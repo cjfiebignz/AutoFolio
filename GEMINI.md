@@ -156,4 +156,14 @@ After the task is fully complete and the summary is finished, the agent MUST EXE
 * **Garage Order:** Collection order must remain stable across plan changes.
 * **Gating:** Plan-aware gating must be backend-driven.
 * **Subscriptions:** Upgrade modals and subscription flows should reflect the real plan state returned by the backend.
-* **Fleet Tier:** Future-facing only; current Pro max is 10 vehicles.
+* Fleet Tier: Future-facing only; current Pro max is 10 vehicles.
+
+---
+
+## 12. Git Workflow Rules
+* **Clean Commits:** Completed features should be committed only after the relevant app builds successfully (`npm run build`).
+* **Message Structure:** Use clear, structured commit messages (e.g., conventional commits).
+* **Feature Branches:** Prefer feature branches for substantial work (`feat/branch-name`).
+* **Timely Pushes:** Push to GitHub after each stable feature completion milestone.
+* **Secret Protection:** Never commit `.env` files or scripts containing hardcoded secrets.
+
