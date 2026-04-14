@@ -1,0 +1,505 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AccountPlan {
+  free
+  pro
+}
+
+// 1. User Identity & Account (Standard NextAuth models)
+model User {
+  id              String    @id @default(uuid())
+  name            String?
+  email           String?   @unique
+  emailVerified   DateTime?
+  image           String?
+  role            String    @default("user") // "user" or "admin"
+  defaultCurrency String    @default("AUD")
+  plan            AccountPlan @default(free)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  accounts        Account[]
+  sessions        Session[]
+  vehicles        UserVehicle[]
+}
+
+model Account {
+  id                 String  @id @default(uuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// 2. User Vehicle Instance
+model UserVehicle {
+  id              String             @id @default(uuid())
+  userId          String
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Public SpecHUB identifier (e.g., 'TOY-COR-2022-HYB')
+  // Nullable for custom or unlinked vehicles
+  specId          String?            
+  
+  vin             String?
+  licensePlate    String?
+  nickname        String?
+  make            String?
+  model           String?
+  year            Int?
+  status          String             @default("active") // active, sold, archived
+  
+  currentOdometer      Int?
+  serviceIntervalKms   Int?
+  serviceIntervalMonths Int?
+  serviceSettingsBaseDate DateTime?
+  serviceSettingsBaseKms  Int?
+  
+  bannerImageUrl  String?
+  bannerImagePath String?
+  bannerUpdatedAt DateTime?
+  bannerCropX     Float?
+  bannerCropY     Float?
+  bannerZoom      Float?
+  
+  attributes      VehicleAttribute[]
+  odometers       OdometerReading[]
+  services        ServiceEvent[]
+  registrations   RegistrationRecord[]
+  insurance       InsuranceRecord[]
+  documents       Document[]
+  reminderRules   ReminderRule[]
+  reminders       Reminder[]
+  workJobs        WorkJob[]
+  photos          VehiclePhoto[]
+  customSpecs     UserVehicleCustomSpec[]
+  importBatches   ImportBatch[]
+  savedParts      SavedPart[]
+  partPresets     PartPreset[]
+
+  createdAt       DateTime           @default(now())
+
+  // Public Report Sharing (Pro Feature)
+  publicShareToken     String?   @unique
+  publicShareEnabled   Boolean   @default(false)
+  publicShareCreatedAt DateTime?
+
+  @@index([userId])
+  @@index([specId])
+}
+
+// 3. User-Owned Custom State & Modifications
+model VehicleAttribute {
+  id              String      @id @default(uuid())
+  vehicleId       String
+  vehicle         UserVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  attrKey         String      // e.g., 'tyre_size', 'lift_kit_model'
+  attrValue       String
+  isModification  Boolean     @default(false)
+  
+  updatedAt       DateTime    @updatedAt
+}
+
+// 4. Odometer History
+model OdometerReading {
+  id              String      @id @default(uuid())
+  vehicleId       String
+  vehicle         UserVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  value           Int
+  readingDate     DateTime
+  source          String      @default("manual") // manual, service, api
+  
+  createdAt       DateTime    @default(now())
+
+  @@index([vehicleId, readingDate(sort: Desc)])
+}
+
+// 5. Service & Maintenance History
+model ServiceEvent {
+  id              String      @id @default(uuid())
+  vehicleId       String
+  vehicle         UserVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  title           String      @default("Untitled Service")
+  eventDate       DateTime
+  odometerAtEvent Int?
+  serviceType     String      @default("workshop") // workshop, diy
+  isMainService   Boolean     @default(false)
+  notes           String?
+  totalCost       Decimal?    @db.Decimal(12, 2)
+  
+  documents       Document[]
+  attachments     ServiceAttachment[]
+  createdAt       DateTime    @default(now())
+
+  @@index([vehicleId, eventDate(sort: Desc)])
+}
+
+// 6. Registration Tracking
+enum RegistrationStatus {
+  active
+  pending
+  expired
+  cancelled
+}
+
+model RegistrationRecord {
+  id              String      @id @default(uuid())
+  vehicleId       String
+  vehicle         UserVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  regNumber       String
+  countryCode     String      // ISO 3166-1 alpha-2
+  region          String?     // State/Province
+  registrationStartDate DateTime?
+  expiryDate      DateTime
+  durationMonths  Int?
+  issuingBody     String?
+  cost            Decimal?    @db.Decimal(12, 2)
+  currency        String?
+  isCurrent       Boolean     @default(true)
+  registrationStatus RegistrationStatus @default(active)
+  
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([vehicleId, isCurrent])
+}
+
+// 7. Insurance Tracking
+enum InsuranceStatus {
+  active
+  pending
+  expired
+  cancelled
+}
+
+model InsuranceRecord {
+  id              String      @id @default(uuid())
+  vehicleId       String
+  vehicle         UserVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  provider        String
+  policyNumber    String?
+  policyType      String      // comprehensive, third_party, liability, etc.
+  policyStartDate DateTime?
+  expiryDate      DateTime
+  premiumAmount   Decimal?    @db.Decimal(12, 2)
+  currency        String      @default("AUD")
+  paymentFrequency String     // monthly, quarterly, semi_annually, annually
+  isCurrent       Boolean     @default(true)
+  insuranceStatus InsuranceStatus @default(active)
+  
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([vehicleId, isCurrent])
+}
+
+// 8. Document Management
+model Document {
+  id              String        @id @default(uuid())
+  vehicleId       String
+  vehicle         UserVehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  // Optional link to a specific service event (e.g., receipt)
+  serviceEventId  String?
+  serviceEvent    ServiceEvent? @relation(fields: [serviceEventId], references: [id], onDelete: SetNull)
+  
+  title           String        // e.g., 'Oil Change Receipt'
+  category        String        @default("other") // receipt, registration, insurance, manual, other
+  date            DateTime      @default(now())
+  notes           String?
+  fileUrl         String?       // Optional for now until real storage is added
+  fileType        String?       // pdf, jpg, png
+  fileSize        Int?          // in bytes
+  createdAt       DateTime      @default(now())
+
+  @@index([vehicleId])
+  @@index([serviceEventId])
+}
+
+// 9. Reminder Rule Engine
+model ReminderRule {
+  id              String             @id @default(uuid())
+  vehicleId       String
+  vehicle         UserVehicle        @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  label           String             // e.g., 'Oil Change'
+  intervalKm      Int?               // e.g., 10000
+  intervalMonths  Int?               // e.g., 12
+  isActive        Boolean            @default(true)
+  
+  instances       ReminderInstance[]
+
+  @@index([vehicleId])
+}
+
+model ReminderInstance {
+  id              String       @id @default(uuid())
+  ruleId          String
+  rule            ReminderRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  
+  dueDate         DateTime?
+  dueKm           Int?
+  status          String       @default("pending") // pending, completed, overdue
+  completedAt     DateTime?
+
+  @@index([ruleId, status])
+}
+
+// 10. Work & Job Planning
+model WorkJob {
+  id              String      @id @default(uuid())
+  vehicleId       String
+  vehicle         UserVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  title           String
+  status          String      @default("planned") // planned, in-progress, done
+  priority        String?     @default("medium")  // low, medium, high
+  date            DateTime?
+  notes           String?
+  estimate        Decimal?    @db.Decimal(12, 2)
+  attachments     WorkAttachment[]
+  parts           WorkJobPart[]
+  specs           WorkJobSpec[]
+  createdAt       DateTime    @default(now())
+
+  @@index([vehicleId, status])
+  @@index([vehicleId, createdAt(sort: Desc)])
+}
+
+model WorkJobPart {
+  id              String      @id @default(uuid())
+  workJobId       String
+  workJob         WorkJob     @relation(fields: [workJobId], references: [id], onDelete: Cascade)
+  
+  savedPartId     String
+  savedPart       SavedPart   @relation(fields: [savedPartId], references: [id], onDelete: Cascade)
+  
+  quantity        Int         @default(1)
+  unitPriceSnapshot Decimal?  @db.Decimal(12, 2)
+  lineTotalSnapshot  Decimal?  @db.Decimal(12, 2)
+  notes           String?
+
+  @@index([workJobId])
+  @@index([savedPartId])
+}
+
+model WorkJobSpec {
+  id              String      @id @default(uuid())
+  workJobId       String
+  workJob         WorkJob     @relation(fields: [workJobId], references: [id], onDelete: Cascade)
+  
+  customSpecId    String
+  customSpec      UserVehicleCustomSpec @relation(fields: [customSpecId], references: [id], onDelete: Cascade)
+
+  @@index([workJobId])
+  @@index([customSpecId])
+}
+
+// 11. MVP Reminders
+enum ReminderSourceType {
+  registration
+  insurance
+  maintenance
+  other
+}
+
+model Reminder {
+  id              String      @id @default(uuid())
+  vehicleId       String
+  vehicle         UserVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  title           String
+  dueDate         DateTime
+  type            String      @default("maintenance") // maintenance, registration, insurance, other
+  status          String      @default("open") // open, done, dismissed
+  notes           String?
+  
+  sourceId        String?     // UUID of the linked Reg/Ins record
+  sourceType      ReminderSourceType?
+  autoGenerated   Boolean     @default(false)
+  
+  createdAt       DateTime    @default(now())
+
+  @@index([vehicleId, status])
+  @@index([vehicleId, dueDate])
+}
+
+// 12. Vehicle Photos
+model VehiclePhoto {
+  id              String      @id @default(uuid())
+  vehicleId       String
+  vehicle         UserVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  url             String
+  createdAt       DateTime    @default(now())
+
+  @@index([vehicleId])
+}
+
+// 13. Service Attachments
+model ServiceAttachment {
+  id              String        @id @default(uuid())
+  serviceEventId  String
+  serviceEvent    ServiceEvent  @relation(fields: [serviceEventId], references: [id], onDelete: Cascade)
+  
+  title           String?
+  url             String
+  fileType        String?       // pdf, jpg, png
+  fileSize        Int?          // in bytes
+  createdAt       DateTime      @default(now())
+
+  @@index([serviceEventId])
+}
+
+// 14. Work Attachments
+model WorkAttachment {
+  id              String        @id @default(uuid())
+  workJobId       String
+  workJob         WorkJob       @relation(fields: [workJobId], references: [id], onDelete: Cascade)
+  
+  title           String?
+  url             String
+  fileType        String?       // pdf, jpg, png
+  fileSize        Int?          // in bytes
+  createdAt       DateTime      @default(now())
+
+  @@index([workJobId])
+}
+
+// 15. Custom Specifications
+model UserVehicleCustomSpec {
+  id              String      @id @default(uuid())
+  vehicleId       String
+  vehicle         UserVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  group           String      // Engine, Oil & Fluids, etc.
+  label           String
+  value           String
+  unit            String?
+  notes           String?
+  
+  workJobLinks    WorkJobSpec[]
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([vehicleId])
+}
+
+// 16. Import Batches
+model ImportBatch {
+  id              String      @id @default(uuid())
+  vehicleId       String
+  vehicle         UserVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  fileName        String
+  totalRows       Int
+  importedCount   Int
+  skippedCount    Int
+  failedCount     Int
+  
+  createdAt       DateTime    @default(now())
+
+  @@index([vehicleId])
+}
+
+// 17. Saved Parts
+model SavedPart {
+  id              String      @id @default(uuid())
+  vehicleId       String
+  vehicle         UserVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  category        String      // Filters (Oil, Air, etc.), Brakes, etc.
+  name            String
+  partNumber      String?
+  description     String?
+  preferredBrand  String?
+  supplier        String?
+  purchaseUrl     String?
+  lastPrice       Decimal?    @db.Decimal(12, 2)
+  lastPurchaseDate DateTime?
+  defaultQuantity Int         @default(1)
+  notes           String?
+  
+  presetItems     PartPresetItem[]
+  workJobLinks    WorkJobPart[]
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([vehicleId])
+  @@index([category])
+}
+
+// 18. Part Presets
+model PartPreset {
+  id              String      @id @default(uuid())
+  vehicleId       String
+  vehicle         UserVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  name            String      // e.g., 'Annual Service Pack', 'Brake Refresh'
+  notes           String?
+  
+  items           PartPresetItem[]
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([vehicleId])
+}
+
+model PartPresetItem {
+  id              String      @id @default(uuid())
+  presetId        String
+  preset          PartPreset  @relation(fields: [presetId], references: [id], onDelete: Cascade)
+  
+  savedPartId     String
+  savedPart       SavedPart   @relation(fields: [savedPartId], references: [id], onDelete: Cascade)
+  
+  quantity        Int         @default(1)
+
+  @@index([presetId])
+  @@index([savedPartId])
+}

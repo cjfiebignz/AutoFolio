@@ -1,0 +1,6 @@
+category,label,value,unit,notes
+Engine,Engine Code,2JZ-GTE,,Twin-turbo inline-6
+Engine,Displacement,2997,cc,
+Fluids,Engine Oil,5.5,L,Synthetic 5W-30
+Dimensions,Wheelbase,2550,mm,
+Torque,Wheel Nuts,103,Nm,

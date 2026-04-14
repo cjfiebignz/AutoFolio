@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "UserVehicle" ADD COLUMN     "bannerCropX" DOUBLE PRECISION,
+ADD COLUMN     "bannerCropY" DOUBLE PRECISION,
+ADD COLUMN     "bannerZoom" DOUBLE PRECISION;
