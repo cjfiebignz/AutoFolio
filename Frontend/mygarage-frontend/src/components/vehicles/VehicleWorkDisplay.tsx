@@ -148,6 +148,24 @@ function WorkCard({
     }
   };
 
+  const handlePrintJobCard = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isExporting) return;
+
+    setIsExporting(true);
+    setErrorMessage(null);
+
+    try {
+      const blob = await exportWorkJobPdf(vehicleId, item.id);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to generate print view');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isUpdating || isPending || isDeleting) return;
@@ -489,15 +507,13 @@ function WorkCard({
                     <div className="grid grid-cols-1 gap-2.5">
                       <div className="group/btn relative">
                         <button 
-                          disabled 
-                          className="w-full flex h-10 items-center justify-center gap-2.5 rounded-xl border border-white/5 bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/20 cursor-not-allowed transition-all"
+                          onClick={handlePrintJobCard}
+                          disabled={isExporting || isUpdating || isDeleting || isPending}
+                          className="w-full flex h-10 items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/60 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
                         >
-                          <Printer size={14} />
-                          Print Job Card
+                          {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />}
+                          {isExporting ? 'Generating...' : 'Print Job Card'}
                         </button>
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity">
-                          <span className="text-[8px] font-black uppercase tracking-widest text-blue-400">Coming Soon</span>
-                        </div>
                       </div>
                       <div className="group/btn relative">
                         <button 

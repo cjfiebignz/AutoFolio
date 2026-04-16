@@ -1,16 +1,16 @@
-We are building MyGarage as a standalone app within a larger Automotive Apps ecosystem.
+We are building AutoFolio as a standalone app within a larger Automotive Apps ecosystem.
 
 Context:
-- MyGarage is separate from SpecHUB
+- AutoFolio is separate from SpecHUB
 - SpecHUB is the master reference database for vehicle specifications, capacities, part numbers, and other technical data
-- MyGarage must not duplicate or own master global vehicle specification data as its source of truth
-- MyGarage should reference SpecHUB using specID as the long-term linking strategy
-- MyGarage is the dynamic, user-owned, time-based vehicle lifecycle platform
+- AutoFolio must not duplicate or own master global vehicle specification data as its source of truth
+- AutoFolio should reference SpecHUB using specID as the long-term linking strategy
+- AutoFolio is the dynamic, user-owned, time-based vehicle lifecycle platform
 
 Your role:
-Act as the main MyGarage build architect and implementation planner for this folder/workspace.
+Act as the main AutoFolio build architect and implementation planner for this folder/workspace.
 
-What MyGarage needs to become:
+What AutoFolio needs to become:
 - a powerful but easy-to-use vehicle ownership and service tracking app
 - a central place for users to manage their vehicles
 - reminder-driven, history-rich, and future-proof
@@ -37,13 +37,13 @@ Future-aware areas to keep in mind:
 
 Constraints:
 1. Do NOT redesign SpecHUB
-2. Do NOT make MyGarage the source of truth for global vehicle specs
+2. Do NOT make AutoFolio the source of truth for global vehicle specs
 3. Keep ownership data, historical records, and reference data clearly separated
 4. Prioritize a clean, scalable, practical architecture
 5. Avoid over-engineering the MVP
 
 Your tasks in order:
-1. Propose the foundational architecture for MyGarage
+1. Propose the foundational architecture for AutoFolio
 2. Define the core entity model
 3. Explain parent-child relationships
 4. Recommend how user vehicles should link to SpecHUB
@@ -62,4 +62,4 @@ Required output:
 - future expansion plan
 
 Important:
-This is the main build workspace for MyGarage, so produce structured output that can be turned directly into implementation files and tasks.
+This is the main build workspace for AutoFolio, so produce structured output that can be turned directly into implementation files and tasks.

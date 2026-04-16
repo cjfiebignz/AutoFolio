@@ -85,6 +85,28 @@ export function VehicleUserSpecsDisplay({
 
   // Track expanded categories - collapsed by default
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Persistence: Load on mount
+  useEffect(() => {
+    const key = `autofolio_specs_expanded_${vehicleId}`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        setExpandedCategories(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse expanded categories', e);
+      }
+    }
+    setIsLoaded(true);
+  }, [vehicleId]);
+
+  // Persistence: Save on change
+  useEffect(() => {
+    if (!isLoaded) return;
+    const key = `autofolio_specs_expanded_${vehicleId}`;
+    localStorage.setItem(key, JSON.stringify(expandedCategories));
+  }, [expandedCategories, vehicleId, isLoaded]);
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => 

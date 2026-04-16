@@ -125,12 +125,18 @@ export async function exportWorkHistory(id: string): Promise<Blob> {
   return response.blob();
 }
 
-export async function exportDocumentsZip(id: string): Promise<Blob> {
+export async function exportDocumentsZip(id: string, documentIds?: string[]): Promise<Blob> {
   const url = `${API_BASE_URL}/user-vehicles/${id}/export-documents-zip`;
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: { 'Accept': 'application/zip' },
-  });
+  const options: RequestInit = {
+    method: documentIds ? 'POST' : 'GET',
+    headers: { 
+      'Accept': 'application/zip',
+      ...(documentIds ? { 'Content-Type': 'application/json' } : {})
+    },
+    body: documentIds ? JSON.stringify({ documentIds }) : undefined,
+  };
+
+  const response = await fetch(url, options);
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));

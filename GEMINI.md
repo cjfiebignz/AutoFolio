@@ -1,6 +1,6 @@
-# GEMINI.md — Shared Operating Guide for MyGarage
+# GEMINI.md — Shared Operating Guide for AutoFolio
 
-This document is the foundational mandate for all Gemini agents working on the MyGarage project. Read this before starting any task.
+This document is the foundational mandate for all Gemini agents working on the AutoFolio project. Read this before starting any task.
 
 ---
 
@@ -12,11 +12,11 @@ This document is the foundational mandate for all Gemini agents working on the M
 ---
 
 ## 1. Project Identity
-* **Project:** MyGarage
+* **Project:** AutoFolio
 * **Ecosystem:** Automotive Apps
 * **Relationship:**
     * **SpecHUB:** Master vehicle/specification source of truth.
-    * **MyGarage:** User-owned vehicle lifecycle tracking (maintenance, costs, documents).
+    * **AutoFolio:** User-owned vehicle lifecycle tracking (maintenance, costs, documents).
 * **Current Status:** Active structured build phase. Not a prototype.
 
 ---

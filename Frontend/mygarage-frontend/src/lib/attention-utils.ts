@@ -44,10 +44,9 @@ export function evaluateVehicleAttention(options: AttentionEngineOptions): Atten
   if (vehicle.hasRegistration) {
     const regStatus = getExpiryStatus(vehicle.registrationExpiryDate);
     
-    // De-duplicate: check if a reminder already covers this
+    // De-duplicate: check if ANY active reminder covers registration/rego
     const hasRegReminder = activeReminders.some(r => 
-      (r.title.toLowerCase().includes('registration') || r.title.toLowerCase().includes('rego')) && 
-      r.urgency === (regStatus === 'expired' ? 'overdue' : 'soon')
+      (r.title.toLowerCase().includes('registration') || r.title.toLowerCase().includes('rego'))
     );
 
     if (!hasRegReminder) {
@@ -86,10 +85,9 @@ export function evaluateVehicleAttention(options: AttentionEngineOptions): Atten
   if (vehicle.hasInsurance) {
     const insStatus = getExpiryStatus(vehicle.insuranceExpiryDate);
 
-    // De-duplicate: check if a reminder already covers this
+    // De-duplicate: check if ANY active reminder covers insurance
     const hasInsReminder = activeReminders.some(r => 
-      r.title.toLowerCase().includes('insurance') && 
-      r.urgency === (insStatus === 'expired' ? 'overdue' : 'soon')
+      r.title.toLowerCase().includes('insurance')
     );
 
     if (!hasInsReminder) {

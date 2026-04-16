@@ -100,6 +100,21 @@ export class UserVehicleController {
     archive.pipe(res);
   }
 
+  @Post(':id/export-documents-zip')
+  async exportSelectedDocumentsZip(
+    @Param('id') id: string, 
+    @Body('documentIds') documentIds: string[],
+    @Res() res: Response
+  ) {
+    const { archive, vehicleName } = await this.userVehicleService.exportDocumentsZip(id, documentIds);
+    
+    const safeName = vehicleName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="autofolio-${safeName}-documents.zip"`);
+    
+    archive.pipe(res);
+  }
+
   @Post(':id/public-report/enable')
   async enablePublicReport(@Param('id') id: string) {
     return this.userVehicleService.enablePublicReport(id);

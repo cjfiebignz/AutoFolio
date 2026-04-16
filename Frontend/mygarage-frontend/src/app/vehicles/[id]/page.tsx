@@ -14,6 +14,7 @@ import { VehicleWorkDisplay } from "@/components/vehicles/VehicleWorkDisplay";
 import { VehiclePhotosDisplay } from "@/components/vehicles/VehiclePhotosDisplay";
 import { VehicleBanner } from "@/components/vehicles/VehicleBanner";
 import { VehicleServiceClientWrapper } from "@/components/vehicles/VehicleServiceClientWrapper";
+import { VehicleTabNavigation } from "@/components/vehicles/VehicleTabNavigation";
 import { MaintenanceStatusBadge, MaintenanceStatus } from "@/components/vehicles/MaintenanceStatusBadge";
 import { AccountNavMenu } from "@/components/AccountNavMenu";
 import { AppFooterBrand } from "@/components/AppFooterBrand";
@@ -88,7 +89,6 @@ export default async function VehicleDetailPage({
   const services = mapToServiceHistoryViewModel(serializedVehicle.services || []);
   const documents = mapToDocumentsViewModel(serializedVehicle.documents || []);
   const workItems = mapToWorkJobsViewModel(serializedVehicle.workJobs || []);
-  const reminders = mapToRemindersViewModel(serializedVehicle.reminders || []);
   
   // Map custom specs and ensure they are serialized
   const customSpecs = (serializedVehicle.customSpecs || []);
@@ -146,15 +146,7 @@ export default async function VehicleDetailPage({
       
       <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
         <div className="space-y-10">
-          {/* Compact Tabs Navigation */}
-          <div className="flex items-center justify-start border-b border-white/5 pb-1 overflow-x-auto no-scrollbar gap-1">
-            <TabLink id={id} label="Home" value="overview" active={isOverviewTab} />
-            <TabLink id={id} label="Service" value="service" active={currentTab === 'service'} />
-            <TabLink id={id} label="Work" value="work" active={currentTab === 'work'} />
-            <TabLink id={id} label="Docs" value="documents" active={currentTab === 'documents'} />
-            <TabLink id={id} label="Photos" value="photos" active={currentTab === 'photos'} />
-            <TabLink id={id} label="Specs" value="specs" active={currentTab === 'specs'} />
-          </div>
+          <VehicleTabNavigation vehicleId={id} currentTab={currentTab} />
 
           {/* Main Content Area */}
           <div className="min-h-[400px]">
@@ -164,7 +156,7 @@ export default async function VehicleDetailPage({
                 services={services} 
                 workItems={workItems} 
                 documents={documents} 
-                reminders={reminders}
+                rawReminders={serializedVehicle.reminders || []}
                 serviceSummary={serviceSummary ? JSON.parse(JSON.stringify(serviceSummary.serviceSummary)) : null}
                 costSummary={costSummary ? JSON.parse(JSON.stringify(costSummary)) : null}
               />
@@ -220,20 +212,5 @@ export default async function VehicleDetailPage({
         <AppFooterBrand />
       </div>
     </div>
-  );
-}
-
-function TabLink({ id, label, value, active }: { id: string; label: string; value: string; active: boolean }) {
-  return (
-    <Link
-      href={`/vehicles/${id}?tab=${value}`}
-      className={`whitespace-nowrap rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all ${
-        active 
-          ? "bg-white text-black shadow-lg" 
-          : "text-white/30 hover:text-white/60 hover:bg-white/5"
-      }`}
-    >
-      {label}
-    </Link>
   );
 }

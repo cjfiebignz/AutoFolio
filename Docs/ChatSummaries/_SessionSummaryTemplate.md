@@ -1,4 +1,4 @@
-# MyGarage Session Summary Template
+# AutoFolio Session Summary Template
 
 ## Session Info
 - Date:

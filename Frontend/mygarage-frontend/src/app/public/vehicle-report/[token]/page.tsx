@@ -4,9 +4,10 @@ import { PublicReport } from "@/types/autofolio";
 import { ShieldCheck, Wrench, Briefcase, FileText, CheckCircle2, Info, Car } from "lucide-react";
 import Link from "next/link";
 import { Metadata } from "next";
+import { AutoFolioLogo } from "@/components/AutoFolioLogo";
 
 export const metadata: Metadata = {
-  title: "Vehicle History Report | MyGarage",
+  title: "Vehicle History Report | AutoFolio",
   description: "View a detailed read-only maintenance and service history report.",
 };
 
@@ -26,17 +27,14 @@ export default async function PublicVehicleReportPage({
         <div className="mx-auto max-w-3xl px-6 py-12 sm:py-20">
           
           {/* Public Header */}
-          <header className="mb-16 flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-white/5 pb-10 print:border-black/10">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-white text-black font-black italic text-lg">MG</div>
-                <span className="text-xl font-black italic tracking-tighter uppercase">MyGarage</span>
-              </div>
-              <div className="space-y-1">
-                <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl uppercase italic drop-shadow-2xl">
+          <header className="mb-16 flex flex-col sm:flex-row sm:items-end justify-between gap-8 border-b border-white/5 pb-12 print:border-black/10">
+            <div className="space-y-6">
+              <AutoFolioLogo height={40} className="!justify-start -ml-1" />
+              <div className="space-y-2">
+                <h1 className="text-5xl font-black tracking-tighter sm:text-7xl uppercase italic drop-shadow-3xl leading-none">
                   Vehicle History Report
                 </h1>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 print:text-black/40">
+                <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/20 print:text-black/40 ml-1">
                   Secure Read-Only Verification &bull; Generated {formatDisplayDate(generatedAt)}
                 </p>
               </div>
@@ -189,7 +187,7 @@ export default async function PublicVehicleReportPage({
 
           <footer className="mt-32 space-y-10 border-t border-white/5 pt-16 text-center print:border-black/10">
             <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/10 print:text-black/20">Shared from MyGarage</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/10 print:text-black/20">Shared from AutoFolio</p>
               <p className="mx-auto max-w-xs text-xs font-medium leading-relaxed text-white/20 print:text-black/40 italic">
                 This is a read-only historical summary of verified records maintained by the vehicle owner.
               </p>
@@ -222,7 +220,7 @@ export default async function PublicVehicleReportPage({
             href="/"
             className="text-[10px] font-black uppercase tracking-widest text-white/20 underline underline-offset-8 decoration-white/10 hover:text-white transition-all"
           >
-            Back to MyGarage
+            Back to AutoFolio
           </Link>
         </div>
       </div>

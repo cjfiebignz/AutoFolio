@@ -21,6 +21,7 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
   
   vehicles.forEach(rawVehicle => {
     const vehicle = mapToVehicleViewModel(rawVehicle);
+    // Use raw reminders and map them on client to ensure "now" is consistent
     const reminders = mapToRemindersViewModel(rawVehicle.reminders || []);
     const documents = mapToDocumentsViewModel(rawVehicle.documents || []);
     
@@ -28,7 +29,7 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
       vehicle,
       reminders,
       documents,
-      serviceSummary: null 
+      serviceSummary: rawVehicle.serviceSummary ? JSON.parse(JSON.stringify(rawVehicle.serviceSummary)) : null
     });
 
     // Filter for only critical and warning items

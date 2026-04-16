@@ -69,19 +69,19 @@ export function ExportHistoryButton({
       switch (type) {
         case 'service':
           blob = await exportServiceHistory(vehicleId);
-          filename = `mygarage-${safeName || 'vehicle'}-service-report.pdf`;
+          filename = `autofolio-${safeName || 'vehicle'}-service-report.pdf`;
           break;
         case 'work':
           blob = await exportWorkHistory(vehicleId);
-          filename = `mygarage-${safeName || 'vehicle'}-work-report.pdf`;
+          filename = `autofolio-${safeName || 'vehicle'}-work-report.pdf`;
           break;
         case 'documents':
           blob = await exportDocumentsZip(vehicleId);
-          filename = `mygarage-${safeName || 'vehicle'}-documents.zip`;
+          filename = `autofolio-${safeName || 'vehicle'}-documents.zip`;
           break;
         default:
           blob = await exportVehicleHistory(vehicleId);
-          filename = `mygarage-${safeName || 'vehicle'}-report.pdf`;
+          filename = `autofolio-${safeName || 'vehicle'}-report.pdf`;
       }
 
       const url = window.URL.createObjectURL(blob);

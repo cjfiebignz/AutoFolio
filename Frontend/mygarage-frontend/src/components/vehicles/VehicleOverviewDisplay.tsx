@@ -2,20 +2,35 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { 
+  Calendar, 
+  Clock, 
+  ShieldCheck, 
+  Bell, 
+  FileText, 
+  Info, 
+  Wrench, 
+  RefreshCw, 
+  Plus, 
+  Edit3, 
+  ArrowRight, 
+  Trash2,
+  X,
+  Loader2
+} from 'lucide-react';
 import { VehicleViewModel } from "@/lib/mappers/vehicle";
 import { ServiceEntryViewModel } from "@/lib/mappers/service";
 import { WorkJobViewModel } from "@/lib/mappers/work";
 import { DocumentViewModel } from "@/lib/mappers/document";
-import { ReminderViewModel } from "@/lib/mappers/reminder";
-import { updateReminderStatus, deleteReminder } from '@/lib/api';
-import { ServiceSummary, LifetimeCostSummary } from "@/types/autofolio";
+import { Reminder, ServiceSummary, LifetimeCostSummary } from "@/types/autofolio";
 import { formatDisplayDate, getExpiryStatus, getRelativeTimeText, formatLifecycleStatus, formatNumber, formatCurrency } from "@/lib/date-utils";
 import { usePreferences } from '@/lib/preferences';
 import { evaluateVehicleAttention, AttentionItem } from '@/lib/attention-utils';
-import { Bell, Wrench, FileText, Edit3, Calendar, Plus, Trash2, ArrowRight, Clock, RefreshCw, ShieldCheck, Info, FileDown } from 'lucide-react';
-import { VehicleCalendarModal } from './VehicleCalendarModal';
+import { mapToRemindersViewModel, ReminderViewModel } from "@/lib/mappers/reminder";
+import { updateReminderStatus, deleteReminder } from '@/lib/api';
 import { ExportHistoryButton } from './ExportHistoryButton';
 import { ShareReportAction } from './ShareReportAction';
+import { VehicleCalendarModal } from './VehicleCalendarModal';
 import { MaintenanceStatusBadge, MaintenanceStatus } from './MaintenanceStatusBadge';
 
 interface OverviewProps {
@@ -23,7 +38,7 @@ interface OverviewProps {
   services: ServiceEntryViewModel[];
   workItems: WorkJobViewModel[];
   documents: DocumentViewModel[];
-  reminders: ReminderViewModel[];
+  rawReminders: Reminder[];
   serviceSummary?: ServiceSummary['serviceSummary'] | null;
   costSummary?: LifetimeCostSummary | null;
 }
@@ -33,7 +48,7 @@ export function VehicleOverviewDisplay({
   services, 
   workItems, 
   documents,
-  reminders,
+  rawReminders,
   serviceSummary,
   costSummary
 }: OverviewProps) {
@@ -41,6 +56,9 @@ export function VehicleOverviewDisplay({
   const [isPending, startTransition] = useTransition();
   const { formatDistance, mounted } = usePreferences();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  // Map reminders on the client-side to ensure "now" is consistent with other UI checks
+  const reminders = mapToRemindersViewModel(rawReminders);
 
   const handleMarkReminderDone = async (reminderId: string) => {
     try {
@@ -330,40 +348,40 @@ export function VehicleOverviewDisplay({
       {/* Recent Activity */}
       <section className="space-y-4">
         <h3 className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Recent Journal</h3>
-        <div className="rounded-[40px] border border-white/5 bg-white/[0.01] p-3 backdrop-blur-sm">
+        <div className="rounded-[32px] border border-white/5 bg-white/[0.01] p-1.5 backdrop-blur-sm">
           {!hasHistory ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-white/10">
-                <Clock size={24} strokeWidth={1.5} />
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-white/10">
+                <Clock size={20} strokeWidth={1.5} />
               </div>
               <p className="text-xs font-bold text-white/20 uppercase tracking-widest italic">No activity recorded yet.</p>
             </div>
           ) : (
             <div className="divide-y divide-white/5">
               {services.length > 0 && (
-                <ActivityRow 
-                  icon={<Wrench size={14} />} 
-                  title="Last Service" 
-                  value={services[0].title} 
-                  date={services[0].date} 
+                <ActivityRow
+                  icon={<Wrench size={14} />}
+                  title="Last Service"
+                  value={services[0].title}
+                  date={services[0].date}
                   href={`/vehicles/${vehicle.id}?tab=service`}
                 />
               )}
               {workItems.length > 0 && (
-                <ActivityRow 
-                  icon={<Edit3 size={14} />} 
-                  title="Latest Job" 
-                  value={workItems[0].title} 
-                  date={workItems[0].date || 'Planned'} 
+                <ActivityRow
+                  icon={<Edit3 size={14} />}
+                  title="Latest Job"
+                  value={workItems[0].title}
+                  date={workItems[0].date || 'Planned'}
                   href={`/vehicles/${vehicle.id}?tab=work`}
                 />
               )}
               {documents.length > 0 && (
-                <ActivityRow 
-                  icon={<FileText size={14} />} 
-                  title="Documents" 
-                  value={`${documents.length} Files Protected`} 
-                  date="Active Library" 
+                <ActivityRow
+                  icon={<FileText size={14} />}
+                  title="Documents"
+                  value={`${documents.length} Files Protected`}
+                  date="Active Library"
                   href={`/vehicles/${vehicle.id}?tab=documents`}
                 />
               )}
@@ -371,7 +389,6 @@ export function VehicleOverviewDisplay({
           )}
         </div>
       </section>
-
       <VehicleCalendarModal 
         isOpen={isCalendarOpen}
         onClose={() => setIsCalendarOpen(false)}
@@ -460,16 +477,16 @@ interface ActivityRowProps {
 
 function ActivityRow({ icon, title, value, date, href }: ActivityRowProps) {
   const content = (
-    <div className="flex items-center gap-5 p-5">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/5 text-white/20 transition-all group-hover:bg-white/10 group-hover:text-white">
+    <div className="flex items-center gap-4 py-3 px-4">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/5 text-white/20 transition-all group-hover:bg-white/10 group-hover:text-white">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[9px] font-black uppercase tracking-widest text-white/20 mb-0.5">{title}</p>
-        <p className="truncate text-sm font-black text-white/80 group-hover:text-white transition-colors">{value}</p>
+        <p className="text-[8px] font-black uppercase tracking-widest text-white/20 mb-0.5">{title}</p>
+        <p className="truncate text-xs font-bold text-white/80 group-hover:text-white transition-colors uppercase italic">{value}</p>
       </div>
       <div className="text-right shrink-0">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 italic group-hover:text-white/50 transition-colors">{date}</p>
+        <p className="text-[9px] font-bold uppercase tracking-widest text-white/20 group-hover:text-white/40 transition-colors">{date}</p>
       </div>
     </div>
   );
@@ -644,6 +661,7 @@ function ReminderItem({
 }: ReminderItemProps & { vehicleId: string }) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const urgencyStyles = {
     overdue: 'border-red-500/20 bg-red-500/5 text-red-400/90 ring-red-500/10',
     soon: 'border-yellow-500/20 bg-yellow-500/5 text-yellow-500/90 ring-yellow-500/10',
@@ -651,7 +669,8 @@ function ReminderItem({
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this reminder? This action cannot be undone.')) {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
       return;
     }
 
@@ -662,6 +681,7 @@ function ReminderItem({
     } catch (err) {
       console.error('Failed to delete reminder:', err);
       setIsDeleting(false);
+      setConfirmDelete(false);
     }
   };
 
@@ -682,30 +702,51 @@ function ReminderItem({
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Link 
-          href={`/vehicles/${vehicleId}/reminders/${reminder.id}/edit`}
-          className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all backdrop-blur-md border border-white/5"
-          title="Edit Reminder"
-        >
-          <Edit3 size={14} />
-        </Link>
-        <button 
-          type="button"
-          onClick={onDone}
-          disabled={isPending || isDeleting}
-          className="flex h-10 items-center justify-center rounded-xl bg-white/5 px-4 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50 border border-white/5"
-          title="Mark Done"
-        >
-          {isPending ? '...' : 'Done'}
-        </button>
+        {!confirmDelete && (
+          <>
+            <Link 
+              href={`/vehicles/${vehicleId}/reminders/${reminder.id}/edit`}
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all backdrop-blur-md border border-white/5"
+              title="Edit Reminder"
+            >
+              <Edit3 size={14} />
+            </Link>
+            <button 
+              type="button"
+              onClick={onDone}
+              disabled={isPending || isDeleting}
+              className="flex h-10 items-center justify-center rounded-xl bg-white/5 px-4 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50 border border-white/5"
+              title="Mark Done"
+            >
+              {isPending ? '...' : 'Done'}
+            </button>
+          </>
+        )}
+
+        {confirmDelete && (
+          <button 
+            type="button"
+            onClick={() => setConfirmDelete(false)}
+            disabled={isDeleting}
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all border border-white/5"
+            title="Cancel"
+          >
+            <X size={14} />
+          </button>
+        )}
+
         <button 
           type="button"
           onClick={handleDelete}
           disabled={isDeleting}
-          className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 text-red-500/40 hover:bg-red-500/20 hover:text-red-500 transition-all disabled:opacity-50 border border-red-500/10"
-          title="Delete Reminder"
+          className={`flex h-10 items-center justify-center rounded-xl transition-all disabled:opacity-50 border ${
+            confirmDelete 
+              ? 'bg-red-500/20 text-red-500 px-4 text-[10px] font-black uppercase tracking-widest border-red-500/20 hover:bg-red-500/30' 
+              : 'bg-red-500/10 text-red-500/40 w-10 border-red-500/10 hover:bg-red-500/20 hover:text-red-500'
+          }`}
+          title={confirmDelete ? 'Click to confirm deletion' : 'Delete Reminder'}
         >
-          <Trash2 size={14} />
+          {isDeleting ? <Loader2 size={14} className="animate-spin" /> : confirmDelete ? 'Confirm' : <Trash2 size={14} />}
         </button>
       </div>
     </div>

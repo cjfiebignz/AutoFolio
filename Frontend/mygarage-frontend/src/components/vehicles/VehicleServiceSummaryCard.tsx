@@ -45,10 +45,10 @@ export function VehicleServiceSummaryCard({ vehicleId, summary }: VehicleService
 
   // State-independent status mapping for deterministic hydration
   const statusColors = {
-    overdue: { text: 'text-red-400', icon: 'text-red-500' },
-    due_soon: { text: 'text-yellow-400', icon: 'text-yellow-500' },
-    up_to_date: { text: 'text-green-500/80', icon: 'text-green-500/60' },
-    insufficient_data: { text: 'text-white/20', icon: 'text-white/10' }
+    overdue: { text: 'text-red-400', icon: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/20' },
+    due_soon: { text: 'text-yellow-400', icon: 'text-yellow-500', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
+    up_to_date: { text: 'text-green-500/80', icon: 'text-green-500/60', bg: 'bg-green-500/10', border: 'border-green-500/20' },
+    insufficient_data: { text: 'text-white/20', icon: 'text-white/10', bg: 'bg-white/5', border: 'border-white/10' }
   };
 
   const currentStatusColors = statusColors[status as keyof typeof statusColors] || statusColors.insufficient_data;
@@ -88,141 +88,107 @@ export function VehicleServiceSummaryCard({ vehicleId, summary }: VehicleService
   }
 
   return (
-    <div className="group relative overflow-hidden rounded-[40px] border border-white/5 bg-white/[0.02] shadow-2xl backdrop-blur-md transition-all duration-500 hover:border-white/10">
-      {/* Primary Dashboard Area */}
-      <div className="grid grid-cols-1 divide-y divide-white/5 sm:grid-cols-2 sm:divide-x sm:divide-y-0 border-b border-white/5 bg-white/[0.01]">
-        {/* Current Odometer Panel */}
-        <div className="p-8 sm:p-10 relative">
-          <div className="mb-8 flex items-center justify-between gap-4 h-6">
-            <div className="flex shrink-0 items-center gap-2 text-white/20">
-              <Gauge size={14} />
-              <span className="text-[10px] font-black uppercase tracking-[0.25em] whitespace-nowrap">Current Odometer</span>
+    <div className="group relative overflow-hidden rounded-[40px] border border-white/10 bg-gradient-to-br from-white/10 to-transparent p-8 shadow-2xl backdrop-blur-md transition-all duration-500">
+      
+      {/* Top Row: Primary Stats & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-8 mb-10">
+        <div className="space-y-4 flex-1">
+          <div className="space-y-1">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Maintenance Intelligence</span>
+            <div className="flex items-center gap-3">
+              <h2 className="text-3xl font-black italic tracking-tighter text-white uppercase">Service Status</h2>
+              <div className={`flex items-center gap-2 rounded-full px-3 py-1 ${currentStatusColors.bg} border ${currentStatusColors.border} ring-1 ring-inset ring-white/5`}>
+                <CheckCircle2 size={12} className={currentStatusColors.icon} />
+                <span className={`text-[9px] font-black uppercase tracking-widest ${currentStatusColors.text}`}>
+                  {status.replace(/_/g, ' ')}
+                </span>
+              </div>
             </div>
           </div>
-          
-          <div className="space-y-2.5">
-            <div className="space-y-1.5">
-              <h4 className="text-4xl font-black italic tracking-tighter text-white sm:text-5xl min-h-[1.2em] leading-none">
-                <span className="inline-flex items-baseline gap-x-2.5 whitespace-nowrap max-w-full overflow-visible">
-                  <span>{currentKms !== null ? formatDistance(currentKms, false) : "Not set"}</span>
-                  {currentKms !== null && (
-                    <span className="text-[14px] sm:text-[18px] font-black not-italic tracking-[0.2em] text-white/20 uppercase">{getUnitLabel()}</span>
-                  )}
+
+          <div className="flex flex-wrap gap-x-10 gap-y-4">
+            <div className="space-y-1">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/15">Current Odometer</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-black italic tracking-tighter text-white uppercase">
+                  {currentKms !== null ? formatNumber(currentKms) : "—"}
                 </span>
-              </h4>
-              <div className="h-4" /> {/* Alignment Spacer */}
+                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{getUnitLabel()}</span>
+              </div>
             </div>
-            
-            {/* Stable Action Group in Bottom Left */}
-            <div className="flex items-center gap-1.5 pt-1">
-              <button 
-                type="button"
-                onClick={() => setIsOdometerOpen(true)}
-                className="flex shrink-0 items-center gap-2 rounded-lg bg-white/5 px-3 py-1.5 text-[8px] font-black uppercase tracking-widest text-white/40 transition-all hover:bg-white/10 hover:text-white active:scale-95 border border-white/5"
-              >
-                <Edit2 size={10} />
-                Update
-              </button>
-              <button 
-                type="button"
-                onClick={() => setIsEditorOpen(true)}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/5 text-white/20 transition-all hover:bg-white hover:text-black active:scale-90 border border-white/5"
-                title="Service Settings"
-              >
-                <Settings2 size={14} />
-              </button>
+            <div className="space-y-1">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-400/30">Next Due At</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-black italic tracking-tighter text-blue-400 uppercase">
+                  {nextServiceDueKms !== null ? formatNumber(nextServiceDueKms) : "—"}
+                </span>
+                <span className="text-[10px] font-black text-blue-400/20 uppercase tracking-widest">{getUnitLabel()}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="p-8 sm:p-10">
-          <div className="mb-8 flex items-center gap-2 text-blue-400/40 h-6">
-            <RefreshCw size={14} />
-            <span className="text-[10px] font-black uppercase tracking-[0.25em]">Next Service Due</span>
-          </div>
-          
-          <div className="space-y-2.5">
-            <div className="space-y-1.5">
-              <h4 className="text-3xl font-black italic tracking-tighter text-blue-400 sm:text-4xl min-h-[1.2em] leading-none">
-                <span className="inline-flex items-baseline gap-x-2.5 whitespace-nowrap max-w-full overflow-visible">
-                  <span>{nextServiceDueKms !== null ? formatDistance(nextServiceDueKms, false) : "Pending"}</span>
-                  {nextServiceDueKms !== null && (
-                    <span className="text-[14px] sm:text-[16px] font-black not-italic tracking-[0.2em] text-blue-400/30 uppercase">{getUnitLabel()}</span>
-                  )}
-                </span>
-              </h4>
-              <div className="h-4">
-                {nextServiceDueKms !== null && kmsUntilNextService !== null ? (
-                  <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${kmsUntilNextService <= 0 ? 'text-red-400' : kmsUntilNextService <= 1000 ? 'text-yellow-400' : 'text-blue-400/50'}`}>
-                    {kmsUntilNextService <= 0 ? 'Overdue' : (
-                      <span className="inline-flex gap-x-1.5 whitespace-nowrap items-center">
-                        <span className="h-1 w-1 rounded-full bg-current opacity-40" />
-                        <span>{formatDistance(kmsUntilNextService)} REMAINING</span>
-                      </span>
-                    )}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-            
-            <div className="h-5">
-              {nextServiceDueDate ? (
-                <div className="flex items-center gap-2.5">
-                  <Calendar size={12} className="text-white/20" />
-                  <p className="text-sm font-black uppercase tracking-[0.15em] text-white/80">
-                    {formatDisplayDate(nextServiceDueDate)}
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button 
+            type="button"
+            onClick={() => setIsOdometerOpen(true)}
+            className="h-12 flex items-center justify-center gap-3 rounded-[20px] bg-white/5 border border-white/10 px-5 text-[10px] font-black uppercase tracking-widest text-white/60 hover:bg-white/10 hover:text-white transition-all shadow-xl active:scale-95"
+            title="Update Odometer"
+          >
+            <Edit2 size={14} />
+            <span>Update</span>
+          </button>
+          <button 
+            type="button"
+            onClick={() => setIsEditorOpen(true)}
+            className="h-12 w-12 flex items-center justify-center rounded-[20px] bg-white/5 border border-white/10 text-white/20 hover:bg-white/10 hover:text-white transition-all shadow-xl active:scale-95"
+            title="Service Settings"
+          >
+            <Settings2 size={18} />
+          </button>
         </div>
       </div>
 
-      {/* Secondary Details Area - Refined Grid & Typography */}
-      <div className="grid grid-cols-2 gap-px bg-white/5 lg:grid-cols-4">
-        <SummaryDetail 
+      {/* Grid Subdivisions: All Facts preserved in high density */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 border-t border-white/10 pt-8">
+        <SummaryDetailCompact 
+          label="Next Date Due" 
+          value={nextServiceDueDate ? formatDisplayDate(nextServiceDueDate) : "Not calc"} 
+          secondaryText={kmsUntilNextService !== null ? (
+            kmsUntilNextService <= 0 ? 'Overdue' : `${formatDistance(kmsUntilNextService)} remaining`
+          ) : undefined}
+          tone={kmsUntilNextService !== null && kmsUntilNextService <= 0 ? 'critical' : 'neutral'}
+        />
+        <SummaryDetailCompact 
           label="Last Service" 
           value={lastServiceDate ? formatDisplayDate(lastServiceDate) : "Not recorded"} 
-          subValue={lastServiceKms ? formatDistance(lastServiceKms) : undefined}
+          secondaryText={lastServiceKms ? formatDistance(lastServiceKms) : undefined}
         />
-        <SummaryDetail 
+        <SummaryDetailCompact 
           label="Interval (Time)" 
-          value={serviceIntervalMonths ? `${serviceIntervalMonths} Months` : "Not set"} 
+          value={serviceIntervalMonths ? `${serviceIntervalMonths} Mo` : "Not set"} 
         />
-        <SummaryDetail 
+        <SummaryDetailCompact 
           label="Interval (Kms)" 
           value={serviceIntervalKms ? formatDistance(serviceIntervalKms) : "Not set"} 
         />
-        
-        <div className="bg-[#0b0b0c] p-7 lg:p-9 flex flex-col justify-center items-center text-center lg:text-left lg:items-start min-h-[110px]">
-           <div className="flex items-center gap-2 mb-2.5">
-              <CheckCircle2 size={14} className={currentStatusColors.icon} />
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Status</p>
-           </div>
-           <p className={`text-[17px] font-black italic tracking-tight uppercase leading-tight ${currentStatusColors.text}`}>
-             {status.replace(/_/g, ' ')}
-           </p>
-        </div>
       </div>
 
-      {/* Baseline Attribution Banner */}
-      <div className="border-t border-white/5 bg-white/[0.01] px-10 py-3.5 flex items-center justify-between min-h-[44px]">
+      {/* Baseline Context Footer */}
+      <div className="mt-8 flex items-center justify-between border-t border-white/5 pt-6">
         <div className="flex items-center gap-3">
-          <div className={`h-1.5 w-1.5 rounded-full ${baselineSource === 'main_service' ? 'bg-blue-500' : 'bg-white/20'}`} />
-          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 text-left leading-none">
+          <div className={`h-1.5 w-1.5 rounded-full ${baselineSource === 'main_service' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-white/10'}`} />
+          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20">
             {baselineSource === 'main_service' 
-              ? 'Based on your latest Main Service' 
-              : 'Based on your Service Settings Baseline'}
+              ? 'Latest Main Service Baseline' 
+              : 'Settings Baseline (No Main Service Record)'}
           </p>
         </div>
-        <div className="flex items-center">
-          {isFallback && (
-            <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/10 italic">
-              No Main Service recorded yet
-            </p>
-          )}
-        </div>
+        {isFallback && (
+          <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/10 italic">
+            Manual configuration active
+          </p>
+        )}
       </div>
 
       <VehicleServiceSettingsEditor 
@@ -248,17 +214,29 @@ export function VehicleServiceSummaryCard({ vehicleId, summary }: VehicleService
   );
 }
 
-function SummaryDetail({ label, value, subValue }: { label: string; value: string; subValue?: string }) {
+function SummaryDetailCompact({ label, value, secondaryText, tone = 'neutral' }: { 
+  label: string; 
+  value: string; 
+  secondaryText?: string;
+  tone?: 'neutral' | 'critical';
+}) {
   return (
-    <div className="bg-[#0b0b0c] p-7 lg:p-9 space-y-2.5 min-h-[110px] flex flex-col justify-center">
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">{label}</p>
-      <div className="space-y-1.5">
-        <p className="text-[15px] font-black italic tracking-tight text-white uppercase leading-tight">{value}</p>
-        <div className="h-4"> {/* Stabilized subValue wrapper */}
-          {subValue && (
-            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em]">{subValue}</p>
-          )}
+    <div className="space-y-2">
+      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-white/20">{label}</p>
+      <div className="space-y-1">
+        <div className="flex items-center gap-2.5">
+          <div className={`h-2 w-2 rounded-full ${
+            tone === 'critical' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-white/10'
+          }`} />
+          <p className="text-sm font-black text-white/90 uppercase italic tracking-tight">{value}</p>
         </div>
+        {secondaryText && (
+          <p className={`text-[10px] font-bold uppercase tracking-widest pl-[1.125rem] ${
+            tone === 'critical' ? 'text-red-400/50' : 'text-white/30'
+          }`}>
+            {secondaryText}
+          </p>
+        )}
       </div>
     </div>
   );

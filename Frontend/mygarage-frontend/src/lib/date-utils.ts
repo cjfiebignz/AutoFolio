@@ -78,20 +78,48 @@ export interface LifecycleStatus {
 }
 
 /**
- * Determines the expiry status based on a given date.
+ * Determines the number of days between two dates, ignoring time.
+ * Returns a positive number for future dates, 0 for today, and negative for past dates.
  */
-export function getExpiryStatus(expiryDate: string | Date | undefined | null): ExpiryStatus {
-  if (!expiryDate) return 'none';
-  const d = typeof expiryDate === 'string' ? new Date(expiryDate) : expiryDate;
+export function calculateDaysRemaining(targetDate: string | Date | undefined | null): number | null {
+  if (!targetDate) return null;
+  
+  const d = typeof targetDate === 'string' ? new Date(targetDate) : targetDate;
   const now = new Date();
   
-  // Set times to midnight for consistent comparison
-  const dMidnight = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  // Use UTC methods for the target date to get the "calendar date" as stored in DB
+  // This avoids timezone shifts turning a UTC midnight into the previous day local
+  const dMidnight = new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  
+  // Use local methods for now to get the "current calendar date" for the user
   const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   
   const diffTime = dMidnight.getTime() - nowMidnight.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  // Using Math.round instead of Math.floor to be more resilient to small precision errors/DST
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
   
+  return diffDays;
+}
+
+/**
+ * Maps days remaining to a reminder urgency level.
+ */
+export function getReminderUrgency(daysRemaining: number | null): 'overdue' | 'soon' | 'upcoming' {
+  if (daysRemaining === null) return 'upcoming';
+  if (daysRemaining < 0) return 'overdue';
+  if (daysRemaining <= 30) return 'soon'; // Aligned with getExpiryStatus threshold
+  return 'upcoming';
+}
+
+/**
+ * Determines the expiry status based on a given date.
+ */
+export function getExpiryStatus(expiryDate: string | Date | undefined | null): ExpiryStatus {
+  const diffDays = calculateDaysRemaining(expiryDate);
+  
+  if (diffDays === null) return 'none';
+  // If it's today (0) or in the future up to 30 days, it's due soon.
+  // Only negative numbers are expired.
   if (diffDays < 0) return 'expired';
   if (diffDays <= 30) return 'due_soon';
   return 'active';
@@ -107,8 +135,9 @@ export function getRelativeTimeText(date: string | Date | undefined | null): str
   const d = typeof date === 'string' ? new Date(date) : date;
   const now = new Date();
   
-  // Set times to midnight for consistent comparison
-  const dMidnight = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  // Use UTC methods for the target date
+  const dMidnight = new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  // Use local methods for now
   const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   
   const diffTime = dMidnight.getTime() - nowMidnight.getTime();
