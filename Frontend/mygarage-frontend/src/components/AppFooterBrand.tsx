@@ -12,10 +12,10 @@ export function AppFooterBrand({ className = "" }: { className?: string }) {
           className="grayscale brightness-150" 
         />
         <div className="mt-4 flex flex-col items-center gap-1">
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 group-hover:text-white/60 transition-colors">
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted transition-colors">
             All your vehicles, one place.
           </p>
-          <div className="h-px w-4 bg-white/10" />
+          <div className="h-px w-4 bg-foreground/10" />
         </div>
       </div>
     </footer>

@@ -121,8 +121,8 @@ export function VehiclePhotosDisplay({
       {/* Tab Header & Action */}
       <div className="flex items-center justify-between px-1">
         <div className="space-y-1.5">
-          <h2 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">Gallery</h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-400/50">Visual History & Showcase</p>
+          <h2 className="text-3xl font-black italic tracking-tighter text-foreground uppercase leading-none">Gallery</h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-accent opacity-60 dark:text-blue-400/50">Visual History & Showcase</p>
         </div>
         
         <div className="flex flex-col items-end gap-2">
@@ -132,15 +132,15 @@ export function VehiclePhotosDisplay({
             disabled={isUploading || isPending}
             className={`flex h-11 items-center justify-center gap-2.5 rounded-2xl px-6 text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.98] shadow-xl disabled:opacity-50 ${
               isLimitReached 
-                ? "bg-white/5 border border-white/10 text-white/40 hover:bg-white/10" 
-                : "bg-white text-black hover:bg-white/90"
+                ? "bg-foreground/5 border border-border-subtle text-muted hover:bg-foreground/10" 
+                : "bg-foreground text-background hover:opacity-90"
             }`}
           >
             {isUploading ? <Loader2 size={14} className="animate-spin" /> : (isLimitReached ? <Lock size={14} /> : <Plus size={14} strokeWidth={3} />)}
             {isLimitReached ? "Gallery Full" : "Add Photo"}
           </button>
           {isLimitReached && plan?.tier === 'free' && (
-            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-white/20 mr-2">
+            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-dim mr-2">
               Free plan limit reached ({maxPhotos} photos)
             </p>
           )}
@@ -183,22 +183,22 @@ export function VehiclePhotosDisplay({
       <section className="space-y-8">
         {/* Photo Grid */}
         {photos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-[40px] border border-white/5 bg-white/[0.01] py-24 text-center">
+          <div className="flex flex-col items-center justify-center rounded-[40px] border border-dashed border-border-strong bg-card-overlay py-24 text-center transition-all hover:bg-card-overlay-hover">
             <div className="mb-6 relative">
-              <div className="absolute -inset-4 rounded-full bg-white/5 blur-2xl opacity-50" />
-              <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/5 text-white/20">
+              <div className="absolute -inset-4 rounded-full bg-foreground/5 blur-2xl opacity-0 transition-opacity" />
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-border-subtle bg-card-overlay text-dim group-hover:text-muted transition-colors shadow-2xl">
                 <ImageIcon size={32} strokeWidth={1.5} />
               </div>
             </div>
-            <p className="text-lg font-bold text-white/80">No photos yet</p>
-            <p className="mx-auto mt-2 max-w-[240px] text-sm font-medium leading-relaxed text-white/30 mb-8">
+            <p className="text-lg font-bold text-foreground/80">No photos yet</p>
+            <p className="mx-auto mt-2 max-w-[240px] text-sm font-medium leading-relaxed text-dim mb-8">
               {isLimitReached 
                 ? `Free plan includes up to ${maxPhotos} photos. Upgrade to Pro to increase this limit.`
                 : "Start building your vehicle's visual profile by uploading your first photo."}
             </p>
             <button 
               onClick={triggerUpload}
-              className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-8 text-[10px] font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98]"
+              className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-foreground text-background px-8 text-[10px] font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-[0.98]"
             >
               {isLimitReached ? <Lock size={14} /> : <Plus size={14} strokeWidth={3} />}
               {isLimitReached ? "Unlock with Pro" : "Select Photo"}
@@ -214,7 +214,7 @@ export function VehiclePhotosDisplay({
                 <div 
                   key={photo.id} 
                   onClick={() => !isRowDeleting && !isConfirming && setSelectedPhoto(photo)}
-                  className={`group relative aspect-square overflow-hidden rounded-[24px] border border-white/5 bg-white/[0.02] cursor-pointer ${isRowDeleting ? 'opacity-50 grayscale pointer-events-none' : ''} ${isConfirming ? 'ring-2 ring-red-500/50' : ''}`}
+                  className={`group relative aspect-square overflow-hidden rounded-[24px] border border-subtle bg-card-overlay cursor-pointer ${isRowDeleting ? 'opacity-50 grayscale pointer-events-none' : ''} ${isConfirming ? 'ring-2 ring-red-500/50' : ''}`}
                 >
                   <img
                     src={normalizeImageUrl(photo.url)}
@@ -231,7 +231,7 @@ export function VehiclePhotosDisplay({
                         type="button"
                         onClick={(e) => { e.stopPropagation(); cancelConfirm(); }}
                         disabled={isRowDeleting}
-                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white/60 hover:bg-white/20 transition-all shadow-xl backdrop-blur-md"
+                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-card-overlay text-muted hover:text-foreground transition-all shadow-xl backdrop-blur-md"
                         title="Cancel"
                       >
                         <X size={14} strokeWidth={3} />
@@ -321,17 +321,17 @@ export function VehiclePhotosDisplay({
 
         {/* Gallery Stats */}
         {photos.length > 0 && (
-          <div className="rounded-[32px] border border-white/5 bg-white/[0.01] p-6">
+          <div className="rounded-[32px] border border-subtle bg-card-overlay p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[10px] font-black uppercase tracking-widest">
-              <div className="flex items-center gap-2 text-white/20">
+              <div className="flex items-center gap-2 text-dim">
                 <span>Gallery Status</span>
-                <div className="h-1 w-1 rounded-full bg-white/10" />
+                <div className="h-1 w-1 rounded-full bg-foreground/10" />
                 <span>{photos.length} / {maxPhotos} Photos Captured</span>
               </div>
               {isLimitReached && plan?.tier === 'free' && (
                 <button 
                   onClick={() => checkLimit(100, 1, () => {})}
-                  className="text-blue-400/60 hover:text-blue-400 transition-colors"
+                  className="text-accent opacity-60 hover:opacity-100 transition-opacity"
                 >
                   Free plan includes up to {maxPhotos} photos. Upgrade to Pro to increase this limit.
                 </button>

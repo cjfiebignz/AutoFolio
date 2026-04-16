@@ -94,26 +94,33 @@ export default function PreferencesPage() {
         {/* Appearance Section */}
         <section className="space-y-4">
           <div className="flex items-center gap-3 px-1">
-            <Palette size={16} className="text-white/20" />
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Appearance</h3>
+            <Palette size={16} className="text-foreground opacity-20" />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground opacity-40">Appearance</h3>
           </div>
           
-          <div className="rounded-[32px] border border-white/5 bg-white/[0.02] p-8">
-            <div className="flex items-start justify-between group">
-              <div className="space-y-1">
-                <p className="text-sm font-bold text-white/80">Interface Theme</p>
-                <p className="text-xs font-medium text-white/20">Dark mode is currently active by default.</p>
-              </div>
-              <div className="flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 border border-white/5">
-                <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Dark Active</span>
-              </div>
+          <div className="rounded-[32px] border border-subtle bg-white/[0.02] dark:bg-white/[0.02] p-8 space-y-6">
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-foreground opacity-80">Interface Theme</p>
+              <p className="text-xs font-medium text-foreground opacity-20">Select your preferred visual mode.</p>
             </div>
             
-            <div className="mt-6 flex items-center gap-2 rounded-2xl bg-white/[0.01] border border-white/5 p-4">
-              <Info size={14} className="text-white/10 shrink-0" />
-              <p className="text-[10px] font-medium text-white/20 leading-relaxed italic">
-                Theme switching and custom accents are being finalized for the next major interface update.
+            <div className="grid grid-cols-2 gap-3">
+              <OptionButton 
+                label="Dark Mode" 
+                active={preferences.theme === 'dark'} 
+                onClick={() => updatePreferences({ theme: 'dark' })}
+              />
+              <OptionButton 
+                label="Light Mode" 
+                active={preferences.theme === 'light'} 
+                onClick={() => updatePreferences({ theme: 'light' })}
+              />
+            </div>
+
+            <div className="mt-2 flex items-center gap-2 rounded-2xl bg-white/[0.01] border border-subtle p-4">
+              <Info size={14} className="text-foreground opacity-10 shrink-0" />
+              <p className="text-[10px] font-medium text-foreground opacity-20 leading-relaxed italic">
+                AutoFolio preserves your theme preference across your local sessions.
               </p>
             </div>
           </div>

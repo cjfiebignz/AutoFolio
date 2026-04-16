@@ -68,10 +68,10 @@ export function VehicleTabNavigation({ vehicleId, currentTab }: VehicleTabNaviga
     };
   }, [isOpen]);
 
-  if (!mounted) return <div className="h-14 border-b border-white/5 pb-4" />;
+  if (!mounted) return <div className="h-14 border-b border-subtle pb-4" />;
 
   return (
-    <div className="relative w-full border-b border-white/5 pb-4">
+    <div className="relative w-full border-b border-subtle pb-4">
       {/* Desktop Navigation: Horizontal Tab Row */}
       {!isMobile && (
         <div className="flex items-center justify-between gap-0.5 animate-in fade-in duration-700">
@@ -79,14 +79,14 @@ export function VehicleTabNavigation({ vehicleId, currentTab }: VehicleTabNaviga
             <Link
               key={tab.value}
               href={`/vehicles/${vehicleId}?tab=${tab.value}`}
-              className={`group flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${
+              className={`group flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 currentTab === tab.value 
-                  ? "bg-white text-black shadow-xl" 
-                  : "text-white/40 hover:text-white/80 hover:bg-white/5"
+                  ? "bg-foreground text-background shadow-xl" 
+                  : "text-muted hover:text-foreground hover:bg-card-overlay"
               }`}
             >
               <span className={`transition-colors duration-300 ${
-                currentTab === tab.value ? "text-black" : "text-white/20 group-hover:text-white/60"
+                currentTab === tab.value ? "text-background" : "text-dim group-hover:text-muted"
               }`}>
                 {tab.icon}
               </span>
@@ -103,32 +103,32 @@ export function VehicleTabNavigation({ vehicleId, currentTab }: VehicleTabNaviga
             type="button"
             onClick={() => setIsOpen(!isOpen)}
             aria-expanded={isOpen}
-            className={`flex w-full items-center justify-between rounded-2xl border transition-all duration-300 active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${
+            className={`flex w-full items-center justify-between rounded-2xl border transition-all duration-300 active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               isOpen 
-                ? 'border-white/20 bg-white/10 shadow-lg' 
-                : 'border-white/10 bg-white/5 hover:bg-white/10'
+                ? 'border-border-strong bg-card-overlay-hover shadow-lg' 
+                : 'border-subtle bg-card-overlay hover:bg-card-overlay-hover'
             } px-5 py-4`}
           >
             <div className="flex items-center gap-3">
               <div className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all duration-300 ${
-                isOpen ? 'bg-white text-black shadow-md' : 'bg-white/10 text-white'
+                isOpen ? 'bg-foreground text-background shadow-md' : 'bg-card-overlay text-foreground'
               }`}>
                 {activeTab.icon}
               </div>
               <div className="text-left">
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 leading-none mb-1">Current Section</p>
-                <p className="text-sm font-black uppercase tracking-widest text-white italic leading-none">{activeTab.label}</p>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted leading-none mb-1">Current Section</p>
+                <p className="text-sm font-black uppercase tracking-widest text-foreground italic leading-none">{activeTab.label}</p>
               </div>
             </div>
             <ChevronDown 
               size={18} 
-              className={`text-white/20 transition-transform duration-500 ease-out ${isOpen ? 'rotate-180 text-white/60' : ''}`} 
+              className={`text-dim transition-transform duration-500 ease-out ${isOpen ? 'rotate-180 text-muted' : ''}`} 
             />
           </button>
 
           {/* Mobile Dropdown Panel */}
           <div 
-            className={`absolute left-0 right-0 mt-3 overflow-hidden rounded-[32px] border border-white/10 bg-[#0b0b0c]/98 shadow-3xl backdrop-blur-2xl transition-all duration-500 ease-out z-50 origin-top ${
+            className={`absolute left-0 right-0 mt-3 overflow-hidden rounded-[32px] border border-subtle bg-[var(--dropdown-bg)] shadow-3xl backdrop-blur-2xl transition-all duration-500 ease-out z-50 origin-top ${
               isOpen 
                 ? 'opacity-100 scale-100 translate-y-0' 
                 : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
@@ -140,25 +140,25 @@ export function VehicleTabNavigation({ vehicleId, currentTab }: VehicleTabNaviga
                   key={tab.value}
                   href={`/vehicles/${vehicleId}?tab=${tab.value}`}
                   onClick={() => setIsOpen(false)}
-                  className={`flex items-center justify-between rounded-[20px] px-4.5 py-4 transition-all duration-300 active:scale-[0.98] group outline-none focus-visible:bg-white/5 ${
+                  className={`flex items-center justify-between rounded-[20px] px-4.5 py-4 transition-all duration-300 active:scale-[0.98] group outline-none focus-visible:bg-card-overlay ${
                     currentTab === tab.value 
-                      ? "bg-white/[0.08] text-white shadow-sm ring-1 ring-inset ring-white/10" 
-                      : "text-white/40 hover:bg-white/5 hover:text-white"
+                      ? "bg-card-overlay text-foreground shadow-sm ring-1 ring-inset ring-border-subtle" 
+                      : "text-muted hover:bg-card-overlay hover:text-foreground"
                   }`}
                 >
                   <div className="flex items-center gap-4">
                     <div className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all duration-500 ${
                       currentTab === tab.value 
-                        ? 'bg-white text-black shadow-md rotate-[360deg]' 
-                        : 'bg-white/5 text-white/40 group-hover:bg-white/10 group-hover:text-white'
+                        ? 'bg-foreground text-background shadow-md rotate-[360deg]' 
+                        : 'bg-card-overlay text-dim group-hover:bg-card-overlay-hover group-hover:text-muted'
                     }`}>
                       {tab.icon}
                     </div>
                     <span className="text-xs font-black uppercase tracking-widest leading-none pt-0.5">{tab.label}</span>
                   </div>
                   {currentTab === tab.value && (
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 animate-in zoom-in-50 duration-300">
-                      <Check size={12} className="text-white/60" />
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-card-overlay animate-in zoom-in-50 duration-300">
+                      <Check size={12} className="text-muted" />
                     </div>
                   )}
                 </Link>

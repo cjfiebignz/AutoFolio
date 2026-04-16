@@ -17,7 +17,8 @@ import {
   Trash2,
   X,
   Loader2,
-  Landmark
+  Landmark,
+  AlertTriangle
 } from 'lucide-react';
 import { VehicleViewModel } from "@/lib/mappers/vehicle";
 import { ServiceEntryViewModel, ServiceSummaryViewModel } from "@/lib/mappers/service";
@@ -109,35 +110,35 @@ export function VehicleOverviewDisplay({
       {/* Tab Header */}
       <div className="px-1">
         <div className="space-y-1.5">
-          <h2 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">Vehicle Overview</h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-400/50">Primary Portfolio Dashboard</p>
+          <h2 className="text-3xl font-black italic tracking-tighter text-foreground uppercase leading-none">Vehicle Overview</h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-400/60 dark:text-blue-400/50">Primary Portfolio Dashboard</p>
         </div>
       </div>
 
       {/* Maintenance Intelligence */}
       <section className="space-y-4">
-        <h3 className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Maintenance Intelligence</h3>
+        <h3 className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted">Maintenance Intelligence</h3>
         <MaintenanceIntelligencePanel vehicleId={vehicle.id} serviceSummary={serviceSummary} />
       </section>
 
       {/* Primary Lifecycle Card */}
-      <div className="overflow-hidden rounded-[40px] border border-white/10 bg-gradient-to-br from-white/10 to-transparent p-8 shadow-2xl backdrop-blur-md">
+      <div className="overflow-hidden rounded-[40px] border border-border-strong bg-gradient-to-br from-foreground/5 to-transparent p-8 shadow-2xl backdrop-blur-md">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Ownership Lifecycle</span>
-            <h2 className="text-3xl font-black italic tracking-tighter text-white uppercase">Active Ownership</h2>
-            <p className="text-sm font-medium text-white/50 italic">Secured for {vehicle.ownershipDuration}</p>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">Ownership Lifecycle</span>
+            <h2 className="text-3xl font-black italic tracking-tighter text-foreground uppercase">Active Ownership</h2>
+            <p className="text-sm font-medium text-muted italic">Secured for {vehicle.ownershipDuration}</p>
           </div>
           <button 
             onClick={() => setIsCalendarOpen(true)}
-            className="h-12 w-12 flex items-center justify-center rounded-[20px] bg-white/5 border border-white/10 text-white/20 hover:bg-white/10 hover:text-white transition-all shadow-xl active:scale-95"
+            className="h-12 w-12 flex items-center justify-center rounded-[20px] bg-foreground/5 border border-border-strong text-muted hover:bg-foreground/10 hover:text-foreground transition-all shadow-xl active:scale-95"
             title="Open Vehicle Calendar"
           >
             <Calendar size={24} strokeWidth={1.5} />
           </button>
         </div>
 
-        <div className="mt-10 grid grid-cols-2 gap-6 border-t border-white/5 pt-8">
+        <div className="mt-10 grid grid-cols-2 gap-6 border-t border-border-subtle pt-8">
           {(() => {
             const status = formatLifecycleStatus(vehicle.registrationExpiryDate, vehicle.registrationStatus);
             
@@ -168,17 +169,17 @@ export function VehicleOverviewDisplay({
         </div>
 
         {/* Service Snapshot Integration */}
-        <div className="mt-6 grid grid-cols-2 gap-6 border-t border-white/5 pt-6">
+        <div className="mt-6 grid grid-cols-2 gap-6 border-t border-border-subtle pt-6">
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-white/20">
+            <div className="flex items-center gap-2 text-dim">
               <Wrench size={12} />
               <span className="text-[9px] font-black uppercase tracking-widest">Last Main Service</span>
             </div>
             <div className="space-y-1 px-1">
-              <p className="text-[13px] font-black italic tracking-tight text-white/90 uppercase leading-none">
+              <p className="text-[13px] font-black italic tracking-tight text-foreground/90 uppercase leading-none">
                 {serviceSummary?.lastServiceDate ? formatDisplayDate(serviceSummary.lastServiceDate) : "Not recorded"}
               </p>
-              <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">
+              <p className="text-[10px] font-black text-muted uppercase tracking-widest">
                 {serviceSummary?.lastServiceKms ? formatDistance(serviceSummary.lastServiceKms) : "—"}
               </p>
             </div>
@@ -188,7 +189,7 @@ export function VehicleOverviewDisplay({
             <div className={`flex items-center gap-2 ${
               serviceSummary?.status === 'overdue' ? 'text-red-400/60' :
               serviceSummary?.status === 'due_soon' ? 'text-yellow-400/60' :
-              'text-blue-400/40'
+              'text-blue-400/60 dark:text-blue-400/40'
             }`}>
               <RefreshCw size={12} />
               <span className="text-[9px] font-black uppercase tracking-widest">Next Service Due</span>
@@ -198,7 +199,7 @@ export function VehicleOverviewDisplay({
                 <p className={`text-[13px] font-black italic tracking-tight uppercase leading-none ${
                   serviceSummary?.status === 'overdue' ? 'text-red-400' :
                   serviceSummary?.status === 'due_soon' ? 'text-yellow-400' :
-                  'text-blue-400'
+                  'text-blue-600 dark:text-blue-400'
                 }`}>
                   {serviceSummary?.nextServiceDueDate ? formatDisplayDate(serviceSummary.nextServiceDueDate) : "Not calculated"}
                 </p>
@@ -216,9 +217,9 @@ export function VehicleOverviewDisplay({
 
                   return combinedText && (
                     <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${
-                      serviceSummary.status === 'overdue' ? 'text-red-400/30' :
-                      serviceSummary.status === 'due_soon' ? 'text-yellow-400/30' :
-                      'text-blue-400/30'
+                      serviceSummary.status === 'overdue' ? 'text-red-400/40 dark:text-red-400/30' :
+                      serviceSummary.status === 'due_soon' ? 'text-yellow-400/40 dark:text-yellow-400/30' :
+                      'text-blue-600/40 dark:text-blue-400/30'
                     }`}>
                       {combinedText}
                     </p>
@@ -226,7 +227,7 @@ export function VehicleOverviewDisplay({
                 })()}
               </div>
               {!serviceSummary?.nextServiceDueDate && serviceSummary?.nextServiceDueKms && (
-                <p className="text-[10px] font-black text-blue-400/30 uppercase tracking-widest pt-1">
+                <p className="text-[10px] font-black text-blue-600/40 dark:text-blue-400/30 uppercase tracking-widest pt-1">
                   {formatDistance(serviceSummary.nextServiceDueKms)}
                 </p>
               )}
@@ -238,7 +239,7 @@ export function VehicleOverviewDisplay({
 
       {/* Management Actions */}
       <section className="space-y-4">
-        <h3 className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Management Command</h3>
+        <h3 className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted">Management Command</h3>
         
         {/* Primary Actions Grid */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
@@ -294,8 +295,8 @@ export function VehicleOverviewDisplay({
       {reminders.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 text-blue-400/60">Upcoming Reminders</h3>
-            <Link href={`/vehicles/${vehicle.id}/reminders/new`} className="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-all underline underline-offset-4 decoration-white/5 hover:decoration-white/20">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400/60">Upcoming Reminders</h3>
+            <Link href={`/vehicles/${vehicle.id}/reminders/new`} className="text-[10px] font-black uppercase tracking-widest text-muted hover:text-foreground transition-all underline underline-offset-4 decoration-border-subtle hover:decoration-border-strong">
               Create New
             </Link>
           </div>
@@ -319,16 +320,16 @@ export function VehicleOverviewDisplay({
       {/* Attention / Alerts */}
       {attentionItems.length > 0 && (
         <section className="space-y-4">
-          <h3 className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">System Alerts</h3>
+          <h3 className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted">System Alerts</h3>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {attentionItems.map((item) => (
               <Link 
                 key={item.key} 
                 href={item.href || '#'}
                 className={`flex flex-col gap-1 rounded-3xl border p-5 text-xs font-black uppercase tracking-widest ring-1 ring-inset transition-all hover:scale-[1.01] active:scale-[0.99] ${
-                  item.severity === 'critical' ? 'border-red-500/20 bg-red-500/5 text-red-400/90 ring-red-500/10' :
-                  item.severity === 'warning' ? 'border-yellow-500/20 bg-yellow-500/5 text-yellow-500/90 ring-yellow-500/10' :
-                  'border-white/10 bg-white/5 text-white/40 ring-white/5'
+                  item.severity === 'critical' ? 'border-red-500/20 bg-red-500/5 text-red-600 dark:text-red-400/90 ring-red-500/10' :
+                  item.severity === 'warning' ? 'border-yellow-500/20 bg-yellow-500/5 text-yellow-600 dark:text-yellow-500/90 ring-yellow-500/10' :
+                  'border-border-subtle bg-card-overlay text-muted ring-border-subtle'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -337,9 +338,9 @@ export function VehicleOverviewDisplay({
                 </div>
                 {item.subLabel && (
                   <span className={`text-[8px] font-black tracking-[0.2em] ml-5 leading-tight ${
-                    item.severity === 'critical' ? 'text-red-500/40' :
-                    item.severity === 'warning' ? 'text-yellow-500/40' :
-                    'text-white/20'
+                    item.severity === 'critical' ? 'text-red-500/50' :
+                    item.severity === 'warning' ? 'text-yellow-500/50' :
+                    'text-muted'
                   }`}>
                     {item.subLabel}
                   </span>
@@ -352,7 +353,7 @@ export function VehicleOverviewDisplay({
 
       {/* Lifetime Cost Summary */}
       <section className="space-y-4">
-        <h3 className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Portfolio Value & Spend</h3>
+        <h3 className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted">Portfolio Value & Spend</h3>
         <LifetimeCostSummaryPanel 
           costSummary={costSummary}
         />
@@ -360,17 +361,17 @@ export function VehicleOverviewDisplay({
 
       {/* Recent Activity */}
       <section className="space-y-4">
-        <h3 className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Recent Journal</h3>
-        <div className="rounded-[32px] border border-white/5 bg-white/[0.01] p-1.5 backdrop-blur-sm">
+        <h3 className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted">Recent Journal</h3>
+        <div className="rounded-[32px] border border-border-subtle bg-card-overlay p-1.5 backdrop-blur-sm">
           {!hasHistory ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-white/10">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-card-overlay border border-border-subtle text-dim">
                 <Clock size={20} strokeWidth={1.5} />
               </div>
-              <p className="text-xs font-bold text-white/20 uppercase tracking-widest italic">No activity recorded yet.</p>
+              <p className="text-xs font-bold text-dim uppercase tracking-widest italic">No activity recorded yet.</p>
             </div>
           ) : (
-            <div className="divide-y divide-white/5">
+            <div className="divide-y divide-border-subtle">
               {services.length > 0 && (
                 <ActivityRow
                   icon={<Wrench size={14} />}
@@ -432,38 +433,38 @@ function MaintenanceIntelligencePanel({
   const config = {
     overdue: {
       label: 'Service Overdue',
-      color: 'text-red-400',
+      color: 'text-red-600 dark:text-red-400',
       bgColor: 'bg-red-500/10',
       borderColor: 'border-red-500/20',
       iconColor: 'text-red-500',
     },
     due_soon: {
       label: 'Service Due Soon',
-      color: 'text-yellow-400',
+      color: 'text-yellow-600 dark:text-yellow-400',
       bgColor: 'bg-yellow-500/10',
       borderColor: 'border-yellow-500/20',
       iconColor: 'text-yellow-500',
     },
     up_to_date: {
       label: 'Maintenance On Track',
-      color: 'text-green-400',
+      color: 'text-green-600 dark:text-green-400',
       bgColor: 'bg-green-500/10',
       borderColor: 'border-green-500/20',
       iconColor: 'text-green-500',
     },
     insufficient_data: {
       label: 'No Service Baseline',
-      color: 'text-white/60',
-      bgColor: 'bg-white/5',
-      borderColor: 'border-white/10',
-      iconColor: 'text-white/20',
+      color: 'text-muted',
+      bgColor: 'bg-card-overlay',
+      borderColor: 'border-border-subtle',
+      iconColor: 'text-dim',
     }
   }[status] || {
     label: 'Maintenance Status',
-    color: 'text-white/60',
-    bgColor: 'bg-white/5',
-    borderColor: 'border-white/10',
-    iconColor: 'text-white/20',
+    color: 'text-muted',
+    bgColor: 'bg-card-overlay',
+    borderColor: 'border-border-subtle',
+    iconColor: 'text-dim',
   };
 
   const getSubLabel = () => {
@@ -500,7 +501,7 @@ function MaintenanceIntelligencePanel({
       className={`group relative flex items-center justify-between overflow-hidden rounded-[32px] border ${config.borderColor} ${config.bgColor} p-6 shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99]`}
     >
       <div className="flex items-center gap-5">
-        <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 ${config.iconColor}`}>
+        <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-foreground/5 border border-border-strong ${config.iconColor}`}>
           <Wrench size={24} strokeWidth={2} />
         </div>
         <div className="space-y-1.5">
@@ -510,12 +511,12 @@ function MaintenanceIntelligencePanel({
             </h3>
             <MaintenanceStatusBadge status={status as MaintenanceStatus} size="sm" className="px-2 py-0.5" />
           </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/40">
+          <p className="text-[10px] font-black uppercase tracking-[0.1em] text-muted">
             {getSubLabel()}
           </p>
         </div>
       </div>
-      <div className="h-10 w-10 flex items-center justify-center rounded-full bg-white/5 text-white/20 group-hover:text-white/40 transition-colors">
+      <div className="h-10 w-10 flex items-center justify-center rounded-full bg-foreground/5 text-dim group-hover:text-muted transition-colors">
         <ArrowRight size={20} />
       </div>
     </Link>
@@ -533,22 +534,22 @@ interface LifecycleItemProps {
 function LifecycleItem({ label, value, secondaryText, status, href }: LifecycleItemProps) {
   const content = (
     <div className="space-y-2 group">
-      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-white/20 group-hover:text-white/40 transition-colors">{label}</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-muted group-hover:text-foreground transition-colors">{label}</p>
       <div className="space-y-1">
         <div className="flex items-center gap-2.5">
           <div className={`h-2 w-2 rounded-full ${
             status === 'success' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 
-            status === 'warning' ? 'bg-yellow-500/40 shadow-[0_0_10px_rgba(234,179,8,0.2)]' : 'bg-white/10'
+            status === 'warning' ? 'bg-yellow-500/40 shadow-[0_0_10px_rgba(234,179,8,0.2)]' : 'bg-foreground/10'
           }`} />
-          <p className="text-sm font-black text-white/90 group-hover:text-white transition-colors">{value}</p>
+          <p className="text-sm font-black text-foreground/90 group-hover:text-foreground transition-colors">{value}</p>
           {href && (
             <div className="ml-auto opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-              <ArrowRight size={14} className="text-white/40" />
+              <ArrowRight size={14} className="text-dim" />
             </div>
           )}
         </div>
         {secondaryText && (
-          <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest pl-[1.125rem]">
+          <p className="text-[10px] font-bold text-muted uppercase tracking-widest pl-[1.125rem]">
             {secondaryText}
           </p>
         )}
@@ -558,14 +559,14 @@ function LifecycleItem({ label, value, secondaryText, status, href }: LifecycleI
 
   if (href) {
     return (
-      <Link href={href} className="group block rounded-2xl bg-white/[0.02] border border-white/5 p-4 transition-all hover:bg-white/[0.05] hover:border-white/10">
+      <Link href={href} className="group block rounded-2xl bg-foreground/[0.02] border border-border-subtle p-4 transition-all hover:bg-foreground/[0.05] hover:border-border-strong">
         {content}
       </Link>
     );
   }
 
   return (
-    <div className="rounded-2xl bg-white/[0.01] border border-white/5 p-4">
+    <div className="rounded-2xl bg-foreground/[0.01] border border-border-subtle p-4">
       {content}
     </div>
   );
@@ -579,9 +580,9 @@ interface ActionButtonProps {
 
 function ActionButton({ href, icon, label }: ActionButtonProps) {
   return (
-    <Link href={href} className="group flex flex-col items-center justify-center gap-3 rounded-[24px] border border-white/5 bg-white/[0.02] py-6 transition-all hover:bg-white/[0.06] hover:border-white/10 hover:shadow-xl active:scale-[0.97]">
-      <div className="text-white/30 group-hover:text-white group-hover:scale-110 transition-all">{icon}</div>
-      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-white transition-colors text-center px-2">{label}</span>
+    <Link href={href} className="group flex flex-col items-center justify-center gap-3 rounded-[24px] border border-border-subtle bg-card-overlay py-6 transition-all hover:bg-card-overlay-hover hover:border-border-strong hover:shadow-xl active:scale-[0.97]">
+      <div className="text-dim group-hover:text-foreground group-hover:scale-110 transition-all">{icon}</div>
+      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted group-hover:text-foreground transition-colors text-center px-2">{label}</span>
     </Link>
   );
 }
@@ -597,22 +598,22 @@ interface ActivityRowProps {
 function ActivityRow({ icon, title, value, date, href }: ActivityRowProps) {
   const content = (
     <div className="flex items-center gap-4 py-3 px-4">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/5 text-white/20 transition-all group-hover:bg-white/10 group-hover:text-white">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-card-overlay text-dim transition-all group-hover:bg-card-overlay-hover group-hover:text-muted">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[8px] font-black uppercase tracking-widest text-white/20 mb-0.5">{title}</p>
-        <p className="truncate text-xs font-bold text-white/80 group-hover:text-white transition-colors uppercase italic">{value}</p>
+        <p className="text-[8px] font-black uppercase tracking-widest text-dim mb-0.5">{title}</p>
+        <p className="truncate text-xs font-bold text-foreground/80 group-hover:text-foreground transition-colors uppercase italic">{value}</p>
       </div>
       <div className="text-right shrink-0">
-        <p className="text-[9px] font-bold uppercase tracking-widest text-white/20 group-hover:text-white/40 transition-colors">{date}</p>
+        <p className="text-[9px] font-bold uppercase tracking-widest text-dim group-hover:text-muted transition-colors">{date}</p>
       </div>
     </div>
   );
 
   if (href) {
     return (
-      <Link href={href} className="group block transition-all hover:bg-white/[0.02]">
+      <Link href={href} className="group block transition-all hover:bg-foreground/[0.02]">
         {content}
       </Link>
     );
@@ -632,25 +633,25 @@ function LifetimeCostSummaryPanel({
   const displayCurrency = costSummary?.preferredCurrencyDisplay ?? 'AUD';
 
   return (
-    <div className="overflow-hidden rounded-[32px] border border-white/5 bg-white/[0.02] p-8 shadow-xl transition-all hover:bg-white/[0.04] group">
+    <div className="overflow-hidden rounded-[32px] border border-border-subtle bg-card-overlay p-8 shadow-xl transition-all hover:bg-card-overlay-hover group">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-8">
         <div className="space-y-2">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 group-hover:text-white/30 transition-colors">Total Lifetime Spend</p>
-          <p className="text-4xl font-black italic tracking-tighter text-blue-400 uppercase leading-none">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted group-hover:text-foreground/40 transition-colors">Total Lifetime Spend</p>
+          <p className="text-4xl font-black italic tracking-tighter text-blue-600 dark:text-blue-400 uppercase leading-none">
             {formatCurrency(totalLifetimeSpend, displayCurrency)}
           </p>
         </div>
         
-        <div className="flex gap-10 border-l border-white/5 pl-0 sm:pl-10 sm:border-solid border-none">
+        <div className="flex gap-10 border-l border-border-subtle pl-0 sm:pl-10 sm:border-solid border-none">
           <div className="space-y-1.5">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/10">Service Spend</p>
-            <p className="text-lg font-black italic tracking-tight text-white/70 uppercase leading-none">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted">Service Spend</p>
+            <p className="text-lg font-black italic tracking-tight text-foreground/70 uppercase leading-none">
               {formatCurrency(totalServiceSpend, displayCurrency)}
             </p>
           </div>
           <div className="space-y-1.5">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/10">Work Spend</p>
-            <p className="text-lg font-black italic tracking-tight text-white/70 uppercase leading-none">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted">Work Spend</p>
+            <p className="text-lg font-black italic tracking-tight text-foreground/70 uppercase leading-none">
               {formatCurrency(totalWorkSpend, displayCurrency)}
             </p>
           </div>
@@ -685,9 +686,9 @@ function ReminderItem({
   } = useActionConfirm();
 
   const urgencyStyles = {
-    overdue: 'border-red-500/20 bg-red-500/5 text-red-400/90 ring-red-500/10',
-    soon: 'border-yellow-500/20 bg-yellow-500/5 text-yellow-500/90 ring-yellow-500/10',
-    upcoming: 'border-white/5 bg-white/[0.02] text-white/40 ring-white/5'
+    overdue: 'border-red-500/20 bg-red-500/5 text-red-600 dark:text-red-400/90 ring-red-500/10',
+    soon: 'border-yellow-500/20 bg-yellow-500/5 text-yellow-600 dark:text-yellow-500/90 ring-yellow-500/10',
+    upcoming: 'border-border-subtle bg-card-overlay text-muted ring-border-subtle'
   };
 
   const handleDelete = async () => {
@@ -713,7 +714,7 @@ function ReminderItem({
             <Bell size={16} />
           </div>
           <div className="min-w-0">
-            <h4 className="text-sm font-black truncate text-white uppercase italic tracking-tight">{reminder.title}</h4>
+            <h4 className="text-sm font-black truncate text-foreground uppercase italic tracking-tight">{reminder.title}</h4>
             <div className="flex items-center gap-2 mt-0.5">
               <div className={`h-1 w-1 rounded-full bg-current opacity-40`} />
               <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">
@@ -727,7 +728,7 @@ function ReminderItem({
             <>
               <Link 
                 href={`/vehicles/${vehicleId}/reminders/${reminder.id}/edit`}
-                className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all backdrop-blur-md border border-white/5"
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-card-overlay text-dim hover:bg-card-overlay-hover hover:text-muted transition-all backdrop-blur-md border border-border-subtle"
                 title="Edit Reminder"
               >
                 <Edit3 size={14} />
@@ -736,7 +737,7 @@ function ReminderItem({
                 type="button"
                 onClick={onDone}
                 disabled={isPending || isDeleting}
-                className="flex h-10 items-center justify-center rounded-xl bg-white/5 px-4 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50 border border-white/5"
+                className="flex h-10 items-center justify-center rounded-xl bg-card-overlay px-4 text-[10px] font-black uppercase tracking-widest text-muted hover:bg-card-overlay-hover hover:text-foreground transition-all disabled:opacity-50 border border-border-subtle"
                 title="Mark Done"
               >
                 {isPending ? '...' : 'Done'}
@@ -749,7 +750,7 @@ function ReminderItem({
               type="button"
               onClick={() => cancelConfirm()}
               disabled={isDeleting}
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all border border-white/5"
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-card-overlay text-muted hover:text-foreground transition-all border border-border-subtle"
               title="Cancel"
             >
               <X size={14} />
@@ -763,7 +764,7 @@ function ReminderItem({
             className={`flex h-10 items-center justify-center rounded-xl transition-all disabled:opacity-50 border ${
               confirmDelete 
                 ? 'bg-red-500 text-white px-4 text-[10px] font-black uppercase tracking-widest border-red-500/20 hover:bg-red-600' 
-                : 'bg-red-500/10 text-red-500/40 w-10 border-red-500/10 hover:bg-red-500/20 hover:text-red-500'
+                : 'bg-red-500/10 text-red-600 dark:text-red-500/40 w-10 border-red-500/10 hover:bg-red-500/20 hover:text-red-600 dark:hover:text-red-500'
             }`}
             title={confirmDelete ? 'Click to confirm deletion' : 'Delete Reminder'}
           >

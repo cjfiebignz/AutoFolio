@@ -3,7 +3,6 @@
 import { Image as ImageIcon } from 'lucide-react';
 import { normalizeCrop, getCropTransform } from '@/lib/cropUtils';
 import { normalizeImageUrl } from '@/lib/image-utils';
-import { VehicleBannerControls } from './VehicleBannerControls';
 
 interface VehicleBannerProps {
   vehicleId: string;
@@ -28,7 +27,7 @@ export function VehicleBanner({
   return (
     <div className="relative w-full group">
       {/* Banner Image Container */}
-      <div className="relative w-full min-h-[380px] sm:min-h-[440px] bg-[#0b0b0c]">
+      <div className="relative w-full min-h-[380px] sm:min-h-[440px] bg-surface">
         {bannerImageUrl ? (
           <>
             <div className="absolute inset-0 overflow-hidden">
@@ -40,13 +39,16 @@ export function VehicleBanner({
               />
             </div>
             {/* Multi-stage gradient for readability */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-[#0b0b0c]" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0b0b0c] via-transparent to-transparent opacity-80" />
+            {/* Top gradient (always dark for nav contrast) */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
+            
+            {/* Bottom blend gradient (theme aware) */}
+            <div className="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent opacity-90" />
           </>
         ) : (
-          <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/[0.03] to-transparent border-b border-white/5">
-            <div className="relative opacity-20">
-              <div className="absolute -inset-8 rounded-full bg-white/5 blur-3xl opacity-50" />
+          <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-foreground/[0.03] to-transparent border-b border-subtle">
+            <div className="relative opacity-20 text-foreground">
+              <div className="absolute -inset-8 rounded-full bg-foreground/5 blur-3xl opacity-50" />
               <ImageIcon className="relative" size={60} strokeWidth={1} />
             </div>
           </div>

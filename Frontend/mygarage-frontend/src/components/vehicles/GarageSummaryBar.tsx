@@ -53,17 +53,17 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
 
   return (
     <>
-      <div className="mb-8 overflow-hidden rounded-[28px] border border-white/5 bg-white/[0.02] p-1 shadow-2xl backdrop-blur-sm">
+      <div className="mb-8 overflow-hidden rounded-[28px] border border-subtle bg-card-overlay p-1 shadow-2xl backdrop-blur-sm transition-colors duration-300">
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 px-6 py-4">
           {/* Status Icon Group */}
           <div className="flex -space-x-2">
             {criticalCount > 0 && (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-500 ring-4 ring-[#0b0b0c] z-20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-500 ring-4 ring-background z-20">
                 <AlertCircle size={18} strokeWidth={2.5} />
               </div>
             )}
             {warningCount > 0 && (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-500/10 text-yellow-500 ring-4 ring-[#0b0b0c] z-10">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 ring-4 ring-background z-10">
                 <AlertTriangle size={18} strokeWidth={2.5} />
               </div>
             )}
@@ -71,12 +71,12 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
 
           {/* Text Insight */}
           <div className="flex-1 text-center sm:text-left space-y-0.5">
-            <p className="text-xs font-black uppercase tracking-widest text-white/80 italic leading-none">
+            <p className="text-xs font-black uppercase tracking-widest text-foreground opacity-80 italic leading-none">
               {criticalCount > 0 
                 ? `${criticalCount} Critical Action${criticalCount > 1 ? 's' : ''} Pending` 
                 : `${warningCount} Attention Item${warningCount > 1 ? 's' : ''} Identified`}
             </p>
-            <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
+            <p className="text-[10px] font-bold text-muted uppercase tracking-widest">
               Summarized across {vehiclesWithAlerts} {vehiclesWithAlerts === 1 ? 'vehicle' : 'vehicles'}
             </p>
           </div>
@@ -84,13 +84,13 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
           {/* Action Button */}
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="group flex items-center gap-3 rounded-2xl bg-white/[0.03] pl-4 pr-3 py-2 border border-white/5 transition-all hover:bg-white/5 hover:border-white/10 active:scale-95 shadow-lg"
+            className="group flex items-center gap-3 rounded-2xl bg-foreground/[0.03] pl-4 pr-3 py-2 border border-subtle transition-all hover:bg-foreground/[0.05] hover:border-border-strong active:scale-95 shadow-lg"
           >
-            <Bell size={12} className="text-white/20 group-hover:text-white/40 transition-colors" />
-            <span className="text-[10px] font-black text-white/40 group-hover:text-white/60 uppercase tracking-tighter transition-colors">
+            <Bell size={12} className="text-muted group-hover:text-foreground transition-colors" />
+            <span className="text-[10px] font-black text-muted group-hover:text-foreground uppercase tracking-tighter transition-colors">
               {allAttentionItems.length} Garage Alerts
             </span>
-            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/5 text-white/20 group-hover:bg-white/10 group-hover:text-white/40 transition-all">
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-foreground/5 text-muted group-hover:bg-foreground/10 group-hover:text-foreground transition-all">
               <ChevronRight size={12} strokeWidth={3} />
             </div>
           </button>

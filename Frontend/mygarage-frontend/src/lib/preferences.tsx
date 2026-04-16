@@ -69,6 +69,27 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
+  // 3. Apply Theme to Document
+  useEffect(() => {
+    if (!mounted) return;
+
+    const root = window.document.documentElement;
+    const effectiveTheme = preferences.theme === 'system' 
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : preferences.theme;
+
+    root.setAttribute('data-theme', effectiveTheme);
+    
+    // Also apply dark/light classes for standard Tailwind variants if needed
+    if (effectiveTheme === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    }
+  }, [preferences.theme, mounted]);
+
   // 2. Load from Backend when session is available
   useEffect(() => {
     const userId = session?.user?.id;

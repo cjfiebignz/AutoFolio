@@ -9,7 +9,7 @@ import { mapToDocumentsViewModel } from '@/lib/mappers/document';
 import { evaluateVehicleSummaryAttention } from '@/lib/attention-utils';
 import { Bell, ArrowRight, Edit3, Trash2, Camera, Wrench, Briefcase, AlertCircle, AlertTriangle, Lock, Info, X, Loader2 } from 'lucide-react';
 import { deleteVehicle } from '@/lib/api';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { normalizeCrop, getCropTransform } from '@/lib/cropUtils';
 import { usePlan } from '@/lib/plan-context';
 import { useActionConfirm } from '@/lib/use-action-confirm';
@@ -48,7 +48,7 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
     vehicle,
     reminders,
     documents,
-    serviceSummary: vehicle.serviceSummary
+    serviceSummary: rawVehicle.serviceSummary
   });
 
   // Normalize coordinates (legacy 0-100 to 0-1)
@@ -116,8 +116,8 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
       onClick={handleClick}
       className={`group relative flex flex-col overflow-hidden rounded-[40px] border transition-all duration-500 ${
         isLocked 
-          ? 'border-white/5 bg-white/[0.01] opacity-60 grayscale-[0.5]' 
-          : 'border-white/5 bg-white/[0.02] hover:border-white/10 hover:shadow-2xl active:scale-[0.99]'
+          ? 'border-subtle bg-card-overlay opacity-60 grayscale-[0.5]' 
+          : 'border-subtle bg-card-overlay hover:border-border-strong hover:shadow-2xl active:scale-[0.99]'
       } p-8 ${isDeleting ? 'opacity-50 grayscale pointer-events-none' : ''} ${confirmDelete ? 'border-red-500/30' : ''}`}
     >
       {/* Background Layer */}
@@ -133,42 +133,42 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
           </div>
           {/* Overlays for readability */}
           <div className={`absolute inset-0 z-0 transition-colors ${isLocked ? 'bg-black/80' : 'bg-black/60 group-hover:bg-black/50'} ${confirmDelete ? 'bg-black/90' : ''}`} />
-          <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#0b0b0c] via-black/20 to-transparent" />
+          <div className="absolute inset-0 z-0 bg-gradient-to-t from-surface via-background/20 to-transparent" />
         </>
       ) : (
         /* Decorative gradient background element for no-banner state */
-        <div className={`absolute -right-12 -top-12 h-40 w-40 rounded-full ${confirmDelete ? 'bg-red-500/5' : 'bg-white/[0.02]'} blur-3xl transition-all group-hover:bg-white/[0.04]`} />
+        <div className={`absolute -right-12 -top-12 h-40 w-40 rounded-full ${confirmDelete ? 'bg-red-500/5' : 'bg-foreground/5'} blur-3xl transition-all group-hover:bg-foreground/10`} />
       )}
       
       <div className="relative z-10 flex items-start justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h2 className={`text-3xl font-black italic tracking-tighter uppercase drop-shadow-lg transition-colors ${isLocked ? 'text-white/40' : 'text-white group-hover:text-white/90'}`}>
+            <h2 className={`text-3xl font-black italic tracking-tighter uppercase drop-shadow-lg transition-colors ${isLocked ? 'text-foreground/40' : 'text-foreground group-hover:text-foreground/90'}`}>
               {vehicle.nickname}
             </h2>
             {vehicle.isActive && !isLocked && (
               <span className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)]" />
             )}
             {isLocked && (
-              <div className="flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1 border border-white/5">
-                <Lock size={10} className="text-white/40" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Locked on Free</span>
+              <div className="flex items-center gap-1.5 rounded-full bg-card-overlay px-2.5 py-1 border border-subtle">
+                <Lock size={10} className="text-muted" />
+                <span className="text-[8px] font-black uppercase tracking-widest text-muted">Locked on Free</span>
               </div>
             )}
           </div>
           <div className="space-y-1">
-            <p className={`text-[11px] font-bold uppercase tracking-tight ${isLocked ? 'text-white/20' : 'text-white/60'}`}>
+            <p className={`text-[11px] font-bold uppercase tracking-tight ${isLocked ? 'text-muted' : 'text-foreground/60'}`}>
               {vehicle.year} {vehicle.make} {vehicle.model}
             </p>
             <div className="flex items-center gap-3">
-              <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isLocked ? 'text-white/10' : 'text-white/30'}`}>
+              <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isLocked ? 'text-dim' : 'text-muted'}`}>
                 {vehicle.licensePlate}
               </p>
-              {!isLocked && vehicle.serviceSummary && (
+              {!isLocked && rawVehicle.serviceSummary && (
                 <>
-                  <span className="h-1 w-1 rounded-full bg-white/20" />
+                  <span className="h-1 w-1 rounded-full bg-foreground/20" />
                   <MaintenanceStatusBadge 
-                    status={vehicle.serviceSummary.status as MaintenanceStatus} 
+                    status={rawVehicle.serviceSummary.status as MaintenanceStatus} 
                     size="sm" 
                     className="py-0.5 px-2" 
                   />
@@ -176,8 +176,8 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
               )}
               {vehicle.lastServiceDate && !isLocked && (
                 <>
-                  <span className="h-1 w-1 rounded-full bg-white/20" />
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-white/20">
+                  <span className="h-1 w-1 rounded-full bg-foreground/20" />
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-muted">
                     Last Service: {vehicle.lastServiceDate}
                   </p>
                 </>
@@ -192,7 +192,7 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); cancelConfirm(); }}
               disabled={isDeleting}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-white/40 hover:text-white transition-all backdrop-blur-md border border-white/10"
+              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-foreground/10 text-muted hover:text-foreground transition-all backdrop-blur-md border border-subtle"
               title="Cancel"
             >
               <X size={18} />
@@ -203,7 +203,7 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
             <button
               type="button"
               onClick={handleEdit}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all backdrop-blur-md border border-white/5"
+              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-foreground/5 text-muted hover:text-foreground transition-all backdrop-blur-md border border-subtle"
               title="Edit Vehicle"
             >
               <Edit3 size={16} />
@@ -218,7 +218,7 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
               confirmDelete 
                 ? 'bg-red-500 text-white px-4 h-10 text-[9px] font-black uppercase tracking-widest' 
                 : isLocked 
-                  ? 'bg-white/5 text-white/20 border-white/5 hover:bg-red-500/10 hover:text-red-500/40 hover:border-red-500/20 h-10 w-10' 
+                  ? 'bg-foreground/5 text-muted border-subtle hover:bg-red-500/10 hover:text-red-500/40 hover:border-red-500/20 h-10 w-10' 
                   : 'bg-red-500/10 text-red-500/40 hover:bg-red-500/20 hover:text-red-500 border-red-500/10 h-10 w-10'
             }`}
             title={confirmDelete ? "Click to confirm deletion" : "Delete Vehicle"}
@@ -239,24 +239,24 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
             <>
               <div className="flex items-center gap-3 pr-2">
                 <div className="flex items-center gap-1.5" title="Photos">
-                  <Camera size={12} className="text-white/30" />
-                  <span className="text-[10px] font-bold text-white/50">{vehicle.photoCount}</span>
+                  <Camera size={12} className="text-muted" />
+                  <span className="text-[10px] font-bold text-foreground/50">{vehicle.photoCount}</span>
                 </div>
                 <div className="flex items-center gap-1.5" title="Service History">
-                  <Wrench size={12} className="text-white/30" />
-                  <span className="text-[10px] font-bold text-white/50">{vehicle.serviceCount}</span>
+                  <Wrench size={12} className="text-muted" />
+                  <span className="text-[10px] font-bold text-foreground/50">{vehicle.serviceCount}</span>
                 </div>
                 <div className="flex items-center gap-1.5" title="Work Log Items">
-                  <Briefcase size={12} className="text-white/30" />
-                  <span className="text-[10px] font-bold text-white/50">{vehicle.workCount}</span>
+                  <Briefcase size={12} className="text-muted" />
+                  <span className="text-[10px] font-bold text-foreground/50">{vehicle.workCount}</span>
                 </div>
               </div>
 
-              <div className="h-4 w-px bg-white/10" />
+              <div className="h-4 w-px bg-foreground/10" />
 
               {/* Identification */}
               <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] font-bold tracking-tight text-white/20">
+                <span className="font-mono text-[10px] font-bold tracking-tight text-muted">
                   {vehicle.vin && vehicle.vin !== 'NO VIN' ? `${vehicle.vin.substring(0, 4)}...${vehicle.vin.substring(vehicle.vin.length - 4)}` : 'NO VIN'}
                 </span>
               </div>
@@ -277,7 +277,7 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
               )}
             </>
           ) : (
-            <div className="flex items-center gap-2 text-white/10">
+            <div className="flex items-center gap-2 text-dim">
               <Info size={12} />
               <span className="text-[9px] font-bold uppercase tracking-[0.15em]">Upgrade to view details and history</span>
             </div>
@@ -287,8 +287,8 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
         {!confirmDelete && (
           <div className={`flex h-10 w-10 items-center justify-center rounded-full shadow-xl transition-all ${
             isLocked 
-              ? 'bg-white/5 text-white/20' 
-              : 'bg-white text-black group-hover:translate-x-1 group-hover:scale-110'
+              ? 'bg-foreground/5 text-dim' 
+              : 'bg-foreground text-background group-hover:translate-x-1 group-hover:scale-110'
           }`}>
             {isLocked ? <Lock size={16} /> : <ArrowRight size={18} strokeWidth={3} />}
           </div>

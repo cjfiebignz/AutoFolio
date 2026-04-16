@@ -32,8 +32,8 @@ export function VehicleSpecsDisplay({
       {/* Tab Header */}
       <div className="px-1">
         <div className="space-y-1.5">
-          <h2 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">Specifications</h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-400/50">Technical Mechanical Blueprint</p>
+          <h2 className="text-3xl font-black italic tracking-tighter text-foreground uppercase leading-none">Specifications</h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-accent opacity-60 dark:text-blue-400/50">Technical Mechanical Blueprint</p>
         </div>
       </div>
 
@@ -44,7 +44,7 @@ export function VehicleSpecsDisplay({
         description="Access deep mechanical specifications, fluid capacities, and part numbers for precise vehicle maintenance." 
       />
 
-      {/* 1. Parts Collection Section (NEW) */}
+      {/* 1. Parts Collection Section */}
       <VehiclePartsDisplay 
         vehicleId={vehicleId}
         savedParts={savedParts}
@@ -62,10 +62,10 @@ export function VehicleSpecsDisplay({
 
       {/* Reference Specs Section (SpecHUB Data) */}
       {hasReferenceData && specs && (
-        <section className="space-y-6 opacity-60">
+        <section className="space-y-6 opacity-80">
           <div className="px-1 space-y-0.5">
-            <h3 className="text-lg font-bold tracking-tight text-white/90">Reference Specifications</h3>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Technical Master Data (Non-editable)</p>
+            <h3 className="text-lg font-bold tracking-tight text-foreground opacity-90">Reference Specifications</h3>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Technical Master Data (Non-editable)</p>
           </div>
           
           <div className="space-y-6">
@@ -79,23 +79,23 @@ export function VehicleSpecsDisplay({
         </section>
       )}
 
-      {/* 3. SpecHUB Status Banner (MOVED TO BOTTOM & RE-TONED) */}
-      <section className="relative overflow-hidden rounded-[32px] border border-white/5 bg-white/[0.01] p-8">
-        <div className="absolute -inset-4 rounded-full bg-blue-500/[0.02] blur-3xl opacity-50" />
+      {/* 3. SpecHUB Status Banner */}
+      <section className="relative overflow-hidden rounded-[32px] border border-subtle bg-card-overlay p-8">
+        <div className="absolute -inset-4 rounded-full bg-accent/[0.02] blur-3xl opacity-50" />
         <div className="relative flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/5 text-blue-400/40">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-foreground/5 text-accent opacity-60 dark:text-blue-400/40">
             <Database size={32} strokeWidth={1.5} />
           </div>
           <div className="space-y-2">
             <div className="flex flex-col md:flex-row items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Future Product Notice</span>
-              <span className="hidden md:block h-1 w-1 rounded-full bg-white/10" />
-              <h4 className="text-xs font-black uppercase tracking-widest text-white/60">SpecHUB Global Synchronization</h4>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-dim">Future Product Notice</span>
+              <span className="hidden md:block h-1 w-1 rounded-full bg-foreground/10" />
+              <h4 className="text-xs font-black uppercase tracking-widest text-muted">SpecHUB Global Synchronization</h4>
             </div>
-            <p className="mx-auto md:mx-0 max-w-[400px] text-xs font-medium leading-relaxed text-white/40 italic">
+            <p className="mx-auto md:mx-0 max-w-[400px] text-xs font-medium leading-relaxed text-muted italic">
               Our engineering team is currently mapping thousands of vehicle variants to provide automated mechanical specifications and OEM part numbers directly to your garage.
             </p>
-            <div className="flex items-center justify-center md:justify-start gap-2 text-[10px] font-bold uppercase tracking-widest text-blue-400/40">
+            <div className="flex items-center justify-center md:justify-start gap-2 text-[10px] font-bold uppercase tracking-widest text-accent opacity-60 dark:text-blue-400/40">
               <Info size={12} />
               <span>Integration Phase: 1.2 (Active Development)</span>
             </div>
@@ -108,13 +108,13 @@ export function VehicleSpecsDisplay({
 
 export function MasterSpecBlock({ master }: { master: MasterSpecViewModel }) {
   return (
-    <div className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 to-transparent p-6 shadow-2xl backdrop-blur-md">
+    <div className="overflow-hidden rounded-3xl border border-border-strong bg-gradient-to-br from-foreground/10 to-transparent p-6 shadow-2xl backdrop-blur-md transition-colors duration-300">
       <div className="mb-4">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Vehicle Architecture</span>
-        <h2 className="mt-1 text-2xl font-bold tracking-tight text-white">{master.make} {master.model}</h2>
-        <p className="text-sm font-medium text-white/60">{master.variant}</p>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Vehicle Architecture</span>
+        <h2 className="mt-1 text-2xl font-bold tracking-tight text-foreground">{master.make} {master.model}</h2>
+        <p className="text-sm font-medium text-muted">{master.variant}</p>
       </div>
-      <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-4 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 border-t border-subtle pt-4 md:grid-cols-3">
         <SpecSummaryItem label="Engine" value={master.engine} />
         <SpecSummaryItem label="Transmission" value={master.transmission} />
         <SpecSummaryItem label="Drivetrain" value={master.drivetrain} />
@@ -133,15 +133,15 @@ export function SpecSection({
   items: SpecDetailItem[] 
 }) {
   return (
-    <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-6">
+    <div className="rounded-3xl border border-subtle bg-card-overlay p-6">
       <div className="mb-4 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-white/60">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground/5 text-muted">
           {icon}
         </div>
-        <h3 className="text-sm font-bold tracking-tight text-white/90 uppercase">{title}</h3>
+        <h3 className="text-sm font-bold tracking-tight text-foreground opacity-90 uppercase">{title}</h3>
       </div>
       
-      <div className="divide-y divide-white/5">
+      <div className="divide-y divide-subtle">
         {items.length > 0 ? (
           items.map((item, i) => <SpecRow key={i} item={item} />)
         ) : (
@@ -157,21 +157,21 @@ export function SpecRow({ item }: { item: SpecDetailItem }) {
     <div className="flex items-center justify-between py-3">
       <div className="space-y-0.5">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-white/90">{item.label}</p>
+          <p className="text-sm font-medium text-foreground opacity-90">{item.label}</p>
           {item.isOem && (
-            <span className="rounded bg-white/10 px-1.5 py-0.5 text-[8px] font-black uppercase text-white/60 ring-1 ring-inset ring-white/10">
+            <span className="rounded bg-card-overlay px-1.5 py-0.5 text-[8px] font-black uppercase text-muted ring-1 ring-inset ring-border-subtle">
               OEM
             </span>
           )}
         </div>
         {item.subValue && !item.isOem && (
-          <p className="text-[10px] text-white/40 font-mono tracking-tight">{item.subValue}</p>
+          <p className="text-[10px] text-muted font-mono tracking-tight">{item.subValue}</p>
         )}
       </div>
       <div className="text-right">
-        <p className="text-sm font-bold text-white">{item.value}</p>
+        <p className="text-sm font-bold text-foreground">{item.value}</p>
         {item.isOem && item.subValue && (
-          <p className="text-[10px] text-white/40 font-medium italic">{item.subValue}</p>
+          <p className="text-[10px] text-muted font-medium italic">{item.subValue}</p>
         )}
       </div>
     </div>
@@ -179,14 +179,14 @@ export function SpecRow({ item }: { item: SpecDetailItem }) {
 }
 
 export function EmptySpecState({ message }: { message: string }) {
-  return <p className="py-2 text-xs text-white/30 italic">{message}</p>;
+  return <p className="py-2 text-xs text-dim italic">{message}</p>;
 }
 
 function SpecSummaryItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-white/30">{label}</p>
-      <p className="text-sm font-semibold text-white/90 truncate">{value}</p>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted">{label}</p>
+      <p className="text-sm font-semibold text-foreground/90 truncate">{value}</p>
     </div>
   );
 }

@@ -16,11 +16,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.className} bg-black text-white min-h-screen antialiased selection:bg-white/10`}>
+    <html lang="en">
+      <body className={`${inter.className} bg-background text-foreground min-h-screen antialiased transition-colors duration-300`}>
         <Providers>
           {/* Mobile-first centered container with premium glassmorphism background */}
-          <div className="mx-auto min-h-screen max-w-2xl bg-[#0b0b0c] shadow-[0_0_100px_rgba(0,0,0,0.8)] ring-1 ring-white/5">
+          <div className="mx-auto min-h-screen max-w-2xl bg-surface shadow-[0_0_100px_rgba(0,0,0,0.2)] dark:shadow-[0_0_100px_rgba(0,0,0,0.8)] ring-1 ring-black/5 dark:ring-white/5 transition-colors duration-300">
             <main className="relative">
               {children}
             </main>

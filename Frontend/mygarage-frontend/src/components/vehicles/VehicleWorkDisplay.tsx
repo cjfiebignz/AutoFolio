@@ -38,16 +38,16 @@ export function VehicleWorkDisplay({
       {/* Tab Header & Action */}
       <div className="flex items-center justify-between px-1">
         <div className="space-y-1.5">
-          <h2 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">Work Log</h2>
+          <h2 className="text-3xl font-black italic tracking-tighter text-foreground uppercase leading-none">Work Log</h2>
           <div className="flex items-center gap-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-400/50">Planned Repairs & Upgrades</p>
-            <div className="h-1 w-1 rounded-full bg-white/10" />
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-600/40 dark:text-blue-400/50">Planned Repairs & Upgrades</p>
+            <div className="h-1 w-1 rounded-full bg-foreground/10" />
             <ExportHistoryButton vehicleId={vehicleId} vehicleNickname={vehicleNickname} variant="minimal" type="work" />
           </div>
         </div>
         <Link 
           href={`/vehicles/${vehicleId}/work/new`}
-          className="flex h-11 items-center justify-center gap-2.5 rounded-2xl bg-white px-6 text-[10px] font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98] shadow-xl"
+          className="flex h-11 items-center justify-center gap-2.5 rounded-2xl bg-foreground text-background px-6 text-[10px] font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-[0.98] shadow-xl"
         >
           <Plus size={14} strokeWidth={3} />
           Add Item
@@ -82,11 +82,11 @@ export function VehicleWorkDisplay({
 
       {/* Summary / Stats */}
       {workItems.length > 0 && (
-        <div className="rounded-[40px] border border-white/5 bg-white/[0.01] p-12 text-center shadow-2xl backdrop-blur-md relative overflow-hidden">
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/10 mb-10">Project Progress</p>
+        <div className="rounded-[40px] border border-border-subtle bg-card-overlay p-12 text-center shadow-2xl backdrop-blur-md relative overflow-hidden">
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted mb-10">Project Progress</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-10 sm:gap-20">
             <StatItem label="Done Cost" value={formatCurrency(doneCost, displayCurrency)} />
-            <div className="hidden sm:block w-px h-12 bg-white/5" />
+            <div className="hidden sm:block w-px h-12 bg-border-subtle" />
             <StatItem label="Predicted Cost" value={formatCurrency(predictedCost, displayCurrency)} highlight="blue" />
           </div>
         </div>
@@ -217,8 +217,8 @@ function WorkCard({
     <div 
       className={`group relative overflow-hidden rounded-[32px] border transition-all duration-500 hover:shadow-2xl ${
         isExpanded 
-          ? 'border-white/15 bg-white/[0.04] shadow-3xl ring-1 ring-white/10' 
-          : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10'
+          ? 'border-border-strong bg-foreground/[0.04] shadow-3xl ring-1 ring-border-subtle' 
+          : 'border-subtle bg-card-overlay hover:bg-card-overlay-hover hover:border-border-strong'
       } ${isDeleting || isUpdating ? 'opacity-50 grayscale pointer-events-none' : ''}`}
     >
       {/* Clickable Summary Area */}
@@ -227,14 +227,14 @@ function WorkCard({
         onClick={toggleExpand}
         aria-expanded={isExpanded}
         aria-controls={contentId}
-        className="w-full text-left p-5 sm:p-7 flex items-center justify-between gap-4 outline-none transition-colors group-focus-visible:bg-white/5"
+        className="w-full text-left p-5 sm:p-7 flex items-center justify-between gap-4 outline-none transition-colors group-focus-visible:bg-card-overlay"
       >
         <div className="flex items-center gap-4 min-w-0 flex-1">
           {/* Status Indicator / Icon */}
           <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border transition-all duration-500 ${
             isExpanded 
-              ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' 
-              : 'bg-white/5 border-white/5 text-white/20 group-hover:text-white/40'
+              ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' 
+              : 'bg-card-overlay border-subtle text-muted group-hover:text-foreground'
           }`}>
             <Briefcase size={18} strokeWidth={1.5} />
           </div>
@@ -242,7 +242,7 @@ function WorkCard({
           <div className="min-w-0 flex-1 space-y-1">
              <div className="flex flex-col sm:flex-row sm:items-center gap-x-3 gap-y-1.5 pr-2">
                 <h3 className={`text-[17px] font-black italic tracking-tight uppercase truncate transition-colors leading-tight ${
-                  isExpanded ? 'text-white' : 'text-white/80 group-hover:text-white'
+                  isExpanded ? 'text-foreground' : 'text-foreground/80 group-hover:text-foreground'
                 }`}>
                   {item.title}
                 </h3>
@@ -254,30 +254,30 @@ function WorkCard({
              <div className="flex items-center gap-3">
                 {item.date && (
                   <div className="flex items-center gap-1.5">
-                    <Calendar size={10} className="text-white/20" />
-                    <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.25em]">{item.date}</p>
+                    <Calendar size={10} className="text-dim" />
+                    <p className="text-[9px] font-black text-muted uppercase tracking-[0.25em]">{item.date}</p>
                   </div>
                 )}
                 {(linkedPartsCount > 0 || linkedSpecsCount > 0) && (
                   <>
-                    <div className="h-1 w-1 rounded-full bg-white/10" />
+                    <div className="h-1 w-1 rounded-full bg-foreground/10" />
                     <div className="flex items-center gap-2">
                       {linkedPartsCount > 0 && (
-                        <span className="flex items-center gap-1 text-[8px] font-black uppercase text-white/20">
+                        <span className="flex items-center gap-1 text-[8px] font-black uppercase text-muted">
                           <Package size={8} /> {linkedPartsCount}
                         </span>
                       )}
                       {linkedSpecsCount > 0 && (
-                        <span className="flex items-center gap-1 text-[8px] font-black uppercase text-white/20">
+                        <span className="flex items-center gap-1 text-[8px] font-black uppercase text-muted">
                           <Tag size={8} /> {linkedSpecsCount}
                         </span>
                       )}
                     </div>
                   </>
                 )}
-                <div className="h-1 w-1 rounded-full bg-white/10" />
+                <div className="h-1 w-1 rounded-full bg-foreground/10" />
                 <div className="flex items-center gap-1.5">
-                   <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.25em]">UUID: {item.id.substring(0, 8)}</p>
+                   <p className="text-[9px] font-black text-dim uppercase tracking-[0.25em]">UUID: {item.id.substring(0, 8)}</p>
                 </div>
              </div>
           </div>
@@ -285,16 +285,16 @@ function WorkCard({
 
         <div className="flex items-center gap-4 sm:gap-8 shrink-0">
           <div className="text-right">
-            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-white/10 mb-0.5 sm:block hidden">
+            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-dim mb-0.5 sm:block hidden">
               {item.status === 'done' ? 'Final Cost' : 'Est. Cost'}
             </p>
-            <p className={`text-base sm:text-xl font-black tracking-tighter leading-none transition-colors ${isExpanded ? 'text-blue-400' : 'text-white'}`}>
+            <p className={`text-base sm:text-xl font-black tracking-tighter leading-none transition-colors ${isExpanded ? 'text-blue-600 dark:text-blue-400' : 'text-foreground'}`}>
               {formatCurrency(item.rawEstimate || 0, displayCurrency)}
             </p>
           </div>
           
-          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/5 bg-white/5 text-white/20 transition-all duration-500 group-hover:border-white/10 group-hover:text-white/40 ${
-            isExpanded ? 'rotate-180 bg-blue-500/10 border-blue-500/20 text-blue-400' : ''
+          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-subtle bg-card-overlay text-muted transition-all duration-500 group-hover:border-border-strong group-hover:text-foreground ${
+            isExpanded ? 'rotate-180 bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' : ''
           }`}>
             <ChevronDown size={14} strokeWidth={3} />
           </div>
@@ -317,7 +317,7 @@ function WorkCard({
         }`}
       >
         <div className="overflow-hidden min-h-0">
-          <div className="px-6 pb-8 sm:px-8 sm:pb-10 space-y-10 border-t border-white/5 pt-8">
+          <div className="px-6 pb-8 sm:px-8 sm:pb-10 space-y-10 border-t border-subtle pt-8">
             {/* Detailed Metadata Grid */}
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <DetailBox label="Work Status" value={item.status.replace('-', ' ')} highlight={item.status === 'done' ? 'green' : 'blue'} />
@@ -331,10 +331,10 @@ function WorkCard({
                 <div className="space-y-10">
                   {item.notes && (
                     <div className="space-y-4">
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/15 ml-1">Job Description</p>
-                      <div className="rounded-[28px] bg-white/[0.01] border border-white/5 p-7 relative overflow-hidden shadow-inner">
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-dim ml-1">Job Description</p>
+                      <div className="rounded-[28px] bg-foreground/[0.01] border border-subtle p-7 relative overflow-hidden shadow-inner">
                         <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/20" />
-                        <p className="text-[13px] font-medium leading-relaxed text-white/60 italic">
+                        <p className="text-[13px] font-medium leading-relaxed text-muted italic">
                           “{item.notes}”
                         </p>
                       </div>
@@ -343,26 +343,26 @@ function WorkCard({
 
                   {/* Linked Parts Section */}
                   <div className="space-y-4">
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/15 ml-1">Linked Parts</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-dim ml-1">Linked Parts</p>
                     {item.parts && item.parts.length > 0 ? (
                       <div className="grid gap-2">
                         {item.parts.map((part) => (
-                          <div key={part.id} className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.01] p-4">
+                          <div key={part.id} className="flex items-center justify-between rounded-2xl border border-subtle bg-foreground/[0.01] p-4">
                             <div className="flex items-center gap-3">
                               <div className="h-8 w-8 rounded-lg bg-blue-500/5 flex items-center justify-center border border-blue-500/10">
-                                <Package size={14} className="text-blue-400/60" />
+                                <Package size={14} className="text-blue-600/60 dark:text-blue-400/60" />
                               </div>
                               <div className="min-w-0">
-                                <p className="text-xs font-black text-white/80 uppercase">{part.savedPart?.name || 'Unknown Part'}</p>
+                                <p className="text-xs font-black text-foreground/80 uppercase">{part.savedPart?.name || 'Unknown Part'}</p>
                                 {part.savedPart?.partNumber && (
-                                  <p className="text-[9px] font-mono text-white/20 mt-0.5">#{part.savedPart.partNumber}</p>
+                                  <p className="text-[9px] font-mono text-dim mt-0.5">#{part.savedPart.partNumber}</p>
                                 )}
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-[10px] font-black text-white/60">x{part.quantity}</p>
+                              <p className="text-[10px] font-black text-muted">x{part.quantity}</p>
                               {part.lineTotalSnapshot !== null && (
-                                <p className="text-[10px] font-bold text-white/20 mt-0.5">
+                                <p className="text-[10px] font-bold text-dim mt-0.5">
                                   {formatCurrency(Number(part.lineTotalSnapshot), displayCurrency)}
                                 </p>
                               )}
@@ -371,45 +371,45 @@ function WorkCard({
                         ))}
                       </div>
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-white/5 bg-white/[0.01] p-6 text-center">
-                        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/10">No hardware linked</p>
+                      <div className="rounded-2xl border border-dashed border-subtle bg-foreground/[0.01] p-6 text-center">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-dim">No hardware linked</p>
                       </div>
                     )}
                   </div>
 
                   {/* Linked Specs Section */}
                   <div className="space-y-4">
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/15 ml-1">Reference Specifications</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-dim ml-1">Reference Specifications</p>
                     {item.specs && item.specs.length > 0 ? (
                       <div className="grid gap-2">
                         {item.specs.map((spec) => (
-                          <div key={spec.id} className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.01] p-4">
+                          <div key={spec.id} className="flex items-center justify-between rounded-2xl border border-subtle bg-foreground/[0.01] p-4">
                             <div className="flex items-center gap-3">
                               <div className="h-8 w-8 rounded-lg bg-purple-500/5 flex items-center justify-center border border-purple-500/10">
-                                <Tag size={14} className="text-purple-400/60" />
+                                <Tag size={14} className="text-purple-600/60 dark:text-purple-400/60" />
                               </div>
                               <div className="min-w-0">
-                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">{spec.customSpec?.group || 'Custom Spec'}</p>
-                                <p className="text-xs font-black text-white/80 uppercase mt-0.5">{spec.customSpec?.label}</p>
+                                <p className="text-[9px] font-black text-dim uppercase tracking-widest">{spec.customSpec?.group || 'Custom Spec'}</p>
+                                <p className="text-xs font-black text-foreground/80 uppercase mt-0.5">{spec.customSpec?.label}</p>
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-sm font-black text-blue-400 italic">
-                                {spec.customSpec?.value} <span className="text-[10px] not-italic text-blue-400/40 ml-0.5">{spec.customSpec?.unit}</span>
+                              <p className="text-sm font-black text-blue-600 dark:text-blue-400 italic">
+                                {spec.customSpec?.value} <span className="text-[10px] not-italic opacity-40 ml-0.5">{spec.customSpec?.unit}</span>
                               </p>
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-white/5 bg-white/[0.01] p-6 text-center">
-                        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/10">No reference specs linked</p>
+                      <div className="rounded-2xl border border-dashed border-subtle bg-foreground/[0.01] p-6 text-center">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-dim">No reference specs linked</p>
                       </div>
                     )}
                   </div>
 
                   <div className="space-y-4">
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/15 ml-1">Attachments</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-dim ml-1">Attachments</p>
                     <WorkAttachmentsDisplay 
                       vehicleId={vehicleId} 
                       workJobId={item.id} 
@@ -420,8 +420,8 @@ function WorkCard({
 
                 {/* Sidebar Quick Actions */}
                 <div className="space-y-6">
-                  <div className="rounded-3xl bg-white/5 p-7 space-y-5 shadow-xl">
-                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/20">Work Management</p>
+                  <div className="rounded-3xl bg-card-overlay p-7 space-y-5 shadow-xl transition-colors duration-300">
+                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-dim">Work Management</p>
                       <div className="grid grid-cols-1 gap-3">
                         {/* Status Toggles */}
                         <div className="grid grid-cols-1 gap-2 pb-2">
@@ -429,7 +429,7 @@ function WorkCard({
                             <button
                               onClick={(e) => handleStatusUpdate(e, 'in-progress')}
                               disabled={isUpdating || isPending}
-                              className="flex h-11 items-center justify-center gap-3 rounded-xl bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                              className="flex h-11 items-center justify-center gap-3 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
                             >
                               {isUpdating ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />}
                               Start Project
@@ -439,7 +439,7 @@ function WorkCard({
                             <button
                               onClick={(e) => handleStatusUpdate(e, 'done')}
                               disabled={isUpdating || isPending}
-                              className="flex h-11 items-center justify-center gap-3 rounded-xl bg-green-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-green-600 transition-all shadow-lg shadow-green-500/20 disabled:opacity-50"
+                              className="flex h-11 items-center justify-center gap-3 rounded-xl bg-green-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-500/20 disabled:opacity-50"
                             >
                               {isUpdating ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                               Mark Completed
@@ -449,7 +449,7 @@ function WorkCard({
                             <button
                               onClick={(e) => handleStatusUpdate(e, 'in-progress')}
                               disabled={isUpdating || isPending}
-                              className="flex h-11 items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-white/60 hover:bg-white/10 transition-all disabled:opacity-50"
+                              className="flex h-11 items-center justify-center gap-3 rounded-xl border border-subtle bg-foreground/[0.05] text-[10px] font-black uppercase tracking-widest text-muted hover:bg-foreground/[0.1] transition-all disabled:opacity-50"
                             >
                               {isUpdating ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
                               Reopen Project
@@ -457,12 +457,12 @@ function WorkCard({
                           )}
                         </div>
 
-                        <div className="h-px bg-white/5 my-1" />
+                        <div className="h-px bg-border-subtle my-1" />
 
                         <Link 
                           href={`/vehicles/${vehicleId}/work/${item.id}/edit`}
                           onClick={handleEdit}
-                          className="flex h-11 items-center justify-center gap-3 rounded-xl bg-white text-[10px] font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.95] shadow-lg"
+                          className="flex h-11 items-center justify-center gap-3 rounded-xl bg-foreground text-background text-[10px] font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-[0.95] shadow-lg"
                         >
                           <Edit3 size={14} />
                           Edit Job
@@ -475,7 +475,7 @@ function WorkCard({
                           className={`flex h-11 items-center justify-center gap-3 rounded-xl transition-all border ${
                             confirmDelete 
                               ? 'bg-red-500 border-red-400 text-white px-4 text-[9px] font-black uppercase tracking-widest hover:bg-red-600' 
-                              : 'bg-red-500/5 border-red-500/10 text-red-500/40 hover:bg-red-500/10 hover:text-red-500 w-full'
+                              : 'bg-red-500/5 border-red-500/10 text-red-600 dark:text-red-500/40 hover:bg-red-500/10 hover:text-red-600 w-full'
                           }`}
                           title={confirmDelete ? 'Click to confirm deletion' : 'Delete Job'}
                         >
@@ -487,7 +487,7 @@ function WorkCard({
                             type="button"
                             onClick={(e) => { e.stopPropagation(); cancelConfirm(); }}
                             disabled={isDeleting}
-                            className="flex h-10 items-center justify-center gap-2 rounded-xl bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white transition-all border border-white/5"
+                            className="flex h-10 items-center justify-center gap-2 rounded-xl bg-card-overlay text-[9px] font-black uppercase tracking-widest text-muted hover:bg-card-overlay-hover hover:text-foreground transition-all border border-subtle"
                           >
                             <X size={14} />
                             Cancel
@@ -497,14 +497,14 @@ function WorkCard({
                   </div>
 
                   {/* Export Staging */}
-                  <div className="rounded-3xl border border-white/5 bg-white/[0.01] p-7 space-y-4">
-                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/20">Documentation</p>
+                  <div className="rounded-3xl border border-subtle bg-foreground/[0.01] p-7 space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-muted">Documentation</p>
                     <div className="grid grid-cols-1 gap-2.5">
                       <div className="group/btn relative">
                         <button 
                           onClick={handlePrintJobCard}
                           disabled={isExporting || isUpdating || isDeleting || isPending}
-                          className="w-full flex h-10 items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/60 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
+                          className="w-full flex h-10 items-center justify-center gap-2.5 rounded-xl border border-subtle bg-card-overlay text-[9px] font-black uppercase tracking-widest text-muted hover:bg-card-overlay-hover hover:text-foreground transition-all disabled:opacity-50"
                         >
                           {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />}
                           {isExporting ? 'Generating...' : 'Print Job Card'}
@@ -514,7 +514,7 @@ function WorkCard({
                         <button 
                           onClick={handleExportJobCard}
                           disabled={isExporting || isUpdating || isDeleting || isPending}
-                          className="w-full flex h-10 items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/60 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
+                          className="w-full flex h-10 items-center justify-center gap-2.5 rounded-xl border border-subtle bg-card-overlay text-[9px] font-black uppercase tracking-widest text-muted hover:bg-card-overlay-hover hover:text-foreground transition-all disabled:opacity-50"
                         >
                           {isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
                           {isExporting ? 'Generating...' : 'Export PDF'}
@@ -523,9 +523,9 @@ function WorkCard({
                     </div>
                   </div>
 
-                  <div className="px-7 py-5 rounded-3xl border border-white/5 flex items-center justify-between bg-white/[0.01]">
-                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20">UUID Reference</p>
-                      <p className="text-[9px] font-mono text-white/10 uppercase tracking-tighter">{item.id.substring(0, 8)}</p>
+                  <div className="px-7 py-5 rounded-3xl border border-subtle flex items-center justify-between bg-foreground/[0.01]">
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-dim">UUID Reference</p>
+                      <p className="text-[9px] font-mono text-dim uppercase tracking-tighter">{item.id.substring(0, 8)}</p>
                   </div>
                 </div>
             </div>
@@ -538,9 +538,9 @@ function WorkCard({
 
 function StatusBadge({ status }: { status: 'planned' | 'in-progress' | 'done' }) {
   const styles = {
-    'planned': 'bg-white/5 text-white/40 ring-white/10',
-    'in-progress': 'bg-blue-500/10 text-blue-400 ring-blue-500/20',
-    'done': 'bg-green-500/10 text-green-400 ring-green-500/20'
+    'planned': 'bg-foreground/5 text-muted ring-border-subtle',
+    'in-progress': 'bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-blue-500/20',
+    'done': 'bg-green-500/10 text-green-600 dark:text-green-400 ring-green-500/20'
   };
   
   return (
@@ -552,14 +552,14 @@ function StatusBadge({ status }: { status: 'planned' | 'in-progress' | 'done' })
 
 function PriorityBadge({ priority }: { priority: 'low' | 'medium' | 'high' }) {
   const styles = {
-    'low': 'text-white/20',
-    'medium': 'text-yellow-500/60',
-    'high': 'text-red-500/60'
+    'low': 'text-muted',
+    'medium': 'text-yellow-600 dark:text-yellow-500/60',
+    'high': 'text-red-600 dark:text-red-500/60'
   };
 
   return (
     <div className={`flex items-center gap-2 text-[7px] font-black uppercase tracking-[0.15em] ${styles[priority]}`}>
-      <div className={`h-1 w-1 rounded-full ${priority === 'high' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : priority === 'medium' ? 'bg-yellow-500' : 'bg-white/20'}`} />
+      <div className={`h-1 w-1 rounded-full ${priority === 'high' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : priority === 'medium' ? 'bg-yellow-500' : 'bg-foreground/20'}`} />
       {priority}
     </div>
   );
@@ -567,15 +567,15 @@ function PriorityBadge({ priority }: { priority: 'low' | 'medium' | 'high' }) {
 
 function DetailBox({ label, value, highlight }: { label: string; value: string; highlight?: 'blue' | 'green' | 'white' }) {
   const highlightStyles = {
-    blue: 'text-blue-400',
-    green: 'text-green-400',
-    white: 'text-white'
+    blue: 'text-blue-600 dark:text-blue-400',
+    green: 'text-green-600 dark:text-green-400',
+    white: 'text-foreground'
   };
 
   return (
-    <div className="rounded-2xl bg-white/[0.01] border border-white/5 p-5 space-y-2 flex flex-col justify-center min-h-[80px]">
-       <p className="text-[8px] font-black uppercase tracking-[0.2em] text-white/15 leading-none">{label}</p>
-       <p className={`text-sm font-black italic tracking-tight uppercase truncate leading-tight ${highlight ? highlightStyles[highlight] : 'text-white/60'}`}>
+    <div className="rounded-2xl bg-foreground/[0.01] border border-subtle p-5 space-y-2 flex flex-col justify-center min-h-[80px]">
+       <p className="text-[8px] font-black uppercase tracking-[0.2em] text-dim leading-none">{label}</p>
+       <p className={`text-sm font-black italic tracking-tight uppercase truncate leading-tight ${highlight ? highlightStyles[highlight] : 'text-foreground/60'}`}>
          {value}
        </p>
     </div>
@@ -584,20 +584,20 @@ function DetailBox({ label, value, highlight }: { label: string; value: string; 
 
 function EmptyWorkState({ vehicleId }: { vehicleId: string }) {
   return (
-    <div className="group relative flex flex-col items-center justify-center rounded-[40px] border border-dashed border-white/10 bg-white/[0.01] py-32 text-center transition-all hover:bg-white/[0.02]">
+    <div className="group relative flex flex-col items-center justify-center rounded-[40px] border border-dashed border-subtle bg-foreground/[0.01] py-32 text-center transition-all hover:bg-foreground/[0.02]">
       <div className="mb-8 relative">
-        <div className="absolute -inset-4 rounded-full bg-white/5 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-        <div className="relative flex h-24 w-24 items-center justify-center rounded-[32px] border border-white/10 bg-white/5 text-white/10 group-hover:text-white/30 transition-colors shadow-2xl">
+        <div className="absolute -inset-4 rounded-full bg-foreground/5 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="relative flex h-24 w-24 items-center justify-center rounded-[32px] border border-subtle bg-card-overlay text-dim group-hover:text-muted transition-colors shadow-2xl">
           <Briefcase size={40} strokeWidth={1} />
         </div>
       </div>
-      <h3 className="text-xl font-bold text-white/60 uppercase italic tracking-tight">No work items found</h3>
-      <p className="mx-auto mt-2 max-w-[240px] text-sm font-medium leading-relaxed text-white/20 mb-10">
+      <h3 className="text-xl font-bold text-muted uppercase italic tracking-tight">No work items found</h3>
+      <p className="mx-auto mt-2 max-w-[240px] text-sm font-medium leading-relaxed text-dim mb-10">
         Plan your next upgrade, track pending repairs, or record custom technical jobs.
       </p>
       <Link 
         href={`/vehicles/${vehicleId}/work/new`}
-        className="flex h-14 items-center justify-center rounded-2xl bg-white px-10 text-xs font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98] shadow-2xl"
+        className="flex h-14 items-center justify-center rounded-2xl bg-foreground text-background px-10 text-xs font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-[0.98] shadow-2xl"
       >
         Add First Item
       </Link>
@@ -608,8 +608,8 @@ function EmptyWorkState({ vehicleId }: { vehicleId: string }) {
 function StatItem({ label, value, highlight }: { label: string; value: string; highlight?: 'blue' }) {
   return (
     <div className="space-y-3">
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 leading-none">{label}</p>
-      <p className={`text-3xl font-black italic tracking-tighter leading-none ${highlight === 'blue' ? 'text-blue-400' : 'text-white'}`}>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted leading-none">{label}</p>
+      <p className={`text-3xl font-black italic tracking-tighter leading-none ${highlight === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-foreground'}`}>
         {value}
       </p>
     </div>
