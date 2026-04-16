@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { WorkJobViewModel } from "@/lib/mappers/work";
 import { 
   ChevronDown, Briefcase, Trash2, Plus, Edit3, Play, 
   CheckCircle2, RotateCcw, Calendar, Printer, FileDown, 
-  Package, Tag, AlertCircle, X, Loader2
+  Package, Tag, X, Loader2
 } from 'lucide-react';
 import { deleteWorkJob, updateWorkJob, exportWorkJobPdf } from '@/lib/api';
 import { WorkAttachmentsDisplay } from './WorkAttachmentsDisplay';
@@ -15,6 +15,8 @@ import { TabIntroBlurb } from '../ui/TabIntroBlurb';
 import { LifetimeCostSummary } from "@/types/autofolio";
 import { formatCurrency } from "@/lib/date-utils";
 import { ExportHistoryButton } from './ExportHistoryButton';
+import { useActionConfirm } from '@/lib/use-action-confirm';
+import { InlineErrorMessage } from '../ui/ActionFeedback';
 
 export function VehicleWorkDisplay({ 
   vehicleId, 
@@ -105,18 +107,18 @@ function WorkCard({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (errorMessage) {
-      const timer = setTimeout(() => setErrorMessage(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [errorMessage]);
+  const { 
+    isActioning: isDeleting, 
+    confirmState: confirmDelete, 
+    errorMessage, 
+    enterConfirm, 
+    cancelConfirm,
+    startAction,
+    failAction,
+    setErrorMessage
+  } = useActionConfirm();
 
   const toggleExpand = () => setIsExpanded(!isExpanded);
   const contentId = `work-content-${item.id}`;
@@ -171,21 +173,18 @@ function WorkCard({
     if (isUpdating || isPending || isDeleting) return;
     
     if (!confirmDelete) {
-      setConfirmDelete(true);
+      enterConfirm();
       return;
     }
 
-    setIsDeleting(true);
-    setErrorMessage(null);
+    startAction();
     try {
       await deleteWorkJob(vehicleId, item.id);
       startTransition(() => {
         router.refresh();
       });
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to delete record');
-      setIsDeleting(false);
-      setConfirmDelete(false);
+      failAction(err.message || 'Failed to delete record');
     }
   };
 
@@ -302,20 +301,12 @@ function WorkCard({
         </div>
       </button>
 
-      {/* Inline Error Feedback */}
-      {errorMessage && (
-        <div className="px-6 pb-2 sm:px-8 animate-in fade-in slide-in-from-top-1 duration-300">
-          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 flex items-center justify-between gap-3 text-red-400">
-            <div className="flex items-center gap-2">
-              <AlertCircle size={14} />
-              <span className="text-[9px] font-bold uppercase tracking-widest">{errorMessage}</span>
-            </div>
-            <button onClick={(e) => { e.stopPropagation(); setErrorMessage(null); }} className="text-red-400/40 hover:text-red-400 transition-colors">
-              <X size={14} />
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Standardized Inline Error Feedback */}
+      <InlineErrorMessage 
+        message={errorMessage} 
+        onClear={() => setErrorMessage(null)} 
+        className="px-6 pb-2 sm:px-8"
+      />
 
       {/* Expanded Details Area */}
       <div 
@@ -481,20 +472,24 @@ function WorkCard({
                           type="button"
                           onClick={handleDelete}
                           disabled={isPending || isDeleting || isUpdating}
-                          className={`flex h-11 items-center justify-center gap-3 rounded-xl transition-all disabled:opacity-50 ${
+                          className={`flex h-11 items-center justify-center gap-3 rounded-xl transition-all border ${
                             confirmDelete 
-                              ? 'bg-red-500 text-white animate-pulse' 
-                              : 'bg-red-500/10 text-red-500/60 border border-red-500/10 hover:bg-red-500/20 hover:text-red-500'
-                          } text-[10px] font-black uppercase tracking-widest`}
+                              ? 'bg-red-500 border-red-400 text-white px-4 text-[9px] font-black uppercase tracking-widest hover:bg-red-600' 
+                              : 'bg-red-500/5 border-red-500/10 text-red-500/40 hover:bg-red-500/10 hover:text-red-500 w-full'
+                          }`}
+                          title={confirmDelete ? 'Click to confirm deletion' : 'Delete Job'}
                         >
-                          {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                          {confirmDelete ? 'Confirm Delete' : 'Delete'}
+                          {isDeleting ? <Loader2 size={14} className="animate-spin" /> : confirmDelete ? 'Confirm Delete' : <Trash2 size={14} />}
+                          {!isDeleting && !confirmDelete && <span className="text-[10px]">Delete Job</span>}
                         </button>
                         {confirmDelete && (
                           <button 
-                            onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); }}
-                            className="text-[8px] font-black uppercase tracking-widest text-white/20 hover:text-white/40 text-center"
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); cancelConfirm(); }}
+                            disabled={isDeleting}
+                            className="flex h-10 items-center justify-center gap-2 rounded-xl bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white transition-all border border-white/5"
                           >
+                            <X size={14} />
                             Cancel
                           </button>
                         )}

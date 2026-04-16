@@ -6,6 +6,7 @@ import { evaluateVehicleAttention, AttentionItem } from "@/lib/attention-utils";
 import { mapToVehicleViewModel } from "@/lib/mappers/vehicle";
 import { mapToRemindersViewModel } from "@/lib/mappers/reminder";
 import { mapToDocumentsViewModel } from "@/lib/mappers/document";
+import { mapToServiceSummaryViewModel } from "@/lib/mappers/service";
 import { AlertCircle, AlertTriangle, Bell, ChevronRight } from "lucide-react";
 import { GarageAlertsModal } from "./GarageAlertsModal";
 
@@ -24,12 +25,13 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
     // Use raw reminders and map them on client to ensure "now" is consistent
     const reminders = mapToRemindersViewModel(rawVehicle.reminders || []);
     const documents = mapToDocumentsViewModel(rawVehicle.documents || []);
+    const serviceSummary = mapToServiceSummaryViewModel(rawVehicle.serviceSummary);
     
     const items = evaluateVehicleAttention({
       vehicle,
       reminders,
       documents,
-      serviceSummary: rawVehicle.serviceSummary ? JSON.parse(JSON.stringify(rawVehicle.serviceSummary)) : null
+      serviceSummary
     });
 
     // Filter for only critical and warning items

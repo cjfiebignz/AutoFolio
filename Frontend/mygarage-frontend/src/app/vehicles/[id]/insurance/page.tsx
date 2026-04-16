@@ -65,7 +65,7 @@ export default async function InsurancePage({
 
         <VehicleInsuranceDisplay 
           vehicleId={id} 
-          insuranceRecords={insuranceRecords} 
+          insurance={insuranceRecords} 
         />
 
         <div className="mt-20">

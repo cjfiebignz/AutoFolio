@@ -19,10 +19,10 @@ import {
   Loader2
 } from 'lucide-react';
 import { VehicleViewModel } from "@/lib/mappers/vehicle";
-import { ServiceEntryViewModel } from "@/lib/mappers/service";
+import { ServiceEntryViewModel, ServiceSummaryViewModel } from "@/lib/mappers/service";
 import { WorkJobViewModel } from "@/lib/mappers/work";
 import { DocumentViewModel } from "@/lib/mappers/document";
-import { Reminder, ServiceSummary, LifetimeCostSummary } from "@/types/autofolio";
+import { Reminder, LifetimeCostSummary } from "@/types/autofolio";
 import { formatDisplayDate, getExpiryStatus, getRelativeTimeText, formatLifecycleStatus, formatNumber, formatCurrency } from "@/lib/date-utils";
 import { usePreferences } from '@/lib/preferences';
 import { evaluateVehicleAttention, AttentionItem } from '@/lib/attention-utils';
@@ -32,6 +32,8 @@ import { ExportHistoryButton } from './ExportHistoryButton';
 import { ShareReportAction } from './ShareReportAction';
 import { VehicleCalendarModal } from './VehicleCalendarModal';
 import { MaintenanceStatusBadge, MaintenanceStatus } from './MaintenanceStatusBadge';
+import { useActionConfirm } from '@/lib/use-action-confirm';
+import { InlineErrorMessage } from '../ui/ActionFeedback';
 
 interface OverviewProps {
   vehicle: VehicleViewModel;
@@ -39,7 +41,7 @@ interface OverviewProps {
   workItems: WorkJobViewModel[];
   documents: DocumentViewModel[];
   rawReminders: Reminder[];
-  serviceSummary?: ServiceSummary['serviceSummary'] | null;
+  serviceSummary?: ServiceSummaryViewModel | null;
   costSummary?: LifetimeCostSummary | null;
 }
 
@@ -403,6 +405,112 @@ export function VehicleOverviewDisplay({
   );
 }
 
+function MaintenanceIntelligencePanel({ 
+  vehicleId, 
+  serviceSummary 
+}: { 
+  vehicleId: string; 
+  serviceSummary?: ServiceSummaryViewModel | null 
+}) {
+  const { formatDistance } = usePreferences();
+  
+  if (!serviceSummary) return null;
+
+  const { status, kmsUntilNextService, nextServiceDueDate, hasEnoughData } = serviceSummary;
+
+  const config = {
+    overdue: {
+      label: 'Service Overdue',
+      color: 'text-red-400',
+      bgColor: 'bg-red-500/10',
+      borderColor: 'border-red-500/20',
+      iconColor: 'text-red-500',
+    },
+    due_soon: {
+      label: 'Service Due Soon',
+      color: 'text-yellow-400',
+      bgColor: 'bg-yellow-500/10',
+      borderColor: 'border-yellow-500/20',
+      iconColor: 'text-yellow-500',
+    },
+    up_to_date: {
+      label: 'Maintenance On Track',
+      color: 'text-green-400',
+      bgColor: 'bg-green-500/10',
+      borderColor: 'border-green-500/20',
+      iconColor: 'text-green-500',
+    },
+    insufficient_data: {
+      label: 'No Service Baseline',
+      color: 'text-white/60',
+      bgColor: 'bg-white/5',
+      borderColor: 'border-white/10',
+      iconColor: 'text-white/20',
+    }
+  }[status] || {
+    label: 'Maintenance Status',
+    color: 'text-white/60',
+    bgColor: 'bg-white/5',
+    borderColor: 'border-white/10',
+    iconColor: 'text-white/20',
+  };
+
+  const getSubLabel = () => {
+    if (!hasEnoughData || status === 'insufficient_data') {
+      return "Add a main service to enable tracking";
+    }
+    
+    if (kmsUntilNextService !== null) {
+      const absKms = Math.abs(kmsUntilNextService);
+      if (kmsUntilNextService < 0) {
+        return `Overdue by ${formatDistance(absKms)}`;
+      } else {
+        if (status === 'up_to_date') {
+            return `Next service in ${formatDistance(absKms)}`;
+        }
+        return `Due in ${formatDistance(absKms)}`;
+      }
+    }
+    
+    if (nextServiceDueDate) {
+        const rel = getRelativeTimeText(nextServiceDueDate);
+        if (status === 'overdue') {
+            return `Overdue ${rel.toLowerCase()}`;
+        }
+        return `Due ${rel.toLowerCase()}`;
+    }
+
+    return "Service tracking active";
+  };
+
+  return (
+    <Link 
+      href={`/vehicles/${vehicleId}?tab=service`}
+      className={`group relative flex items-center justify-between overflow-hidden rounded-[32px] border ${config.borderColor} ${config.bgColor} p-6 shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99]`}
+    >
+      <div className="flex items-center gap-5">
+        <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 ${config.iconColor}`}>
+          <Wrench size={24} strokeWidth={2} />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-3">
+            <h3 className={`text-lg font-black italic tracking-tight uppercase leading-none ${config.color}`}>
+              {config.label}
+            </h3>
+            <MaintenanceStatusBadge status={status as MaintenanceStatus} size="sm" className="px-2 py-0.5" />
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/40">
+            {getSubLabel()}
+          </p>
+        </div>
+      </div>
+      <div className="h-10 w-10 flex items-center justify-center rounded-full bg-white/5 text-white/20 group-hover:text-white/40 transition-colors">
+        <ArrowRight size={20} />
+      </div>
+    </Link>
+  );
+}
+
 interface LifecycleItemProps {
   label: string;
   value: string;
@@ -541,112 +649,6 @@ function LifetimeCostSummaryPanel({
   );
 }
 
-function MaintenanceIntelligencePanel({ 
-  vehicleId, 
-  serviceSummary 
-}: { 
-  vehicleId: string; 
-  serviceSummary?: ServiceSummary['serviceSummary'] | null 
-}) {
-  const { formatDistance } = usePreferences();
-  
-  if (!serviceSummary) return null;
-
-  const { status, kmsUntilNextService, nextServiceDueDate, hasEnoughData } = serviceSummary;
-
-  const config = {
-    overdue: {
-      label: 'Service Overdue',
-      color: 'text-red-400',
-      bgColor: 'bg-red-500/10',
-      borderColor: 'border-red-500/20',
-      iconColor: 'text-red-500',
-    },
-    due_soon: {
-      label: 'Service Due Soon',
-      color: 'text-yellow-400',
-      bgColor: 'bg-yellow-500/10',
-      borderColor: 'border-yellow-500/20',
-      iconColor: 'text-yellow-500',
-    },
-    up_to_date: {
-      label: 'Maintenance On Track',
-      color: 'text-green-400',
-      bgColor: 'bg-green-500/10',
-      borderColor: 'border-green-500/20',
-      iconColor: 'text-green-500',
-    },
-    insufficient_data: {
-      label: 'No Service Baseline',
-      color: 'text-white/60',
-      bgColor: 'bg-white/5',
-      borderColor: 'border-white/10',
-      iconColor: 'text-white/20',
-    }
-  }[status] || {
-    label: 'Maintenance Status',
-    color: 'text-white/60',
-    bgColor: 'bg-white/5',
-    borderColor: 'border-white/10',
-    iconColor: 'text-white/20',
-  };
-
-  const getSubLabel = () => {
-    if (!hasEnoughData || status === 'insufficient_data') {
-      return "Add a main service to enable tracking";
-    }
-    
-    if (kmsUntilNextService !== null) {
-      const absKms = Math.abs(kmsUntilNextService);
-      if (kmsUntilNextService < 0) {
-        return `Overdue by ${formatDistance(absKms)}`;
-      } else {
-        if (status === 'up_to_date') {
-            return `Next service in ${formatDistance(absKms)}`;
-        }
-        return `Due in ${formatDistance(absKms)}`;
-      }
-    }
-    
-    if (nextServiceDueDate) {
-        const rel = getRelativeTimeText(nextServiceDueDate);
-        if (status === 'overdue') {
-            return `Overdue ${rel.toLowerCase()}`;
-        }
-        return `Due ${rel.toLowerCase()}`;
-    }
-
-    return "Service tracking active";
-  };
-
-  return (
-    <Link 
-      href={`/vehicles/${vehicleId}?tab=service`}
-      className={`group relative flex items-center justify-between overflow-hidden rounded-[32px] border ${config.borderColor} ${config.bgColor} p-6 shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99]`}
-    >
-      <div className="flex items-center gap-5">
-        <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 ${config.iconColor}`}>
-          <Wrench size={24} strokeWidth={2} />
-        </div>
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-3">
-            <h3 className={`text-lg font-black italic tracking-tight uppercase leading-none ${config.color}`}>
-              {config.label}
-            </h3>
-            <MaintenanceStatusBadge status={status as MaintenanceStatus} size="sm" className="px-2 py-0.5" />
-          </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/40">
-            {getSubLabel()}
-          </p>
-        </div>
-      </div>
-      <div className="h-10 w-10 flex items-center justify-center rounded-full bg-white/5 text-white/20 group-hover:text-white/40 transition-colors">
-        <ArrowRight size={20} />
-      </div>
-    </Link>
-  );
-}
-
 interface ReminderItemProps {
   reminder: ReminderViewModel;
   onDone: () => void;
@@ -660,8 +662,17 @@ function ReminderItem({
   vehicleId
 }: ReminderItemProps & { vehicleId: string }) {
   const router = useRouter();
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const { 
+    isActioning: isDeleting, 
+    confirmState: confirmDelete, 
+    errorMessage, 
+    enterConfirm, 
+    cancelConfirm,
+    startAction,
+    failAction,
+    setErrorMessage
+  } = useActionConfirm();
+
   const urgencyStyles = {
     overdue: 'border-red-500/20 bg-red-500/5 text-red-400/90 ring-red-500/10',
     soon: 'border-yellow-500/20 bg-yellow-500/5 text-yellow-500/90 ring-yellow-500/10',
@@ -670,85 +681,91 @@ function ReminderItem({
 
   const handleDelete = async () => {
     if (!confirmDelete) {
-      setConfirmDelete(true);
+      enterConfirm();
       return;
     }
 
-    setIsDeleting(true);
+    startAction();
     try {
       await deleteReminder(vehicleId, reminder.id);
       router.refresh();
-    } catch (err) {
-      console.error('Failed to delete reminder:', err);
-      setIsDeleting(false);
-      setConfirmDelete(false);
+    } catch (err: any) {
+      failAction(err.message || 'Failed to delete reminder');
     }
   };
 
   return (
-    <div className={`flex items-center justify-between rounded-[24px] border p-4 transition-all hover:shadow-lg ring-1 ring-inset ${urgencyStyles[reminder.urgency]} ${isDeleting ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
-      <div className="flex items-center gap-4 min-w-0 flex-1">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-current opacity-10`}>
-          <Bell size={16} />
-        </div>
-        <div className="min-w-0">
-          <h4 className="text-sm font-black truncate text-white uppercase italic tracking-tight">{reminder.title}</h4>
-          <div className="flex items-center gap-2 mt-0.5">
-            <div className={`h-1 w-1 rounded-full bg-current opacity-40`} />
-            <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">
-              {reminder.urgency === 'overdue' ? 'Overdue' : reminder.urgency === 'soon' ? `In ${reminder.daysRemaining} days` : reminder.dueDate}
-            </p>
+    <div className={`flex flex-col rounded-[24px] border transition-all hover:shadow-lg ring-1 ring-inset ${urgencyStyles[reminder.urgency]} ${isDeleting ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
+      <div className="flex items-center justify-between p-4">
+        <div className="flex items-center gap-4 min-w-0 flex-1">
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-current opacity-10`}>
+            <Bell size={16} />
+          </div>
+          <div className="min-w-0">
+            <h4 className="text-sm font-black truncate text-white uppercase italic tracking-tight">{reminder.title}</h4>
+            <div className="flex items-center gap-2 mt-0.5">
+              <div className={`h-1 w-1 rounded-full bg-current opacity-40`} />
+              <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">
+                {reminder.urgency === 'overdue' ? 'Overdue' : reminder.urgency === 'soon' ? `In ${reminder.daysRemaining} days` : reminder.dueDate}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="flex items-center gap-2">
-        {!confirmDelete && (
-          <>
-            <Link 
-              href={`/vehicles/${vehicleId}/reminders/${reminder.id}/edit`}
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all backdrop-blur-md border border-white/5"
-              title="Edit Reminder"
-            >
-              <Edit3 size={14} />
-            </Link>
+        <div className="flex items-center gap-2">
+          {!confirmDelete && (
+            <>
+              <Link 
+                href={`/vehicles/${vehicleId}/reminders/${reminder.id}/edit`}
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all backdrop-blur-md border border-white/5"
+                title="Edit Reminder"
+              >
+                <Edit3 size={14} />
+              </Link>
+              <button 
+                type="button"
+                onClick={onDone}
+                disabled={isPending || isDeleting}
+                className="flex h-10 items-center justify-center rounded-xl bg-white/5 px-4 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50 border border-white/5"
+                title="Mark Done"
+              >
+                {isPending ? '...' : 'Done'}
+              </button>
+            </>
+          )}
+
+          {confirmDelete && (
             <button 
               type="button"
-              onClick={onDone}
-              disabled={isPending || isDeleting}
-              className="flex h-10 items-center justify-center rounded-xl bg-white/5 px-4 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50 border border-white/5"
-              title="Mark Done"
+              onClick={() => cancelConfirm()}
+              disabled={isDeleting}
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all border border-white/5"
+              title="Cancel"
             >
-              {isPending ? '...' : 'Done'}
+              <X size={14} />
             </button>
-          </>
-        )}
+          )}
 
-        {confirmDelete && (
           <button 
             type="button"
-            onClick={() => setConfirmDelete(false)}
+            onClick={handleDelete}
             disabled={isDeleting}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all border border-white/5"
-            title="Cancel"
+            className={`flex h-10 items-center justify-center rounded-xl transition-all disabled:opacity-50 border ${
+              confirmDelete 
+                ? 'bg-red-500 text-white px-4 text-[10px] font-black uppercase tracking-widest border-red-500/20 hover:bg-red-600' 
+                : 'bg-red-500/10 text-red-500/40 w-10 border-red-500/10 hover:bg-red-500/20 hover:text-red-500'
+            }`}
+            title={confirmDelete ? 'Click to confirm deletion' : 'Delete Reminder'}
           >
-            <X size={14} />
+            {isDeleting ? <Loader2 size={14} className="animate-spin" /> : confirmDelete ? 'Confirm' : <Trash2 size={14} />}
           </button>
-        )}
-
-        <button 
-          type="button"
-          onClick={handleDelete}
-          disabled={isDeleting}
-          className={`flex h-10 items-center justify-center rounded-xl transition-all disabled:opacity-50 border ${
-            confirmDelete 
-              ? 'bg-red-500/20 text-red-500 px-4 text-[10px] font-black uppercase tracking-widest border-red-500/20 hover:bg-red-500/30' 
-              : 'bg-red-500/10 text-red-500/40 w-10 border-red-500/10 hover:bg-red-500/20 hover:text-red-500'
-          }`}
-          title={confirmDelete ? 'Click to confirm deletion' : 'Delete Reminder'}
-        >
-          {isDeleting ? <Loader2 size={14} className="animate-spin" /> : confirmDelete ? 'Confirm' : <Trash2 size={14} />}
-        </button>
+        </div>
       </div>
+      
+      <InlineErrorMessage 
+        message={errorMessage} 
+        onClear={() => setErrorMessage(null)} 
+        className="px-4 pb-4"
+      />
     </div>
   );
 }

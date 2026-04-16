@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useRef, useTransition, useEffect } from 'react';
+import { useRef, useTransition, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ServiceAttachment } from '@/types/autofolio';
 import { uploadServiceAttachment, deleteServiceAttachment } from '@/lib/api';
-import { Paperclip, Trash2, FileText, FileImage, Download, Eye, Loader2, File, Plus } from 'lucide-react';
+import { Paperclip, Trash2, FileText, FileImage, Eye, Loader2, File, Plus, X } from 'lucide-react';
 import { usePlan } from '@/lib/plan-context';
+import { useActionConfirm } from '@/lib/use-action-confirm';
+import { InlineErrorMessage } from '../ui/ActionFeedback';
 
 import { normalizeImageUrl } from '@/lib/image-utils';
 
@@ -19,12 +21,24 @@ export function ServiceAttachmentsDisplay({ vehicleId, serviceId, attachments }:
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isUploading, setIsUploading] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [localAttachments, setLocalAttachments] = useState<ServiceAttachment[]>(attachments);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { plan } = usePlan();
   const maxMB = plan?.maxDocumentSizeMB ?? 5;
+
+  const {
+    isActioning: isDeleting,
+    actioningId: deletingId,
+    confirmId: confirmDeleteId,
+    errorMessage,
+    setErrorMessage,
+    enterConfirm,
+    cancelConfirm,
+    startAction,
+    failAction,
+    completeAction
+  } = useActionConfirm();
 
   // Keep local state in sync with props
   useEffect(() => {
@@ -37,23 +51,21 @@ export function ServiceAttachmentsDisplay({ vehicleId, serviceId, attachments }:
 
     const fileSizeMB = file.size / 1024 / 1024;
     if (fileSizeMB > maxMB) {
-      alert(`Free plan includes up to ${maxMB}MB per attachment. Upgrade to Pro to increase this limit.`);
+      setErrorMessage(`File too large. Free plan limit: ${maxMB}MB. Upgrade to Pro.`);
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
     setIsUploading(true);
+    setErrorMessage(null);
     try {
       const newAttachment = await uploadServiceAttachment(vehicleId, serviceId, file);
-      
-      // Update local state immediately
       setLocalAttachments(prev => [...prev, newAttachment]);
-
       startTransition(() => {
         router.refresh();
       });
     } catch (err: any) {
-      alert(err.message || 'Failed to upload attachment');
+      setErrorMessage(err.message || 'Failed to upload attachment');
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -61,22 +73,21 @@ export function ServiceAttachmentsDisplay({ vehicleId, serviceId, attachments }:
   };
 
   const handleDelete = async (attachmentId: string) => {
-    if (!window.confirm('Are you sure you want to delete this attachment?')) return;
+    if (confirmDeleteId !== attachmentId) {
+      enterConfirm(attachmentId);
+      return;
+    }
 
-    setDeletingId(attachmentId);
+    startAction(attachmentId);
     try {
       await deleteServiceAttachment(vehicleId, serviceId, attachmentId);
-      
-      // Update local state immediately
       setLocalAttachments(prev => prev.filter(a => a.id !== attachmentId));
-
+      completeAction();
       startTransition(() => {
         router.refresh();
       });
     } catch (err: any) {
-      alert(err.message || 'Failed to delete attachment');
-    } finally {
-      setDeletingId(null);
+      failAction(err.message || 'Failed to delete attachment');
     }
   };
 
@@ -141,6 +152,12 @@ export function ServiceAttachmentsDisplay({ vehicleId, serviceId, attachments }:
         />
       </div>
 
+      <InlineErrorMessage 
+        message={errorMessage} 
+        onClear={() => setErrorMessage(null)} 
+        className="mb-4"
+      />
+
       {localAttachments.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 rounded-[24px] bg-white/[0.01] border border-dashed border-white/5">
            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white/10">
@@ -153,12 +170,13 @@ export function ServiceAttachmentsDisplay({ vehicleId, serviceId, attachments }:
           {localAttachments.map((attachment) => {
             const isImage = attachment.fileType?.includes('image') || 
                             attachment.url.match(/\.(jpg|jpeg|png|webp)$/i);
-            const isDeleting = deletingId === attachment.id;
+            const isRowDeleting = deletingId === attachment.id;
+            const isConfirming = confirmDeleteId === attachment.id;
 
             return (
               <div 
                 key={attachment.id} 
-                className={`group flex items-center justify-between rounded-2xl bg-white/[0.02] border border-white/5 p-2 pr-3 transition-all hover:bg-white/[0.04] hover:border-white/10 ${isDeleting ? 'opacity-50 grayscale' : ''}`}
+                className={`group flex items-center justify-between rounded-2xl bg-white/[0.02] border border-white/5 p-2 pr-3 transition-all hover:bg-white/[0.04] hover:border-white/10 ${isRowDeleting ? 'opacity-50 grayscale' : ''} ${isConfirming ? 'border-red-500/20 bg-red-500/5' : ''}`}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {isImage ? (
@@ -194,24 +212,45 @@ export function ServiceAttachmentsDisplay({ vehicleId, serviceId, attachments }:
                 </div>
                 
                 <div className="flex items-center gap-1.5 ml-4">
-                  <a
-                    href={normalizeImageUrl(attachment.url)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all"
-                    title="View Full Resolution"
-                  >
-                    <Eye size={12} strokeWidth={2.5} />
-                  </a>
+                  {!isConfirming && (
+                    <a
+                      href={normalizeImageUrl(attachment.url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all"
+                      title="View Full Resolution"
+                    >
+                      <Eye size={12} strokeWidth={2.5} />
+                    </a>
+                  )}
+                  
+                  {isConfirming && (
+                    <button
+                      type="button"
+                      onClick={() => cancelConfirm()}
+                      disabled={isRowDeleting}
+                      className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white/40 hover:text-white transition-all"
+                      title="Cancel"
+                    >
+                      <X size={12} strokeWidth={2.5} />
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => handleDelete(attachment.id)}
                     disabled={isDeleting}
-                    className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-500/5 text-red-500/30 hover:bg-red-500/10 hover:text-red-500 transition-all disabled:opacity-50"
-                    title="Delete"
+                    className={`flex items-center justify-center rounded-xl transition-all disabled:opacity-50 ${
+                      isConfirming 
+                        ? 'bg-red-500 text-white px-3 h-8 text-[9px] font-black uppercase tracking-widest' 
+                        : 'bg-red-500/5 text-red-500/30 hover:bg-red-500/10 hover:text-red-500 h-8 w-8'
+                    }`}
+                    title={isConfirming ? "Click to confirm deletion" : "Delete"}
                   >
-                    {isDeleting ? (
+                    {isRowDeleting ? (
                       <Loader2 size={12} className="animate-spin" />
+                    ) : isConfirming ? (
+                      "Confirm"
                     ) : (
                       <Trash2 size={12} strokeWidth={2.5} />
                     )}

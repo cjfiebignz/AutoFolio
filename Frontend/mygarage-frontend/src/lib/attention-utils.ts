@@ -1,4 +1,4 @@
-import { ServiceSummary } from "@/types/autofolio";
+import { ServiceEntryViewModel, ServiceSummaryViewModel } from "@/lib/mappers/service";
 import { VehicleViewModel } from "@/lib/mappers/vehicle";
 import { ReminderViewModel } from "@/lib/mappers/reminder";
 import { DocumentViewModel } from "@/lib/mappers/document";
@@ -19,7 +19,7 @@ export interface AttentionItem {
 export interface AttentionEngineOptions {
   vehicle: VehicleViewModel;
   reminders: ReminderViewModel[];
-  serviceSummary?: ServiceSummary['serviceSummary'] | null;
+  serviceSummary?: ServiceSummaryViewModel | null;
   documents: DocumentViewModel[];
 }
 
@@ -50,13 +50,13 @@ export function evaluateVehicleAttention(options: AttentionEngineOptions): Atten
     );
 
     if (!hasRegReminder) {
-      if (regStatus === 'expired' || vehicle.registrationStatus === 'expired') {
+      if (regStatus === 'expired') {
         attention.push({
           key: 'reg-expired',
           category: 'registration',
           severity: 'critical',
           title: 'Registration Expired',
-          subLabel: 'Legal compliance required',
+          subLabel: getRelativeTimeText(vehicle.registrationExpiryDate) ? `Expired ${getRelativeTimeText(vehicle.registrationExpiryDate).toLowerCase()}` : 'Legal compliance required',
           href: `/vehicles/${vehicle.id}/registration`
         });
       } else if (regStatus === 'due_soon') {
@@ -65,7 +65,7 @@ export function evaluateVehicleAttention(options: AttentionEngineOptions): Atten
           category: 'registration',
           severity: 'warning',
           title: 'Registration Due Soon',
-          subLabel: 'Renewal window open',
+          subLabel: `Due ${getRelativeTimeText(vehicle.registrationExpiryDate).toLowerCase()}`,
           href: `/vehicles/${vehicle.id}/registration`
         });
       }
@@ -91,13 +91,13 @@ export function evaluateVehicleAttention(options: AttentionEngineOptions): Atten
     );
 
     if (!hasInsReminder) {
-      if (insStatus === 'expired' || vehicle.insuranceStatus === 'expired') {
+      if (insStatus === 'expired') {
         attention.push({
           key: 'ins-expired',
           category: 'insurance',
           severity: 'critical',
           title: 'Insurance Expired',
-          subLabel: 'Vehicle unprotected',
+          subLabel: getRelativeTimeText(vehicle.insuranceExpiryDate) ? `Expired ${getRelativeTimeText(vehicle.insuranceExpiryDate).toLowerCase()}` : 'Vehicle unprotected',
           href: `/vehicles/${vehicle.id}/insurance`
         });
       } else if (insStatus === 'due_soon') {
@@ -106,7 +106,7 @@ export function evaluateVehicleAttention(options: AttentionEngineOptions): Atten
           category: 'insurance',
           severity: 'warning',
           title: 'Insurance Due Soon',
-          subLabel: 'Coverage renewal needed',
+          subLabel: `Due ${getRelativeTimeText(vehicle.insuranceExpiryDate).toLowerCase()}`,
           href: `/vehicles/${vehicle.id}/insurance`
         });
       }
@@ -166,7 +166,7 @@ export function evaluateVehicleAttention(options: AttentionEngineOptions): Atten
     } else if (serviceSummary.status === 'insufficient_data') {
       let subLabel = 'Update odometer or baseline';
       if (serviceSummary.baselineSource === 'none') subLabel = 'Set service baseline';
-      else if (serviceSummary.currentKms === null) subLabel = 'Update odometer';
+      else if (serviceSummary.currentOdometer === null) subLabel = 'Update odometer';
 
       attention.push({
         key: 'service-insufficient',

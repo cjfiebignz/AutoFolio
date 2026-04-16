@@ -7,11 +7,13 @@ import { mapToRemindersViewModel } from '@/lib/mappers/reminder';
 import { mapToVehicleViewModel } from '@/lib/mappers/vehicle';
 import { mapToDocumentsViewModel } from '@/lib/mappers/document';
 import { evaluateVehicleSummaryAttention } from '@/lib/attention-utils';
-import { Bell, ArrowRight, Edit3, Trash2, Camera, Wrench, Briefcase, AlertCircle, AlertTriangle, Lock, Info } from 'lucide-react';
+import { Bell, ArrowRight, Edit3, Trash2, Camera, Wrench, Briefcase, AlertCircle, AlertTriangle, Lock, Info, X, Loader2 } from 'lucide-react';
 import { deleteVehicle } from '@/lib/api';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { normalizeCrop, getCropTransform } from '@/lib/cropUtils';
 import { usePlan } from '@/lib/plan-context';
+import { useActionConfirm } from '@/lib/use-action-confirm';
+import { InlineErrorMessage } from '../ui/ActionFeedback';
 
 import { normalizeImageUrl } from '@/lib/image-utils';
 import { MaintenanceStatusBadge, MaintenanceStatus } from './MaintenanceStatusBadge';
@@ -23,8 +25,19 @@ interface VehicleCardProps {
 export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
   const router = useRouter();
   const { refreshPlan, openUpgradeModal } = usePlan();
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   
+  const { 
+    isActioning: isDeleting, 
+    confirmState: confirmDelete, 
+    errorMessage, 
+    enterConfirm, 
+    cancelConfirm,
+    startAction,
+    failAction,
+    setErrorMessage
+  } = useActionConfirm();
+
   const vehicle = mapToVehicleViewModel(rawVehicle);
   const reminders = mapToRemindersViewModel(rawVehicle.reminders || []);
   const documents = mapToDocumentsViewModel(rawVehicle.documents || []);
@@ -43,6 +56,12 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
   const y = normalizeCrop(rawVehicle.bannerCropY);
 
   const handleClick = (e: React.MouseEvent) => {
+    if (confirmDelete) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
     if (isLocked) {
       e.preventDefault();
       // Force trigger the upgrade modal with specific messaging
@@ -58,18 +77,20 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!window.confirm('Are you sure you want to delete this vehicle? This action cannot be undone.')) {
+    if (!confirmDelete) {
+      enterConfirm();
       return;
     }
 
-    setIsDeleting(true);
+    startAction();
     try {
       await deleteVehicle(vehicle.id);
       await refreshPlan();
-      router.refresh();
+      startTransition(() => {
+        router.refresh();
+      });
     } catch (err: any) {
-      alert(err.message || 'Failed to delete vehicle');
-      setIsDeleting(false);
+      failAction(err.message || 'Failed to delete vehicle');
     }
   };
 
@@ -97,7 +118,7 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
         isLocked 
           ? 'border-white/5 bg-white/[0.01] opacity-60 grayscale-[0.5]' 
           : 'border-white/5 bg-white/[0.02] hover:border-white/10 hover:shadow-2xl active:scale-[0.99]'
-      } p-8 ${isDeleting ? 'opacity-50 grayscale pointer-events-none' : ''}`}
+      } p-8 ${isDeleting ? 'opacity-50 grayscale pointer-events-none' : ''} ${confirmDelete ? 'border-red-500/30' : ''}`}
     >
       {/* Background Layer */}
       {rawVehicle.bannerImageUrl ? (
@@ -111,12 +132,12 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
             />
           </div>
           {/* Overlays for readability */}
-          <div className={`absolute inset-0 z-0 transition-colors ${isLocked ? 'bg-black/80' : 'bg-black/60 group-hover:bg-black/50'}`} />
+          <div className={`absolute inset-0 z-0 transition-colors ${isLocked ? 'bg-black/80' : 'bg-black/60 group-hover:bg-black/50'} ${confirmDelete ? 'bg-black/90' : ''}`} />
           <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#0b0b0c] via-black/20 to-transparent" />
         </>
       ) : (
         /* Decorative gradient background element for no-banner state */
-        <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/[0.02] blur-3xl transition-all group-hover:bg-white/[0.04]" />
+        <div className={`absolute -right-12 -top-12 h-40 w-40 rounded-full ${confirmDelete ? 'bg-red-500/5' : 'bg-white/[0.02]'} blur-3xl transition-all group-hover:bg-white/[0.04]`} />
       )}
       
       <div className="relative z-10 flex items-start justify-between">
@@ -166,7 +187,19 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          {!isLocked && (
+          {confirmDelete && (
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); cancelConfirm(); }}
+              disabled={isDeleting}
+              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-white/40 hover:text-white transition-all backdrop-blur-md border border-white/10"
+              title="Cancel"
+            >
+              <X size={18} />
+            </button>
+          )}
+
+          {!isLocked && !confirmDelete && (
             <button
               type="button"
               onClick={handleEdit}
@@ -176,25 +209,33 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
               <Edit3 size={16} />
             </button>
           )}
+          
           <button 
             type="button"
             onClick={handleDelete}
-            className={`flex h-10 w-10 items-center justify-center rounded-2xl transition-all backdrop-blur-md border ${
-              isLocked 
-                ? 'bg-white/5 text-white/20 border-white/5 hover:bg-red-500/10 hover:text-red-500/40 hover:border-red-500/10' 
-                : 'bg-red-500/10 text-red-500/40 hover:bg-red-500/20 hover:text-red-500 border-red-500/10'
+            disabled={isDeleting}
+            className={`flex items-center justify-center rounded-2xl transition-all backdrop-blur-md border ${
+              confirmDelete 
+                ? 'bg-red-500 text-white px-4 h-10 text-[9px] font-black uppercase tracking-widest' 
+                : isLocked 
+                  ? 'bg-white/5 text-white/20 border-white/5 hover:bg-red-500/10 hover:text-red-500/40 hover:border-red-500/20 h-10 w-10' 
+                  : 'bg-red-500/10 text-red-500/40 hover:bg-red-500/20 hover:text-red-500 border-red-500/10 h-10 w-10'
             }`}
-            title="Delete Vehicle"
+            title={confirmDelete ? "Click to confirm deletion" : "Delete Vehicle"}
           >
-            <Trash2 size={16} />
+            {isDeleting ? <Loader2 size={16} className="animate-spin" /> : confirmDelete ? 'Confirm' : <Trash2 size={16} />}
           </button>
         </div>
       </div>
 
       <div className="mt-12 relative z-10 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {/* Quick Stats Metadata */}
-          {!isLocked ? (
+        <div className="flex items-center gap-4 flex-1">
+          {confirmDelete ? (
+            <div className="flex items-center gap-2 text-red-400 animate-in slide-in-from-left-2 duration-300">
+              <AlertCircle size={14} />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Delete vehicle and all technical history?</span>
+            </div>
+          ) : !isLocked ? (
             <>
               <div className="flex items-center gap-3 pr-2">
                 <div className="flex items-center gap-1.5" title="Photos">
@@ -243,14 +284,22 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
           )}
         </div>
         
-        <div className={`flex h-10 w-10 items-center justify-center rounded-full shadow-xl transition-all ${
-          isLocked 
-            ? 'bg-white/5 text-white/20' 
-            : 'bg-white text-black group-hover:translate-x-1 group-hover:scale-110'
-        }`}>
-          {isLocked ? <Lock size={16} /> : <ArrowRight size={18} strokeWidth={3} />}
-        </div>
+        {!confirmDelete && (
+          <div className={`flex h-10 w-10 items-center justify-center rounded-full shadow-xl transition-all ${
+            isLocked 
+              ? 'bg-white/5 text-white/20' 
+              : 'bg-white text-black group-hover:translate-x-1 group-hover:scale-110'
+          }`}>
+            {isLocked ? <Lock size={16} /> : <ArrowRight size={18} strokeWidth={3} />}
+          </div>
+        )}
       </div>
+
+      <InlineErrorMessage 
+        message={errorMessage} 
+        onClear={() => setErrorMessage(null)} 
+        className="mt-4 relative z-10"
+      />
     </Link>
   );
 }

@@ -1,330 +1,226 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { InsuranceRecord } from '@/types/autofolio';
-import { formatDisplayDate, formatCurrency, getExpiryStatus, getRelativeTimeText, formatLifecycleStatus } from '@/lib/date-utils';
+import Link from 'next/link';
+import { ShieldCheck, Plus, Trash2, Edit3, Calendar, ExternalLink, Clock, X, Loader2 } from 'lucide-react';
 import { deleteInsurance } from '@/lib/api';
-import { usePreferences } from '@/lib/preferences';
-import { 
-  ShieldCheck, 
-  Plus, 
-  Trash2, 
-  Edit3, 
-  Landmark, 
-  Calendar, 
-  Clock, 
-  CheckCircle2, 
-  CreditCard,
-  ChevronDown,
-  AlertCircle,
-  AlertTriangle
-} from 'lucide-react';
+import { formatCurrency, formatDisplayDate, getExpiryStatus } from '@/lib/date-utils';
+import { useActionConfirm } from '@/lib/use-action-confirm';
+import { InlineErrorMessage } from '../ui/ActionFeedback';
 import { InsuranceForm } from './InsuranceForm';
-import { TabIntroBlurb } from '../ui/TabIntroBlurb';
 
 interface VehicleInsuranceDisplayProps {
   vehicleId: string;
-  insuranceRecords: InsuranceRecord[];
+  insurance?: any[];
+  displayCurrency?: string;
 }
 
-export function VehicleInsuranceDisplay({ vehicleId, insuranceRecords }: VehicleInsuranceDisplayProps) {
+export function VehicleInsuranceDisplay({ vehicleId, insurance = [], displayCurrency = 'AUD' }: VehicleInsuranceDisplayProps) {
   const router = useRouter();
-  const { preferences } = usePreferences();
   const [isPending, startTransition] = useTransition();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<InsuranceRecord | null>(null);
-
-  const currentRecord = insuranceRecords.find(r => r.isCurrent);
-  const historyRecords = insuranceRecords.filter(r => !r.isCurrent).sort((a, b) => 
-    new Date(b.expiryDate).getTime() - new Date(a.expiryDate).getTime()
-  );
+  const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
+  
+  const {
+    isActioning: isDeleting,
+    actioningId: deletingId,
+    confirmId: confirmDeleteId,
+    errorMessage,
+    setErrorMessage,
+    enterConfirm,
+    cancelConfirm,
+    startAction,
+    failAction,
+    completeAction
+  } = useActionConfirm();
 
   const handleAdd = () => {
-    setEditingRecord(null);
+    setSelectedRecord(null);
     setIsFormOpen(true);
   };
 
-  const handleEdit = (record: InsuranceRecord) => {
-    setEditingRecord(record);
+  const handleEdit = (record: any) => {
+    setSelectedRecord(record);
     setIsFormOpen(true);
   };
 
-  const handleDelete = async (insId: string) => {
-    if (!window.confirm('Delete this insurance record?')) return;
+  const handleDelete = async (insuranceId: string) => {
+    if (confirmDeleteId !== insuranceId) {
+      enterConfirm(insuranceId);
+      return;
+    }
+
+    startAction(insuranceId);
     try {
-      await deleteInsurance(vehicleId, insId);
+      await deleteInsurance(vehicleId, insuranceId);
+      completeAction();
       startTransition(() => {
         router.refresh();
       });
     } catch (err: any) {
-      alert(err.message || 'Failed to delete record');
+      failAction(err.message || 'Failed to delete insurance record');
     }
   };
 
   return (
-    <div className="space-y-12">
-      {/* Tab Header & Action */}
+    <div className="space-y-6">
       <div className="flex items-center justify-between px-1">
-        <div className="space-y-1.5">
-          <h2 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">Insurance</h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-400/50">Protection & Coverage</p>
+        <div className="space-y-1">
+          <h3 className="text-xl font-black italic tracking-tight uppercase text-white/90">Insurance</h3>
+          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20">Policy & Coverage Management</p>
         </div>
         <button 
           onClick={handleAdd}
-          className="flex h-11 items-center justify-center gap-2.5 rounded-2xl bg-white px-6 text-[10px] font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98] shadow-xl"
+          className="flex h-9 items-center justify-center gap-2 rounded-xl bg-white/5 px-4 text-[9px] font-black uppercase tracking-widest text-white/60 hover:bg-white/10 hover:text-white transition-all border border-white/5"
         >
-          <Plus size={14} strokeWidth={3} />
+          <Plus size={12} strokeWidth={3} />
           Add Policy
         </button>
       </div>
 
-      <TabIntroBlurb 
-        tab="insurance" 
-        title="Asset Protection" 
-        description="Maintain a complete record of your insurance policies, premiums, and coverage periods to ensure your vehicle is always protected." 
+      <InlineErrorMessage 
+        message={errorMessage} 
+        onClear={() => setErrorMessage(null)} 
       />
 
-      {/* Current Policy Summary */}
-      {currentRecord ? (
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 px-1">
-            <ShieldCheck size={14} className="text-blue-400/60" />
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Active Policy</h3>
+      {!insurance || insurance.length === 0 ? (
+        <div className="rounded-[32px] border border-dashed border-white/5 bg-white/[0.01] p-12 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-white/10">
+            <ShieldCheck size={32} strokeWidth={1} />
           </div>
-          
-          <div className="group relative overflow-hidden rounded-[40px] border border-white/10 bg-white/[0.03] p-8 sm:p-10 shadow-2xl backdrop-blur-md">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-              <div className="lg:col-span-7 space-y-10">
-                <div className="space-y-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Current Provider</p>
-                    <StatusBadge status={currentRecord.insuranceStatus} expiryDate={currentRecord.expiryDate} />
-                  </div>
-                  <h4 className="text-4xl sm:text-5xl font-black italic tracking-tighter text-white uppercase break-words leading-tight">{currentRecord.provider}</h4>
-                  <div className="flex items-center gap-2">
-                    <div className="h-px w-6 bg-blue-400/30" />
-                    <p className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em]">Policy: {currentRecord.policyNumber || 'Not provided'}</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 pt-2">
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/15 mb-2.5">Coverage</p>
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck size={14} className="text-blue-400/40" />
-                      <span className="text-xs font-black uppercase tracking-widest text-white/80">{currentRecord.policyType.replace(/_/g, ' ')}</span>
-                    </div>
-                  </div>
-                  {currentRecord.premiumAmount && (
-                    <div>
-                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/15 mb-2.5">Premium</p>
-                      <div className="flex items-center gap-2">
-                        <CreditCard size={14} className="text-white/20" />
-                        <span className="text-xs font-black tracking-widest text-white/80">{formatCurrency(Number(currentRecord.premiumAmount), currentRecord.currency, preferences.defaultCurrency)}</span>
-                      </div>
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/15 mb-2.5">Frequency</p>
-                    <span className="text-xs font-black uppercase tracking-widest text-white/60">{currentRecord.paymentFrequency}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-5 flex flex-col justify-between space-y-8 lg:border-l lg:border-white/5 lg:pl-10">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 lg:gap-10">
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/15 mb-2.5">Effective Date</p>
-                    <div className="flex items-center gap-2">
-                      <Calendar size={14} className="text-white/20" />
-                      <span className="text-xs font-black tracking-widest text-white/80">{currentRecord.policyStartDate ? formatDisplayDate(currentRecord.policyStartDate) : 'Not recorded'}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/15 mb-2.5">Renewal Due</p>
-                    <div className="flex items-center gap-2.5 text-blue-400">
-                      <Clock size={15} className="opacity-60" />
-                      <div className="flex flex-col">
-                        <span className="text-sm font-black italic leading-none uppercase tracking-tight">{formatDisplayDate(currentRecord.expiryDate)}</span>
-                        {(() => {
-                          const status = formatLifecycleStatus(currentRecord.expiryDate, currentRecord.insuranceStatus, 'Covered');
-                          return status.subLabel && (
-                            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mt-1.5">
-                              {status.subLabel}
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {currentRecord.notes && (
-                  <div className="rounded-3xl bg-white/[0.02] p-5 border border-white/5 relative">
-                    <p className="text-[8px] font-black uppercase tracking-[0.2em] text-white/10 mb-2 absolute -top-2 left-4 bg-[#0b0b0c] px-2 py-0.5 rounded-full border border-white/5">Notes</p>
-                    <p className="text-[11px] font-medium leading-relaxed text-white/30 italic">"{currentRecord.notes}"</p>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-3 pt-4">
-                  <button 
-                    onClick={() => handleEdit(currentRecord)}
-                    className="flex-1 flex h-14 items-center justify-center gap-3 rounded-2xl bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-white/60 transition-all hover:bg-white/10 hover:text-white border border-white/5"
-                  >
-                    <Edit3 size={14} />
-                    Update Policy
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(currentRecord.id)}
-                    className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/5 text-red-500/40 transition-all hover:bg-red-500/10 hover:text-red-500 border border-red-500/5"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+          <p className="text-[10px] font-black uppercase tracking-widest text-white/20">No insurance records</p>
+          <p className="mt-2 text-[10px] font-medium text-white/10 max-w-[200px] mx-auto leading-relaxed">
+            Keep your policy details and coverage information organized.
+          </p>
+        </div>
       ) : (
-        <section className="flex flex-col items-center justify-center py-20 text-center rounded-[40px] border border-dashed border-white/10 bg-white/[0.01]">
-          <div className="mb-6 rounded-2xl bg-white/5 p-5 text-white/10">
-            <Landmark size={32} strokeWidth={1} />
-          </div>
-          <h3 className="text-lg font-bold text-white/40 uppercase italic tracking-tight">No active insurance</h3>
-          <p className="mt-2 text-xs font-medium text-white/20 max-w-xs mx-auto">Log your vehicle's current insurance policy to track coverage and get renewal alerts.</p>
-        </section>
-      )}
+        <div className="grid gap-3">
+          {insurance.map((record) => {
+            const expiry = getExpiryStatus(record.expiryDate);
+            const isConfirming = confirmDeleteId === record.id;
+            const isRowDeleting = isDeleting && deletingId === record.id;
 
-      {/* Insurance History */}
-      {historyRecords.length > 0 && (
-        <section className="space-y-6">
-          <div className="flex items-center gap-2 px-1">
-            <Clock size={14} className="text-white/20" />
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Policy History</h3>
-          </div>
-          
-          <div className="grid gap-3">
-            {historyRecords.map(record => (
-              <HistoryCard 
+            return (
+              <div 
                 key={record.id} 
-                record={record} 
-                onEdit={() => handleEdit(record)}
-                onDelete={() => handleDelete(record.id)}
-              />
-            ))}
-          </div>
-        </section>
+                className={`group relative overflow-hidden rounded-[24px] border border-white/5 bg-white/[0.02] p-5 transition-all hover:bg-white/[0.04] hover:border-white/10 ${isRowDeleting ? 'opacity-50 grayscale pointer-events-none' : ''} ${isConfirming ? 'border-red-500/20 bg-red-500/5' : ''}`}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all ${
+                      expiry.status === 'expired' 
+                        ? 'bg-red-500/10 border-red-500/20 text-red-400' 
+                        : 'bg-white/5 border-white/10 text-white/40'
+                    }`}>
+                      <ShieldCheck size={18} strokeWidth={1.5} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h4 className="text-sm font-black italic tracking-tight uppercase text-white truncate">{record.provider}</h4>
+                        {record.isPrimary && (
+                          <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[7px] font-black uppercase tracking-widest text-blue-400 ring-1 ring-inset ring-blue-500/20">Primary</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
+                        {record.policyNumber || 'No Policy Number'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-6">
+                    <div className="text-right">
+                      <p className="text-[8px] font-black uppercase tracking-[0.2em] text-white/10 mb-0.5">Coverage Total</p>
+                      <p className="text-sm font-black text-white italic tracking-tight">{formatCurrency(record.premium || 0, displayCurrency)}</p>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {!isConfirming && (
+                        <button 
+                          onClick={() => handleEdit(record)}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all border border-white/5"
+                          title="Edit Policy"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                      )}
+
+                      {isConfirming && (
+                        <button
+                          type="button"
+                          onClick={() => cancelConfirm()}
+                          disabled={isRowDeleting}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white/40 hover:text-white transition-all"
+                          title="Cancel"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+
+                      <button 
+                        type="button"
+                        onClick={() => handleDelete(record.id)}
+                        disabled={isDeleting && deletingId === record.id}
+                        className={`flex items-center justify-center rounded-xl transition-all disabled:opacity-50 ${
+                          isConfirming 
+                            ? 'bg-red-500 text-white px-4 h-9 text-[9px] font-black uppercase tracking-widest' 
+                            : 'bg-red-500/5 text-red-500/20 hover:bg-red-500/10 hover:text-red-400 h-9 w-9'
+                        }`}
+                        title={isConfirming ? "Confirm Deletion" : "Delete Policy"}
+                      >
+                        {isRowDeleting ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : isConfirming ? (
+                          "Confirm"
+                        ) : (
+                          <Trash2 size={14} />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar size={10} className="text-white/20" />
+                      <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">
+                        Exp: {formatDisplayDate(record.expiryDate)}
+                      </p>
+                    </div>
+                    {expiry.status !== 'valid' && (
+                      <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full ${expiry.status === 'expired' ? 'bg-red-500/10 text-red-400' : 'bg-yellow-500/10 text-yellow-500'}`}>
+                        <Clock size={8} />
+                        <span className="text-[7px] font-black uppercase tracking-widest">{expiry.label}</span>
+                      </div>
+                    )}
+                  </div>
+                  {record.policyUrl && (
+                    <a 
+                      href={record.policyUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-blue-400/60 hover:text-blue-400 transition-colors"
+                    >
+                      <ExternalLink size={10} />
+                      View Policy
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
 
-      <InsuranceForm 
-        vehicleId={vehicleId}
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        initialData={editingRecord}
-      />
-    </div>
-  );
-}
-
-function StatusBadge({ status, expiryDate, className = "" }: { status: string, expiryDate?: string, className?: string }) {
-  const lifecycle = formatLifecycleStatus(expiryDate, status, 'Active');
-  const expiryStatus = getExpiryStatus(expiryDate);
-  
-  let label = lifecycle.label;
-  let colors = "bg-white/5 text-white/40 ring-white/10";
-  let icon = null;
-
-  if (status === 'expired' || expiryStatus === 'expired') {
-    colors = "bg-red-500/10 text-red-400 ring-red-500/20";
-    icon = <AlertCircle size={10} />;
-  } else if (expiryStatus === 'due_soon') {
-    colors = "bg-yellow-500/10 text-yellow-500 ring-yellow-500/20";
-    icon = <AlertTriangle size={10} />;
-  } else if (status === 'active') {
-    colors = "bg-blue-500/10 text-blue-400 ring-blue-500/20";
-    icon = <ShieldCheck size={10} />;
-  } else if (status === 'pending') {
-    colors = "bg-blue-500/10 text-blue-400 ring-blue-500/20";
-  } else if (status === 'cancelled') {
-    colors = "bg-white/5 text-white/20 ring-white/5";
-  }
-
-  return (
-    <span className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest ring-1 ring-inset ${colors} ${className}`}>
-      {icon}
-      {label}
-    </span>
-  );
-}
-
-function HistoryCard({ record, onEdit, onDelete }: { record: InsuranceRecord, onEdit: () => void, onDelete: () => void }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const { preferences } = usePreferences();
-
-  return (
-    <div className="group overflow-hidden rounded-[28px] border border-white/5 bg-white/[0.01] transition-all hover:border-white/10 hover:bg-white/[0.02]">
-      <button 
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-5 sm:p-7 text-left outline-none"
-      >
-        <div className="flex items-center gap-5">
-          <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 text-white/20 group-hover:text-white/40 transition-colors">
-            <Landmark size={18} strokeWidth={1.5} />
-          </div>
-          <div>
-            <div className="flex items-center gap-3">
-              <h4 className="text-base font-black italic text-white/80 uppercase tracking-tight leading-tight">{record.provider}</h4>
-              <StatusBadge status={record.insuranceStatus} expiryDate={record.expiryDate} className="py-0.5" />
-            </div>
-            <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] mt-1">{record.policyType.replace(/_/g, ' ')} • {record.policyNumber || 'No Policy #'}</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-8">
-          <div className="text-right hidden sm:block">
-            <p className="text-[8px] font-black uppercase tracking-widest text-white/10 mb-0.5">Expired On</p>
-            <p className="text-xs font-bold text-white/40 group-hover:text-white/60 transition-colors">{formatDisplayDate(record.expiryDate)}</p>
-          </div>
-          <ChevronDown size={16} className={`text-white/20 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
-        </div>
-      </button>
-
-      <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${isExpanded ? 'max-h-[500px] opacity-100 border-t border-white/5' : 'max-h-0 opacity-0'}`}>
-        <div className="p-7 grid grid-cols-1 sm:grid-cols-2 gap-8">
-          <div className="grid grid-cols-2 gap-y-6 gap-x-4">
-            <div className="space-y-1">
-              <p className="text-[8px] font-black uppercase tracking-widest text-white/10">Frequency</p>
-              <p className="text-xs font-bold text-white/60 capitalize">{record.paymentFrequency}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[8px] font-black uppercase tracking-widest text-white/10">Premium</p>
-              <p className="text-xs font-bold text-white/60">{record.premiumAmount ? formatCurrency(Number(record.premiumAmount), record.currency, preferences.defaultCurrency) : '—'}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[8px] font-black uppercase tracking-widest text-white/10">Start Date</p>
-              <p className="text-xs font-bold text-white/60">{record.policyStartDate ? formatDisplayDate(record.policyStartDate) : '—'}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[8px] font-black uppercase tracking-widest text-white/10">Policy #</p>
-              <p className="text-xs font-bold text-white/60 truncate max-w-[120px]">{record.policyNumber || '—'}</p>
-            </div>
-          </div>
-          
-          <div className="space-y-4 flex flex-col justify-between">
-            {record.notes ? (
-              <div className="rounded-xl bg-white/5 p-4 border border-white/5">
-                <p className="text-[8px] font-black uppercase tracking-widest text-white/10 mb-1">Notes</p>
-                <p className="text-[11px] font-medium text-white/30 italic">"{record.notes}"</p>
-              </div>
-            ) : <div />}
-            <div className="flex items-center gap-3 justify-end">
-              <button onClick={onEdit} className="h-9 w-9 flex items-center justify-center rounded-lg bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all border border-white/5"><Edit3 size={14} /></button>
-              <button onClick={onDelete} className="h-9 w-9 flex items-center justify-center rounded-lg bg-red-500/5 text-red-500/20 hover:bg-red-500/10 hover:text-red-400 transition-all border border-red-500/5"><Trash2 size={14} /></button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {isFormOpen && (
+        <InsuranceForm
+          vehicleId={vehicleId}
+          isOpen={isFormOpen}
+          onClose={() => setIsFormOpen(false)}
+          initialData={selectedRecord}
+        />
+      )}
     </div>
   );
 }

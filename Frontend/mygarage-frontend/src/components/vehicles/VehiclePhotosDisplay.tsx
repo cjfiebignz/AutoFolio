@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useTransition } from 'react';
+import { useState, useRef, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { VehiclePhoto } from '@/types/autofolio';
 import { uploadVehiclePhoto, deleteVehiclePhoto } from '@/lib/api';
@@ -10,6 +10,8 @@ import { TabIntroBlurb } from '../ui/TabIntroBlurb';
 import { VehicleBannerControls } from './VehicleBannerControls';
 import { usePlan } from '@/lib/plan-context';
 import { useVehicleLimitGate } from '@/lib/limit-gate';
+import { useActionConfirm } from '@/lib/use-action-confirm';
+import { InlineErrorMessage } from '../ui/ActionFeedback';
 
 import { normalizeImageUrl } from '@/lib/image-utils';
 
@@ -33,7 +35,6 @@ export function VehiclePhotosDisplay({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isUploading, setIsUploading] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<VehiclePhoto | null>(null);
   
   const { plan } = usePlan();
@@ -43,6 +44,19 @@ export function VehiclePhotosDisplay({
 
   const maxPhotos = plan?.maxPhotos ?? 10;
   const isLimitReached = photos.length >= maxPhotos;
+
+  const {
+    isActioning: isDeleting,
+    actioningId: deletingId,
+    confirmId: confirmDeleteId,
+    errorMessage,
+    setErrorMessage,
+    enterConfirm,
+    cancelConfirm,
+    startAction,
+    failAction,
+    completeAction
+  } = useActionConfirm();
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -54,6 +68,7 @@ export function VehiclePhotosDisplay({
     }
 
     setIsUploading(true);
+    setErrorMessage(null);
     try {
       await uploadVehiclePhoto(vehicleId, file);
       startTransition(() => {
@@ -64,7 +79,7 @@ export function VehiclePhotosDisplay({
       if (message.toLowerCase().includes('limit') || message.toLowerCase().includes('plan')) {
         checkLimit(100, 1, () => {});
       } else {
-        alert(message || 'Failed to upload photo');
+        setErrorMessage(message || 'Failed to upload photo');
       }
     } finally {
       setIsUploading(false);
@@ -74,19 +89,22 @@ export function VehiclePhotosDisplay({
 
   const handleDelete = async (e: React.MouseEvent, photoId: string) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this photo? This action cannot be undone.')) return;
+    
+    if (confirmDeleteId !== photoId) {
+      enterConfirm(photoId);
+      return;
+    }
 
-    setDeletingId(photoId);
+    startAction(photoId);
     try {
       await deleteVehiclePhoto(vehicleId, photoId);
       if (selectedPhoto?.id === photoId) setSelectedPhoto(null);
+      completeAction();
       startTransition(() => {
         router.refresh();
       });
     } catch (err: any) {
-      alert(err.message || 'Failed to delete photo');
-    } finally {
-      setDeletingId(null);
+      failAction(err.message || 'Failed to delete photo');
     }
   };
 
@@ -136,6 +154,11 @@ export function VehiclePhotosDisplay({
         />
       </div>
 
+      <InlineErrorMessage 
+        message={errorMessage} 
+        onClear={() => setErrorMessage(null)} 
+      />
+
       {/* Banner/Header Management Section */}
       <VehicleBannerControls 
         variant="inline"
@@ -184,12 +207,14 @@ export function VehiclePhotosDisplay({
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             {photos.map((photo) => {
-              const isDeleting = deletingId === photo.id;
+              const isRowDeleting = deletingId === photo.id;
+              const isConfirming = confirmDeleteId === photo.id;
+
               return (
                 <div 
                   key={photo.id} 
-                  onClick={() => !isDeleting && setSelectedPhoto(photo)}
-                  className={`group relative aspect-square overflow-hidden rounded-[24px] border border-white/5 bg-white/[0.02] cursor-pointer ${isDeleting ? 'opacity-50 grayscale pointer-events-none' : ''}`}
+                  onClick={() => !isRowDeleting && !isConfirming && setSelectedPhoto(photo)}
+                  className={`group relative aspect-square overflow-hidden rounded-[24px] border border-white/5 bg-white/[0.02] cursor-pointer ${isRowDeleting ? 'opacity-50 grayscale pointer-events-none' : ''} ${isConfirming ? 'ring-2 ring-red-500/50' : ''}`}
                 >
                   <img
                     src={normalizeImageUrl(photo.url)}
@@ -197,18 +222,35 @@ export function VehiclePhotosDisplay({
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center">
-                    <Maximize2 className="text-white/80" size={24} />
+                    {!isConfirming && <Maximize2 className="text-white/80" size={24} />}
                   </div>
                   
-                  <button
-                    type="button"
-                    onClick={(e) => handleDelete(e, photo.id)}
-                    disabled={isDeleting}
-                    className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-xl bg-red-500/80 text-white opacity-0 transition-all duration-300 hover:bg-red-500 group-hover:opacity-100 shadow-xl backdrop-blur-md disabled:opacity-50"
-                    title="Delete Photo"
-                  >
-                    {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                  </button>
+                  <div className={`absolute right-3 top-3 z-10 flex gap-1 transition-all duration-300 ${isConfirming ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                    {isConfirming && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); cancelConfirm(); }}
+                        disabled={isRowDeleting}
+                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white/60 hover:bg-white/20 transition-all shadow-xl backdrop-blur-md"
+                        title="Cancel"
+                      >
+                        <X size={14} strokeWidth={3} />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => handleDelete(e, photo.id)}
+                      disabled={isDeleting && deletingId === photo.id}
+                      className={`flex items-center justify-center rounded-xl transition-all shadow-xl backdrop-blur-md disabled:opacity-50 ${
+                        isConfirming 
+                          ? 'bg-red-500 text-white px-3 h-8 text-[8px] font-black uppercase tracking-widest' 
+                          : 'bg-red-500/80 text-white hover:bg-red-500 h-8 w-8'
+                      }`}
+                      title={isConfirming ? "Confirm Deletion" : "Delete Photo"}
+                    >
+                      {isRowDeleting ? <Loader2 size={14} className="animate-spin" /> : isConfirming ? "Confirm" : <Trash2 size={14} />}
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -243,13 +285,35 @@ export function VehiclePhotosDisplay({
                   Captured {formatDisplayDate(selectedPhoto.createdAt)}
                 </p>
                 <div className="h-3 w-px bg-white/10" />
-                <button
-                  type="button"
-                  onClick={(e) => handleDelete(e, selectedPhoto.id)}
-                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-red-400 hover:text-red-300 transition-colors"
-                >
-                  <Trash2 size={12} /> Delete
-                </button>
+                
+                {confirmDeleteId === selectedPhoto.id ? (
+                  <div className="flex items-center gap-2 animate-in slide-in-from-right-2 duration-300">
+                    <button
+                      type="button"
+                      onClick={() => cancelConfirm()}
+                      className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDelete(e, selectedPhoto.id)}
+                      disabled={isDeleting && deletingId === selectedPhoto.id}
+                      className="flex items-center gap-2 rounded-lg bg-red-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-white hover:bg-red-600 transition-all"
+                    >
+                      {isDeleting && deletingId === selectedPhoto.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                      Confirm Delete
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => handleDelete(e, selectedPhoto.id)}
+                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    <Trash2 size={12} /> Delete
+                  </button>
+                )}
               </div>
             </div>
           </div>

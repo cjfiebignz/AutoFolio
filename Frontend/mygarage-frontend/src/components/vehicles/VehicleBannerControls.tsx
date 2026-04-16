@@ -2,10 +2,12 @@
 
 import { useState, useRef, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Camera, Trash2, Loader2, Move, Layout } from 'lucide-react';
+import { Camera, Trash2, Loader2, Move, Layout, X } from 'lucide-react';
 import { uploadVehicleBanner, deleteVehicleBanner, updateVehicleBannerMetadata } from '@/lib/api';
 import { BannerCropEditor } from './BannerCropEditor';
 import { normalizeImageUrl } from '@/lib/image-utils';
+import { useActionConfirm } from '@/lib/use-action-confirm';
+import { InlineErrorMessage } from '../ui/ActionFeedback';
 
 interface VehicleBannerControlsProps {
   vehicleId: string;
@@ -28,6 +30,18 @@ export function VehicleBannerControls({
   const [isPending, startTransition] = useTransition();
   const [isBannerAction, setIsBannerAction] = useState(false);
   
+  const {
+    isActioning: isDeleting,
+    confirmState: confirmDelete,
+    errorMessage,
+    setErrorMessage,
+    enterConfirm,
+    cancelConfirm,
+    startAction,
+    failAction,
+    completeAction
+  } = useActionConfirm();
+
   // Crop Editor State
   const [isCropEditorOpen, setIsCropEditorOpen] = useState(false);
   const [editingFile, setEditingFile] = useState<File | null>(null);
@@ -58,6 +72,7 @@ export function VehicleBannerControls({
 
   const handleSaveCrop = async (metadata: { bannerCropX: number; bannerCropY: number; bannerZoom: number }) => {
     setIsBannerAction(true);
+    setErrorMessage(null);
     try {
       if (editingFile) {
         await uploadVehicleBanner(vehicleId, editingFile, metadata);
@@ -69,7 +84,7 @@ export function VehicleBannerControls({
         router.refresh();
       });
     } catch (err: any) {
-      alert(err.message || 'Failed to save header composition');
+      setErrorMessage(err.message || 'Failed to save header composition');
     } finally {
       setIsBannerAction(false);
       if (bannerInputRef.current) bannerInputRef.current.value = '';
@@ -77,64 +92,85 @@ export function VehicleBannerControls({
   };
 
   const handleBannerDelete = async () => {
-    if (!window.confirm('Remove vehicle banner?')) return;
+    if (!confirmDelete) {
+      enterConfirm();
+      return;
+    }
 
-    setIsBannerAction(true);
+    startAction();
     try {
       await deleteVehicleBanner(vehicleId);
+      completeAction();
       startTransition(() => {
         router.refresh();
       });
     } catch (err: any) {
-      alert(err.message || 'Failed to delete banner');
-    } finally {
-      setIsBannerAction(false);
+      failAction(err.message || 'Failed to delete banner');
     }
   };
 
   const controls = (
     <div className="flex gap-2">
-      <button
-        type="button"
-        onClick={() => bannerInputRef.current?.click()}
-        disabled={isBannerAction || isPending}
-        className={`flex h-10 items-center justify-center gap-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 ${
-          variant === 'overlay' 
-            ? 'bg-white px-4 text-black shadow-2xl hover:bg-white/90' 
-            : 'bg-white/10 border border-white/10 px-6 text-white hover:bg-white/20'
-        }`}
-      >
-        {isBannerAction ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
-        {bannerImageUrl ? 'Change Header' : 'Upload Header'}
-      </button>
-      {bannerImageUrl && (
+      {!confirmDelete && (
         <>
           <button
             type="button"
-            onClick={handleEditCrop}
-            disabled={isBannerAction || isPending}
-            className={`flex h-10 items-center justify-center gap-2 rounded-xl border px-4 text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all active:scale-95 disabled:opacity-50 ${
-              variant === 'overlay'
-                ? 'bg-white/10 backdrop-blur-xl border-white/10 text-white hover:bg-white/20'
-                : 'bg-white/5 border-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+            onClick={() => bannerInputRef.current?.click()}
+            disabled={isBannerAction || isPending || isDeleting}
+            className={`flex h-10 items-center justify-center gap-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 ${
+              variant === 'overlay' 
+                ? 'bg-white px-4 text-black shadow-2xl hover:bg-white/90' 
+                : 'bg-white/10 border border-white/10 px-6 text-white hover:bg-white/20'
             }`}
           >
-            <Move size={14} />
-            Position
+            {isBannerAction ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+            {bannerImageUrl ? 'Change' : 'Upload'}
           </button>
+          {bannerImageUrl && (
+            <button
+              type="button"
+              onClick={handleEditCrop}
+              disabled={isBannerAction || isPending || isDeleting}
+              className={`flex h-10 items-center justify-center gap-2 rounded-xl border px-4 text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all active:scale-95 disabled:opacity-50 ${
+                variant === 'overlay'
+                  ? 'bg-white/10 backdrop-blur-xl border-white/10 text-white hover:bg-white/20'
+                  : 'bg-white/5 border-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <Move size={14} />
+              Position
+            </button>
+          )}
+        </>
+      )}
+
+      {bannerImageUrl && (
+        <div className="flex gap-1.5">
+          {confirmDelete && (
+            <button
+              type="button"
+              onClick={() => cancelConfirm()}
+              disabled={isBannerAction || isPending || isDeleting}
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white/40 hover:text-white transition-all border border-white/10"
+            >
+              <X size={16} />
+            </button>
+          )}
           <button
             type="button"
             onClick={handleBannerDelete}
-            disabled={isBannerAction || isPending}
-            className={`flex h-10 w-10 items-center justify-center rounded-xl backdrop-blur-xl border transition-all active:scale-95 disabled:opacity-50 ${
-              variant === 'overlay'
-                ? 'bg-black/60 text-white/60 border-white/10 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/20'
-                : 'bg-red-500/10 text-red-500/40 border-red-500/10 hover:bg-red-500/20 hover:text-red-500'
+            disabled={isBannerAction || isPending || isDeleting}
+            className={`flex items-center justify-center rounded-xl transition-all disabled:opacity-50 ${
+              confirmDelete 
+                ? 'bg-red-500 text-white px-4 h-10 text-[9px] font-black uppercase tracking-widest' 
+                : variant === 'overlay'
+                  ? 'bg-black/60 text-white/60 border-white/10 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/20 h-10 w-10'
+                  : 'bg-red-500/10 text-red-500/40 border-red-500/10 hover:bg-red-500/20 hover:text-red-500 h-10 w-10'
             }`}
           >
-            <Trash2 size={16} />
+            {isDeleting ? <Loader2 size={14} className="animate-spin" /> : confirmDelete ? 'Confirm Remove' : <Trash2 size={16} />}
           </button>
-        </>
+        </div>
       )}
     </div>
   );
@@ -158,6 +194,12 @@ export function VehicleBannerControls({
             {controls}
           </div>
 
+          <InlineErrorMessage 
+            message={errorMessage} 
+            onClear={() => setErrorMessage(null)} 
+            className="mt-6"
+          />
+
           <input
             type="file"
             ref={bannerInputRef}
@@ -177,7 +219,7 @@ export function VehicleBannerControls({
             />
           )}
 
-          {(isBannerAction || isPending) && (
+          {(isBannerAction || isPending || isDeleting) && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
               <Loader2 className="animate-spin text-white" size={24} />
             </div>
@@ -189,8 +231,14 @@ export function VehicleBannerControls({
 
   return (
     <>
-      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-100 sm:opacity-0 backdrop-blur-[2px] transition-all sm:group-hover:opacity-100">
+      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 opacity-100 sm:opacity-0 backdrop-blur-[2px] transition-all sm:group-hover:opacity-100">
         {controls}
+        
+        <InlineErrorMessage 
+          message={errorMessage} 
+          onClear={() => setErrorMessage(null)} 
+          className="mt-4 px-4 w-full max-w-xs"
+        />
       </div>
 
       <input
@@ -212,7 +260,7 @@ export function VehicleBannerControls({
         />
       )}
 
-      {(isBannerAction || isPending) && (
+      {(isBannerAction || isPending || isDeleting) && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <Loader2 className="animate-spin text-white" size={24} />
         </div>

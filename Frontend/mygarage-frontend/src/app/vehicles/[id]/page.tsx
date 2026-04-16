@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { getUserVehicleWithSpecs, getServiceSummary, getLifetimeCostSummary } from "@/lib/api";
 import { mapToVehicleViewModel } from "@/lib/mappers/vehicle";
 import { mapToSpecsViewModel } from "@/lib/mappers/specs";
-import { mapToServiceHistoryViewModel } from "@/lib/mappers/service";
+import { mapToServiceHistoryViewModel, mapToServiceSummaryViewModel } from "@/lib/mappers/service";
 import { mapToDocumentsViewModel } from "@/lib/mappers/document";
 import { mapToWorkJobsViewModel } from "@/lib/mappers/work";
 import { mapToRemindersViewModel } from "@/lib/mappers/reminder";
@@ -93,6 +93,8 @@ export default async function VehicleDetailPage({
   // Map custom specs and ensure they are serialized
   const customSpecs = (serializedVehicle.customSpecs || []);
 
+  const mappedServiceSummary = mapToServiceSummaryViewModel(serviceSummary?.serviceSummary);
+
   const isOverviewTab = currentTab === 'overview' || currentTab === 'reminders';
 
   return (
@@ -117,8 +119,8 @@ export default async function VehicleDetailPage({
             </span>
           </div>
 
-          {serviceSummary?.serviceSummary?.status && (
-            <MaintenanceStatusBadge status={serviceSummary.serviceSummary.status as MaintenanceStatus} />
+          {mappedServiceSummary?.status && (
+            <MaintenanceStatusBadge status={mappedServiceSummary.status as MaintenanceStatus} />
           )}
         </div>
 
@@ -157,7 +159,7 @@ export default async function VehicleDetailPage({
                 workItems={workItems} 
                 documents={documents} 
                 rawReminders={serializedVehicle.reminders || []}
-                serviceSummary={serviceSummary ? JSON.parse(JSON.stringify(serviceSummary.serviceSummary)) : null}
+                serviceSummary={mappedServiceSummary}
                 costSummary={costSummary ? JSON.parse(JSON.stringify(costSummary)) : null}
               />
             )}
@@ -166,7 +168,7 @@ export default async function VehicleDetailPage({
                 vehicleId={id} 
                 vehicleNickname={vehicle.nickname}
                 services={services} 
-                serviceSummary={serviceSummary ? JSON.parse(JSON.stringify(serviceSummary)) : null} 
+                serviceSummary={mappedServiceSummary} 
                 costSummary={costSummary ? JSON.parse(JSON.stringify(costSummary)) : null}
               />
             )}

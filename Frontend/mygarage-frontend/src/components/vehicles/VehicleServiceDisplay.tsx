@@ -16,6 +16,8 @@ import { TabIntroBlurb } from '../ui/TabIntroBlurb';
 import { ServiceSummary, LifetimeCostSummary } from "@/types/autofolio";
 import { VehicleServiceSummaryCard } from './VehicleServiceSummaryCard';
 import { ExportHistoryButton } from './ExportHistoryButton';
+import { useActionConfirm } from '@/lib/use-action-confirm';
+import { InlineErrorMessage } from '../ui/ActionFeedback';
 
 export function VehicleServiceDisplay({ 
   vehicleId, 
@@ -27,7 +29,7 @@ export function VehicleServiceDisplay({
   vehicleId: string;
   vehicleNickname: string;
   services: ServiceEntryViewModel[];
-  serviceSummary: ServiceSummary | null;
+  serviceSummary: ServiceSummaryViewModel | null;
   costSummary: LifetimeCostSummary | null;
 }) {
   const displayCurrency = costSummary?.preferredCurrencyDisplay ?? 'AUD';
@@ -56,7 +58,7 @@ export function VehicleServiceDisplay({
 
         {serviceSummary && (
           <div className="animate-in fade-in slide-in-from-top-4 duration-700">
-            <VehicleServiceSummaryCard vehicleId={vehicleId} summary={serviceSummary.serviceSummary} />
+            <VehicleServiceSummaryCard vehicleId={vehicleId} summary={serviceSummary} />
           </div>
         )}
       </div>
@@ -106,16 +108,16 @@ function ServiceCard({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (errorMessage) {
-      const timer = setTimeout(() => setErrorMessage(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [errorMessage]);
+  const { 
+    isActioning: isDeleting, 
+    confirmState: confirmDelete, 
+    errorMessage, 
+    enterConfirm, 
+    cancelConfirm,
+    startAction,
+    failAction,
+    setErrorMessage
+  } = useActionConfirm();
 
   const toggleExpand = () => setIsExpanded(!isExpanded);
   const contentId = `service-content-${service.id}`;
@@ -125,21 +127,18 @@ function ServiceCard({
     if (isPending || isDeleting) return;
     
     if (!confirmDelete) {
-      setConfirmDelete(true);
+      enterConfirm();
       return;
     }
 
-    setIsDeleting(true);
-    setErrorMessage(null);
+    startAction();
     try {
       await deleteService(vehicleId, service.id);
       startTransition(() => {
         router.refresh();
       });
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to delete record');
-      setIsDeleting(false);
-      setConfirmDelete(false);
+      failAction(err.message || 'Failed to delete record');
     }
   };
 
@@ -198,7 +197,7 @@ function ServiceCard({
 
         <div className="flex items-center gap-4 sm:gap-8 shrink-0">
           <p className={`text-base sm:text-lg font-black tracking-tighter leading-none transition-colors ${isExpanded ? 'text-blue-400' : 'text-white'}`}>
-            {formatCurrency(service.rawTotalCost || 0, displayCurrency)}
+            {service.totalCostDisplay}
           </p>
           
           <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/5 bg-white/5 text-white/20 transition-all duration-500 group-hover:border-white/10 group-hover:text-white/40 ${
@@ -209,20 +208,12 @@ function ServiceCard({
         </div>
       </button>
 
-      {/* Inline Error Feedback */}
-      {errorMessage && (
-        <div className="px-6 pb-2 sm:px-8 animate-in fade-in slide-in-from-top-1 duration-300">
-          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 flex items-center justify-between gap-3 text-red-400">
-            <div className="flex items-center gap-2">
-              <AlertCircle size={14} />
-              <span className="text-[9px] font-bold uppercase tracking-widest">{errorMessage}</span>
-            </div>
-            <button onClick={(e) => { e.stopPropagation(); setErrorMessage(null); }} className="text-red-400/40 hover:text-red-400 transition-colors">
-              <X size={14} />
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Standardized Inline Error Feedback */}
+      <InlineErrorMessage 
+        message={errorMessage} 
+        onClear={() => setErrorMessage(null)} 
+        className="px-6 pb-2 sm:px-8"
+      />
 
       {/* Expanded Details Area - Matches Work Tab Style */}
       <div 
@@ -236,10 +227,10 @@ function ServiceCard({
           <div className="px-6 pb-8 sm:px-8 sm:pb-10 space-y-10 border-t border-white/5 pt-8">
             {/* Detailed Metadata Grid */}
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <DetailBox label="Service Type" value={service.serviceType} highlight="blue" />
+                <DetailBox label="Service Type" value={service.serviceTypeLabel} highlight="blue" />
                 <DetailBox label="Record Verification" value="Verified" highlight="green" />
                 <DetailBox label="Odometer Reading" value={service.odometerDisplay} />
-                <DetailBox label="Total Investment" value={formatCurrency(service.rawTotalCost || 0, displayCurrency)} highlight="white" />
+                <DetailBox label="Total Investment" value={service.totalCostDisplay} highlight="white" />
             </div>
 
             {/* Content & Actions Layout */}
@@ -285,18 +276,22 @@ function ServiceCard({
                           disabled={isPending || isDeleting}
                           className={`flex h-11 items-center justify-center gap-3 rounded-xl transition-all border ${
                             confirmDelete 
-                              ? 'bg-red-500 border-red-400 text-white px-3 text-[8px] font-black uppercase tracking-widest' 
-                              : 'bg-red-500/10 border-red-500/10 text-red-500/40 hover:bg-red-500/10 hover:text-red-500 w-full'
+                              ? 'bg-red-500 border-red-400 text-white px-4 text-[9px] font-black uppercase tracking-widest hover:bg-red-600' 
+                              : 'bg-red-500/5 border-red-500/10 text-red-500/40 hover:bg-red-500/10 hover:text-red-500 w-full'
                           }`}
+                          title={confirmDelete ? 'Click to confirm deletion' : 'Delete Record'}
                         >
-                          {isDeleting ? <Loader2 size={14} className="animate-spin" /> : confirmDelete ? 'Confirm' : <Trash2 size={14} />}
-                          {!isDeleting && (confirmDelete ? '' : 'Delete')}
+                          {isDeleting ? <Loader2 size={14} className="animate-spin" /> : confirmDelete ? 'Confirm Delete' : <Trash2 size={14} />}
+                          {!isDeleting && !confirmDelete && <span className="text-[10px]">Delete Record</span>}
                         </button>
                         {confirmDelete && (
                           <button 
+                            type="button"
                             onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); }}
-                            className="text-[8px] font-black uppercase tracking-widest text-white/20 hover:text-white/40 text-center"
+                            disabled={isDeleting}
+                            className="flex h-10 items-center justify-center gap-2 rounded-xl bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white transition-all border border-white/5"
                           >
+                            <X size={14} />
                             Cancel
                           </button>
                         )}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ServiceSummary } from "@/types/autofolio";
+import { ServiceSummaryViewModel } from "@/lib/mappers/service";
 import { formatNumber, formatDisplayDate } from "@/lib/date-utils";
 import { usePreferences } from "@/lib/preferences";
 import { Calendar, Gauge, RefreshCw, AlertCircle, CheckCircle2, Settings2, Edit2 } from "lucide-react";
@@ -10,7 +10,7 @@ import { VehicleOdometerEditor } from "./VehicleOdometerEditor";
 
 interface VehicleServiceSummaryCardProps {
   vehicleId: string;
-  summary: ServiceSummary['serviceSummary'];
+  summary: ServiceSummaryViewModel;
 }
 
 /**
@@ -26,10 +26,8 @@ export function VehicleServiceSummaryCard({ vehicleId, summary }: VehicleService
   const { formatDistance, getUnitLabel } = usePreferences();
 
   const {
-    currentKms,
+    currentOdometer,
     baselineSource,
-    baselineDate,
-    baselineKms,
     lastServiceDate,
     lastServiceKms,
     serviceIntervalMonths,
@@ -38,10 +36,10 @@ export function VehicleServiceSummaryCard({ vehicleId, summary }: VehicleService
     nextServiceDueKms,
     kmsUntilNextService,
     status,
-    hasEnoughData
+    hasEnoughData,
+    isFallbackBaseline,
+    baselineKms
   } = summary;
-
-  const isFallback = baselineSource === 'settings_baseline';
 
   // State-independent status mapping for deterministic hydration
   const statusColors = {
@@ -77,7 +75,7 @@ export function VehicleServiceSummaryCard({ vehicleId, summary }: VehicleService
         <VehicleServiceSettingsEditor 
           key={`settings-editor-empty-${vehicleId}`}
           vehicleId={vehicleId}
-          currentOdometer={currentKms}
+          currentOdometer={currentOdometer}
           serviceIntervalKms={serviceIntervalKms || undefined}
           serviceIntervalMonths={serviceIntervalMonths || undefined}
           isOpen={isEditorOpen}
@@ -111,7 +109,7 @@ export function VehicleServiceSummaryCard({ vehicleId, summary }: VehicleService
               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/15">Current Odometer</p>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-black italic tracking-tighter text-white uppercase">
-                  {currentKms !== null ? formatNumber(currentKms) : "—"}
+                  {currentOdometer !== null ? formatNumber(currentOdometer) : "—"}
                 </span>
                 <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{getUnitLabel()}</span>
               </div>
@@ -184,7 +182,7 @@ export function VehicleServiceSummaryCard({ vehicleId, summary }: VehicleService
               : 'Settings Baseline (No Main Service Record)'}
           </p>
         </div>
-        {isFallback && (
+        {isFallbackBaseline && (
           <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/10 italic">
             Manual configuration active
           </p>
@@ -194,7 +192,7 @@ export function VehicleServiceSummaryCard({ vehicleId, summary }: VehicleService
       <VehicleServiceSettingsEditor 
         key={`settings-editor-${vehicleId}`}
         vehicleId={vehicleId}
-        currentOdometer={currentKms}
+        currentOdometer={currentOdometer}
         serviceIntervalKms={serviceIntervalKms || undefined}
         serviceIntervalMonths={serviceIntervalMonths || undefined}
         isOpen={isEditorOpen}
@@ -204,7 +202,7 @@ export function VehicleServiceSummaryCard({ vehicleId, summary }: VehicleService
       <VehicleOdometerEditor
         key={`odometer-editor-${vehicleId}`}
         vehicleId={vehicleId}
-        currentOdometer={currentKms}
+        currentOdometer={currentOdometer}
         baselineKms={baselineKms}
         baselineSource={baselineSource}
         isOpen={isOdometerOpen}

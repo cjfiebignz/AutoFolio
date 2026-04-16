@@ -14,6 +14,8 @@ import { deleteDocument, exportDocumentsZip } from '@/lib/api';
 import { TabIntroBlurb } from '../ui/TabIntroBlurb';
 import { formatDisplayDate } from '@/lib/date-utils';
 import { normalizeImageUrl } from '@/lib/image-utils';
+import { useActionConfirm } from '@/lib/use-action-confirm';
+import { InlineErrorMessage } from '../ui/ActionFeedback';
 
 export function VehicleDocumentsDisplay({ 
   vehicleId, 
@@ -28,7 +30,7 @@ export function VehicleDocumentsDisplay({
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { errorMessage, setErrorMessage } = useActionConfirm();
 
   const toggleSelection = (id: string) => {
     const newSelected = new Set(selectedIds);
@@ -107,19 +109,11 @@ export function VehicleDocumentsDisplay({
           </div>
         )}
 
-        {errorMessage && (
-          <div className="px-1 animate-in fade-in slide-in-from-top-1 duration-300">
-            <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 flex items-center justify-between gap-3 text-red-400">
-              <div className="flex items-center gap-2">
-                <AlertCircle size={14} />
-                <span className="text-[9px] font-bold uppercase tracking-widest">{errorMessage}</span>
-              </div>
-              <button onClick={() => setErrorMessage(null)} className="text-red-400/40 hover:text-red-400 transition-colors">
-                <X size={14} />
-              </button>
-            </div>
-          </div>
-        )}
+        <InlineErrorMessage 
+          message={errorMessage} 
+          onClear={() => setErrorMessage(null)} 
+          className="px-1"
+        />
       </div>
 
       <TabIntroBlurb 
@@ -163,28 +157,32 @@ function DocumentCard({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { 
+    isActioning: isDeleting, 
+    confirmState: confirmDelete, 
+    errorMessage, 
+    enterConfirm, 
+    cancelConfirm,
+    startAction,
+    failAction,
+    setErrorMessage
+  } = useActionConfirm();
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!confirmDelete) {
-      setConfirmDelete(true);
+      enterConfirm();
       return;
     }
 
-    setIsDeleting(true);
-    setError(null);
+    startAction();
     try {
       await deleteDocument(vehicleId, doc.id);
       startTransition(() => {
         router.refresh();
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to delete');
-      setIsDeleting(false);
-      setConfirmDelete(false);
+      failAction(err.message || 'Failed to delete');
     }
   };
 
@@ -199,75 +197,83 @@ function DocumentCard({
           : 'border-white/5 bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/10'
       } ${isDeleting ? 'opacity-50 grayscale pointer-events-none' : ''}`}
     >
-      <div className="flex items-center gap-4 p-4 sm:p-5">
-        {/* Selection Affordance */}
-        <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-all ${
-          isSelected 
-            ? 'bg-blue-500 border-blue-400 text-white' 
-            : 'border-white/10 bg-white/5 text-transparent group-hover:border-white/20'
-        }`}>
-          <CheckCircle2 size={14} strokeWidth={3} />
-        </div>
+      <div className="flex flex-col">
+        <div className="flex items-center gap-4 p-4 sm:p-5">
+          {/* Selection Affordance */}
+          <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-all ${
+            isSelected 
+              ? 'bg-blue-500 border-blue-400 text-white' 
+              : 'border-white/10 bg-white/5 text-transparent group-hover:border-white/20'
+          }`}>
+            <CheckCircle2 size={14} strokeWidth={3} />
+          </div>
 
-        {/* Icon / Preview */}
-        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-all duration-500 ${
-          isSelected 
-            ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' 
-            : 'bg-white/5 border-white/5 text-white/20 group-hover:text-white/40'
-        }`}>
-          {isImage ? <FileImage size={20} strokeWidth={1.5} /> : <FileText size={20} strokeWidth={1.5} />}
-        </div>
+          {/* Icon / Preview */}
+          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-all duration-500 ${
+            isSelected 
+              ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' 
+              : 'bg-white/5 border-white/5 text-white/20 group-hover:text-white/40'
+          }`}>
+            {isImage ? <FileImage size={20} strokeWidth={1.5} /> : <FileText size={20} strokeWidth={1.5} />}
+          </div>
 
-        <div className="min-w-0 flex-1 space-y-0.5">
-          <p className="text-[8px] font-black uppercase tracking-[0.25em] text-white/20">{doc.category}</p>
-          <h3 className="text-sm font-bold text-white uppercase italic tracking-tight truncate">{doc.title}</h3>
-          <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{doc.date}</p>
-        </div>
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <p className="text-[8px] font-black uppercase tracking-[0.25em] text-white/20">{doc.category}</p>
+            <h3 className="text-sm font-bold text-white uppercase italic tracking-tight truncate">{doc.title}</h3>
+            <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{doc.date}</p>
+          </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0" onClick={e => e.stopPropagation()}>
-          {doc.fileUrl && (
-            <>
-              <a 
-                href={normalizeImageUrl(doc.fileUrl)} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all border border-white/5"
-                title="View Document"
-              >
-                <Eye size={14} />
-              </a>
-              <a 
-                href={normalizeImageUrl(doc.fileUrl)} 
-                download
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all border border-white/5"
-                title="Download Original"
-              >
-                <Download size={14} />
-              </a>
-            </>
-          )}
-          <button 
-            type="button"
-            onClick={handleDelete}
-            disabled={isPending || isDeleting}
-            className={`flex h-9 items-center justify-center rounded-xl transition-all border ${
-              confirmDelete 
-                ? 'bg-red-500 border-red-400 text-white px-3 text-[8px] font-black uppercase tracking-widest' 
-                : 'bg-red-500/5 border-red-500/10 text-red-500/40 hover:bg-red-500/10 hover:text-red-500 w-9'
-            }`}
-            title={confirmDelete ? 'Click to confirm' : 'Delete Document'}
-          >
-            {isDeleting ? <Loader2 size={14} className="animate-spin" /> : confirmDelete ? 'Confirm' : <Trash2 size={14} />}
-          </button>
-          {confirmDelete && (
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0" onClick={e => e.stopPropagation()}>
+            {doc.fileUrl && (
+              <>
+                <a 
+                  href={normalizeImageUrl(doc.fileUrl)} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all border border-white/5"
+                  title="View Document"
+                >
+                  <Eye size={14} />
+                </a>
+                <a 
+                  href={normalizeImageUrl(doc.fileUrl)} 
+                  download
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all border border-white/5"
+                  title="Download Original"
+                >
+                  <Download size={14} />
+                </a>
+              </>
+            )}
             <button 
-              onClick={() => setConfirmDelete(false)}
-              className="h-9 w-9 flex items-center justify-center rounded-xl bg-white/5 text-white/20 hover:text-white transition-colors"
+              type="button"
+              onClick={handleDelete}
+              disabled={isPending || isDeleting}
+              className={`flex h-9 items-center justify-center rounded-xl transition-all border ${
+                confirmDelete 
+                  ? 'bg-red-500 border-red-400 text-white px-3 text-[8px] font-black uppercase tracking-widest' 
+                  : 'bg-red-500/5 border-red-500/10 text-red-500/40 hover:bg-red-500/10 hover:text-red-500 w-9'
+              }`}
+              title={confirmDelete ? 'Click to confirm' : 'Delete Document'}
             >
-              <X size={14} />
+              {isDeleting ? <Loader2 size={14} className="animate-spin" /> : confirmDelete ? 'Confirm' : <Trash2 size={14} />}
             </button>
-          )}
+            {confirmDelete && (
+              <button 
+                onClick={() => cancelConfirm()}
+                className="h-9 w-9 flex items-center justify-center rounded-xl bg-white/5 text-white/20 hover:text-white transition-colors"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
         </div>
+        
+        <InlineErrorMessage 
+          message={errorMessage} 
+          onClear={() => setErrorMessage(null)} 
+          className="px-4 pb-4"
+        />
       </div>
     </div>
   );
