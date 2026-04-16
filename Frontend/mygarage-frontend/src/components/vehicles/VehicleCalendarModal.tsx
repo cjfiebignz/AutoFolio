@@ -4,14 +4,12 @@ import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { X, ChevronLeft, ChevronRight, Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
-import { VehicleViewModel } from "@/lib/mappers/vehicle";
-import { ServiceEntryViewModel } from "@/lib/mappers/service";
+import { ServiceEntryViewModel, ServiceSummaryViewModel } from "@/lib/mappers/service";
 import { WorkJobViewModel } from "@/lib/mappers/work";
 import { DocumentViewModel } from "@/lib/mappers/document";
 import { ReminderViewModel } from "@/lib/mappers/reminder";
 import { formatDisplayDate } from "@/lib/date-utils";
 import { usePreferences } from "@/lib/preferences";
-import { ServiceSummary } from "@/types/autofolio";
 
 interface CalendarEvent {
   id: string;
@@ -30,7 +28,7 @@ interface VehicleCalendarModalProps {
   workItems: WorkJobViewModel[];
   documents: DocumentViewModel[];
   reminders: ReminderViewModel[];
-  serviceSummary?: ServiceSummary['serviceSummary'] | null;
+  serviceSummary?: ServiceSummaryViewModel | null;
 }
 
 export function VehicleCalendarModal({

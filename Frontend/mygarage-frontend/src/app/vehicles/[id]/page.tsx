@@ -205,7 +205,7 @@ export default async function VehicleDetailPage({
                 savedParts={serializedVehicle.savedParts || []}
                 partPresets={serializedVehicle.partPresets || []}
                 vehicle={vehicle}
-                currentKms={serviceSummary?.serviceSummary?.currentKms}
+                serviceSummary={mappedServiceSummary}
               />
             )}
           </div>

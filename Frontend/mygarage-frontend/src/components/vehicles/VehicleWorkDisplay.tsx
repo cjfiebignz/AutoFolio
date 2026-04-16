@@ -21,13 +21,13 @@ import { InlineErrorMessage } from '../ui/ActionFeedback';
 export function VehicleWorkDisplay({ 
   vehicleId, 
   vehicleNickname,
-  workItems,
-  costSummary
+  workItems = [],
+  costSummary = null
 }: { 
   vehicleId: string;
   vehicleNickname: string;
-  workItems: WorkJobViewModel[];
-  costSummary: LifetimeCostSummary | null;
+  workItems?: WorkJobViewModel[];
+  costSummary?: LifetimeCostSummary | null;
 }) {
   const displayCurrency = costSummary?.preferredCurrencyDisplay ?? 'AUD';
   const doneCost = costSummary?.totalDoneWorkCost ?? 0;

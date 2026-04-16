@@ -20,11 +20,11 @@ import { InlineErrorMessage } from '../ui/ActionFeedback';
 export function VehicleDocumentsDisplay({ 
   vehicleId, 
   vehicleNickname,
-  documents 
+  documents = []
 }: { 
   vehicleId: string;
   vehicleNickname: string;
-  documents: DocumentViewModel[] 
+  documents?: DocumentViewModel[] 
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();

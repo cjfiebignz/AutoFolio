@@ -1,5 +1,6 @@
 import { UserVehicle } from "@/types/autofolio";
 import { formatDisplayDate } from "@/lib/date-utils";
+import { ServiceSummaryViewModel, mapToServiceSummaryViewModel } from "./service";
 
 export interface VehicleViewModel {
   id: string;
@@ -29,7 +30,7 @@ export interface VehicleViewModel {
   lockReason?: string | null;
   publicShareEnabled: boolean;
   publicShareToken?: string | null;
-  serviceSummary?: UserVehicle['serviceSummary'];
+  serviceSummary: ServiceSummaryViewModel | null;
 }
 
 export function mapToVehicleViewModel(raw: UserVehicle): VehicleViewModel {
@@ -80,6 +81,6 @@ export function mapToVehicleViewModel(raw: UserVehicle): VehicleViewModel {
     lockReason: raw.lockReason,
     publicShareEnabled: !!raw.publicShareEnabled,
     publicShareToken: raw.publicShareToken,
-    serviceSummary: raw.serviceSummary
+    serviceSummary: mapToServiceSummaryViewModel(raw.serviceSummary)
   };
 }

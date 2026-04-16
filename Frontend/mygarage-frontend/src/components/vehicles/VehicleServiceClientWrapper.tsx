@@ -1,14 +1,14 @@
 'use client';
 
-import { ServiceEntryViewModel } from "@/lib/mappers/service";
+import { ServiceEntryViewModel, ServiceSummaryViewModel } from "@/lib/mappers/service";
 import { VehicleServiceDisplay } from "./VehicleServiceDisplay";
-import { ServiceSummary, LifetimeCostSummary } from "@/types/autofolio";
+import { LifetimeCostSummary } from "@/types/autofolio";
 
 interface VehicleServiceClientWrapperProps {
   vehicleId: string;
   vehicleNickname: string;
   services: ServiceEntryViewModel[];
-  serviceSummary: ServiceSummary | null;
+  serviceSummary: ServiceSummaryViewModel | null;
   costSummary: LifetimeCostSummary | null;
 }
 

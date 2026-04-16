@@ -22,15 +22,15 @@ import { InlineErrorMessage } from '../ui/ActionFeedback';
 export function VehicleServiceDisplay({ 
   vehicleId, 
   vehicleNickname,
-  services,
-  serviceSummary,
-  costSummary
+  services = [],
+  serviceSummary = null,
+  costSummary = null
 }: { 
   vehicleId: string;
   vehicleNickname: string;
-  services: ServiceEntryViewModel[];
-  serviceSummary: ServiceSummaryViewModel | null;
-  costSummary: LifetimeCostSummary | null;
+  services?: ServiceEntryViewModel[];
+  serviceSummary?: ServiceSummaryViewModel | null;
+  costSummary?: LifetimeCostSummary | null;
 }) {
   const displayCurrency = costSummary?.preferredCurrencyDisplay ?? 'AUD';
 

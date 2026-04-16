@@ -26,7 +26,7 @@ interface VehiclePhotosDisplayProps {
 
 export function VehiclePhotosDisplay({ 
   vehicleId, 
-  photos,
+  photos = [],
   bannerImageUrl,
   bannerCropX,
   bannerCropY,

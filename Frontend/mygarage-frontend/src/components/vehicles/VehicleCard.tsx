@@ -48,7 +48,7 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
     vehicle,
     reminders,
     documents,
-    serviceSummary: rawVehicle.serviceSummary
+    serviceSummary: vehicle.serviceSummary
   });
 
   // Normalize coordinates (legacy 0-100 to 0-1)
@@ -164,11 +164,11 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
               <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isLocked ? 'text-white/10' : 'text-white/30'}`}>
                 {vehicle.licensePlate}
               </p>
-              {!isLocked && rawVehicle.serviceSummary && (
+              {!isLocked && vehicle.serviceSummary && (
                 <>
                   <span className="h-1 w-1 rounded-full bg-white/20" />
                   <MaintenanceStatusBadge 
-                    status={rawVehicle.serviceSummary.status as MaintenanceStatus} 
+                    status={vehicle.serviceSummary.status as MaintenanceStatus} 
                     size="sm" 
                     className="py-0.5 px-2" 
                   />

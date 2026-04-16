@@ -4,6 +4,7 @@ import { VehiclePartsDisplay } from "./VehiclePartsDisplay";
 import { UserVehicleCustomSpec, SavedPart, PartPreset } from "@/types/autofolio";
 import { VehicleViewModel } from "@/lib/mappers/vehicle";
 import { TabIntroBlurb } from '../ui/TabIntroBlurb';
+import { ServiceSummaryViewModel } from "@/lib/mappers/service";
 import { Database, Info } from 'lucide-react';
 
 export function VehicleSpecsDisplay({ 
@@ -13,7 +14,7 @@ export function VehicleSpecsDisplay({
   savedParts = [],
   partPresets = [],
   vehicle,
-  currentKms
+  serviceSummary
 }: { 
   vehicleId: string;
   specs: SpecsViewModel | null;
@@ -21,9 +22,10 @@ export function VehicleSpecsDisplay({
   savedParts?: SavedPart[];
   partPresets?: PartPreset[];
   vehicle: VehicleViewModel;
-  currentKms?: number | null;
+  serviceSummary?: ServiceSummaryViewModel | null;
 }) {
   const hasReferenceData = !!specs && !!specs.master.make && !!specs.master.model;
+  const currentKms = serviceSummary?.currentOdometer;
 
   return (
     <div className="space-y-12 pb-12">

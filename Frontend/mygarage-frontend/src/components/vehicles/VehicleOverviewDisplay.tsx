@@ -16,7 +16,8 @@ import {
   ArrowRight, 
   Trash2,
   X,
-  Loader2
+  Loader2,
+  Landmark
 } from 'lucide-react';
 import { VehicleViewModel } from "@/lib/mappers/vehicle";
 import { ServiceEntryViewModel, ServiceSummaryViewModel } from "@/lib/mappers/service";
@@ -47,12 +48,12 @@ interface OverviewProps {
 
 export function VehicleOverviewDisplay({ 
   vehicle, 
-  services, 
-  workItems, 
-  documents,
-  rawReminders,
-  serviceSummary,
-  costSummary
+  services = [], 
+  workItems = [], 
+  documents = [],
+  rawReminders = [],
+  serviceSummary = null,
+  costSummary = null
 }: OverviewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -60,7 +61,7 @@ export function VehicleOverviewDisplay({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   // Map reminders on the client-side to ensure "now" is consistent with other UI checks
-  const reminders = mapToRemindersViewModel(rawReminders);
+  const reminders = mapToRemindersViewModel(rawReminders || []);
 
   const handleMarkReminderDone = async (reminderId: string) => {
     try {
@@ -240,7 +241,7 @@ export function VehicleOverviewDisplay({
         <h3 className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Management Command</h3>
         
         {/* Primary Actions Grid */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           <ActionButton 
             href={`/vehicles/${vehicle.id}/service/new`}
             icon={<Plus size={20} strokeWidth={3} />}
@@ -255,6 +256,16 @@ export function VehicleOverviewDisplay({
             href={`/vehicles/${vehicle.id}/reminders/new`}
             icon={<Bell size={18} />}
             label="Set Reminder"
+          />
+          <ActionButton 
+            href={`/vehicles/${vehicle.id}/registration`}
+            icon={<Landmark size={18} />}
+            label="Registration"
+          />
+          <ActionButton 
+            href={`/vehicles/${vehicle.id}/insurance`}
+            icon={<ShieldCheck size={18} />}
+            label="Insurance"
           />
           <ActionButton 
             href={`/vehicles/${vehicle.id}/documents/new`}
