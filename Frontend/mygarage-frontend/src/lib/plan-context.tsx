@@ -2,9 +2,10 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { getUserPreferences } from './api';
+import { getUserPreferences, getUserVehicles } from './api';
 import { getEntitlements, PlanEntitlements, PlanTier } from './entitlements';
 import { PremiumUpgradeModal } from '@/components/ui/PremiumUpgradeModal';
+import { UserVehicle } from '@/types/autofolio';
 
 interface UpgradeModalOptions {
   title?: string;
@@ -20,6 +21,7 @@ interface UpgradeModalOptions {
 
 interface PlanContextType {
   plan: PlanEntitlements | null;
+  vehicles: UserVehicle[];
   vehicleCount: number;
   isLimitReached: boolean;
   canAddVehicle: boolean;
@@ -34,6 +36,7 @@ const PlanContext = createContext<PlanContextType | undefined>(undefined);
 export function PlanProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
   const [plan, setPlan] = useState<PlanEntitlements | null>(null);
+  const [vehicles, setVehicles] = useState<UserVehicle[]>([]);
   const [vehicleCount, setVehicleCount] = useState(0);
   const [canAddVehicle, setCanAddVehicle] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -49,8 +52,15 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      // 1. Fetch preferences for plan entitlements
       const prefs = await getUserPreferences(session.user.id);
       
+      // 2. Fetch real vehicle collection (Source of Truth for Daily status)
+      const vehicleList = await getUserVehicles(session.user.id);
+      setVehicles(vehicleList);
+      
+      console.log("[PlanContext] Vehicles refreshed:", vehicleList.length, "Daily vehicle:", vehicleList.find(v => v.isDaily)?.nickname);
+
       // Map backend tier to entitlements (feature flags)
       const baseEntitlements = getEntitlements(prefs.plan as PlanTier);
       
@@ -63,6 +73,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         canUseSpecHub: prefs.limits?.canUseSpecHub ?? baseEntitlements.canUseSpecHub,
         canExportPdf: prefs.limits?.canExportPdf ?? baseEntitlements.canExportPdf,
         canExportZip: prefs.limits?.canExportZip ?? baseEntitlements.canExportZip,
+        canSharePublicReport: prefs.limits?.canSharePublicReport ?? baseEntitlements.canSharePublicReport,
         canSharePublicReport: prefs.limits?.canSharePublicReport ?? baseEntitlements.canSharePublicReport,
         canImportSpecCsv: prefs.limits?.canImportSpecCsv ?? baseEntitlements.canImportSpecCsv,
       };
@@ -122,6 +133,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   return (
     <PlanContext.Provider value={{ 
       plan, 
+      vehicles,
       vehicleCount, 
       isLimitReached, 
       canAddVehicle,

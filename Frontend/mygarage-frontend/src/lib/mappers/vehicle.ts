@@ -30,6 +30,7 @@ export interface VehicleViewModel {
   lockReason?: string | null;
   publicShareEnabled: boolean;
   publicShareToken?: string | null;
+  isDaily: boolean;
   serviceSummary: ServiceSummaryViewModel | null;
 }
 
@@ -81,6 +82,7 @@ export function mapToVehicleViewModel(raw: UserVehicle): VehicleViewModel {
     lockReason: raw.lockReason,
     publicShareEnabled: !!raw.publicShareEnabled,
     publicShareToken: raw.publicShareToken,
+    isDaily: !!raw.isDaily,
     serviceSummary: mapToServiceSummaryViewModel(raw.serviceSummary)
   };
 }

@@ -28,7 +28,11 @@ model User {
   updatedAt       DateTime  @updatedAt
   accounts        Account[]
   sessions        Session[]
-  vehicles        UserVehicle[]
+  vehicles        UserVehicle[] @relation("UserVehicles")
+  
+  // Daily Vehicle Reference (Canonical Source of Truth)
+  dailyVehicleId  String?       @unique
+  dailyVehicle    UserVehicle?  @relation("DailyVehicle", fields: [dailyVehicleId], references: [id], onDelete: SetNull)
 }
 
 model Account {
@@ -70,8 +74,11 @@ model VerificationToken {
 model UserVehicle {
   id              String             @id @default(uuid())
   userId          String
-  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User               @relation("UserVehicles", fields: [userId], references: [id], onDelete: Cascade)
   
+  // Daily vehicle relationship (back-reference)
+  dailyForUser    User?              @relation("DailyVehicle")
+
   // Public SpecHUB identifier (e.g., 'TOY-COR-2022-HYB')
   // Nullable for custom or unlinked vehicles
   specId          String?            

@@ -185,6 +185,7 @@ export interface UserVehicle {
   publicShareToken?: string | null;
   publicShareEnabled: boolean;
   publicShareCreatedAt?: string | null;
+  isDaily: boolean;
   serviceSummary?: {
     currentKms: number | null;
     baselineSource: 'main_service' | 'settings_baseline' | 'none' | null;

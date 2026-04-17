@@ -178,6 +178,7 @@ export interface CreateVehicleData {
   vin?: string;
   specId?: string;
   userId: string;
+  isDaily?: boolean;
 }
 
 export interface UpdateVehicleData {
@@ -191,6 +192,7 @@ export interface UpdateVehicleData {
   currentOdometer?: number | null;
   serviceIntervalKms?: number | null;
   serviceIntervalMonths?: number | null;
+  isDaily?: boolean;
 }
 
 export async function createVehicle(data: CreateVehicleData): Promise<UserVehicle> {
@@ -230,6 +232,19 @@ export async function updateVehicle(id: string, data: UpdateVehicleData): Promis
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to update vehicle');
+  }
+
+  return response.json();
+}
+
+export async function setVehicleDaily(id: string): Promise<UserVehicle> {
+  const response = await fetch(`${API_BASE_URL}/user-vehicles/${id}/set-daily`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to set vehicle as daily');
   }
 
   return response.json();

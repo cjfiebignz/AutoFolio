@@ -16,6 +16,7 @@ import {
   VehicleBanner, 
   BannerStatusWrapper, 
   BannerStatusLabel, 
+  BannerDailyBadge,
   BannerNickname, 
   BannerSubheading, 
   BannerPlate, 
@@ -126,6 +127,10 @@ export default async function VehicleDetailPage({
               {vehicle.status}
             </BannerStatusLabel>
           </BannerStatusWrapper>
+
+          {vehicle.isDaily && (
+            <BannerDailyBadge />
+          )}
 
           {mappedServiceSummary?.status && (
             <MaintenanceStatusBadge status={mappedServiceSummary.status as MaintenanceStatus} />

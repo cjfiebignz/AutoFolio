@@ -1,9 +1,13 @@
-import { IsString, IsOptional, IsUUID, IsInt, Min, Max, IsDate } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsInt, Min, Max, IsDate, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateUserVehicleDto {
   @IsUUID()
   userId: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isDaily?: boolean;
 
   @IsString()
   @IsOptional()

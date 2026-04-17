@@ -111,11 +111,109 @@ export class UserVehicleService {
     return this.getUserPreferences(userId);
   }
 
+  async getDailyUsageSummary(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { dailyVehicleId: true },
+    });
+
+    if (!user || !user.dailyVehicleId) {
+      return {
+        dailyVehicleId: null,
+        hasDailyVehicle: false,
+        hasUsageData: false,
+        currentStreak: 0,
+        lastLoggedAt: null,
+        activeDaysLast7: 0,
+      };
+    }
+
+    // Get odometer readings for the daily vehicle
+    // We only need the last ~30 readings to compute a current streak and last 7 days activity
+    const readings = await this.prisma.odometerReading.findMany({
+      where: { vehicleId: user.dailyVehicleId },
+      orderBy: { readingDate: 'desc' },
+      take: 50,
+      select: { readingDate: true },
+    });
+
+    if (readings.length === 0) {
+      return {
+        dailyVehicleId: user.dailyVehicleId,
+        hasDailyVehicle: true,
+        hasUsageData: false,
+        currentStreak: 0,
+        lastLoggedAt: null,
+        activeDaysLast7: 0,
+      };
+    }
+
+    const lastLoggedAt = readings[0].readingDate;
+
+    // Helper to get date string in YYYY-MM-DD format (UTC)
+    const toDateKey = (date: Date) => date.toISOString().split('T')[0];
+
+    // Unique days logged
+    const loggedDays = new Set(readings.map(r => toDateKey(r.readingDate)));
+    const sortedLoggedDays = Array.from(loggedDays).sort((a, b) => b.localeCompare(a));
+
+    const today = new Date();
+    const todayKey = toDateKey(today);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayKey = toDateKey(yesterday);
+
+    let currentStreak = 0;
+    const latestLoggedDay = sortedLoggedDays[0];
+
+    // Streak logic:
+    // If user logged today OR yesterday, the streak is alive.
+    // If they last logged before yesterday, streak is 0.
+    if (latestLoggedDay === todayKey || latestLoggedDay === yesterdayKey) {
+      currentStreak = 1;
+      let checkDate = new Date(latestLoggedDay);
+      
+      for (let i = 1; i < sortedLoggedDays.length; i++) {
+        checkDate.setDate(checkDate.getDate() - 1);
+        const expectedKey = toDateKey(checkDate);
+        
+        if (sortedLoggedDays[i] === expectedKey) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Active days in last 7 days
+    let activeDaysLast7 = 0;
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoKey = toDateKey(sevenDaysAgo);
+
+    for (const dayKey of sortedLoggedDays) {
+      if (dayKey >= sevenDaysAgoKey) {
+        activeDaysLast7++;
+      } else {
+        break;
+      }
+    }
+
+    return {
+      dailyVehicleId: user.dailyVehicleId,
+      hasDailyVehicle: true,
+      hasUsageData: true,
+      currentStreak,
+      lastLoggedAt,
+      activeDaysLast7,
+    };
+  }
+
   async create(dto: CreateUserVehicleDto) {
     // Diagnostic: Check if user exists first to give a better error message
     const user = await this.prisma.user.findUnique({
       where: { id: dto.userId },
-      select: { id: true, plan: true }
+      select: { id: true, dailyVehicleId: true, plan: true }
     });
 
     if (!user) {
@@ -153,7 +251,7 @@ export class UserVehicleService {
     }
 
     try {
-      return await this.prisma.userVehicle.create({
+      const newVehicle = await this.prisma.userVehicle.create({
         data: {
           userId: dto.userId,
           specId: dto.specId,
@@ -170,6 +268,20 @@ export class UserVehicleService {
           serviceSettingsBaseKms: dto.serviceSettingsBaseKms,
         },
       });
+
+      // Daily Vehicle Assignment Logic
+      // 1. If explicitly requested
+      // 2. OR if it's the user's ONLY active vehicle (first vehicle created)
+      const currentDailyId = user.dailyVehicleId;
+      if (dto.isDaily || !currentDailyId) {
+        await this.prisma.user.update({
+          where: { id: dto.userId },
+          data: { dailyVehicleId: newVehicle.id }
+        });
+        return { ...newVehicle, isDaily: true };
+      }
+
+      return { ...newVehicle, isDaily: false };
     } catch (err: any) {
       throw err;
     }
@@ -199,7 +311,8 @@ export class UserVehicleService {
     }
     
     // Prepare update data
-    const updateData: Prisma.UserVehicleUpdateInput = { ...dto };
+    const { isDaily, ...rest } = dto;
+    const updateData: Prisma.UserVehicleUpdateInput = { ...rest };
 
     // Baseline fallback logic:
     // If ANY service settings are being updated AND no main service exists yet, 
@@ -229,6 +342,14 @@ export class UserVehicleService {
       where: { id: vehicle.id },
       data: updateData,
     });
+
+    // Daily Vehicle Assignment Logic
+    if (isDaily === true) {
+      await this.prisma.user.update({
+        where: { id: vehicle.userId },
+        data: { dailyVehicleId: vehicle.id }
+      });
+    }
 
     // If currentOdometer was updated manually, record it in history as 'manual'
     if (dto.currentOdometer !== undefined && dto.currentOdometer !== null) {
@@ -278,6 +399,11 @@ export class UserVehicleService {
   }
 
   async findAllByUser(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { dailyVehicleId: true }
+    });
+
     const vehicles = await this.prisma.userVehicle.findMany({
       where: {
         userId,
@@ -354,6 +480,7 @@ export class UserVehicleService {
       const serviceSummary = this.calculateServiceSummary(v);
       return {
         ...v,
+        isDaily: v.id === user?.dailyVehicleId,
         isLocked: lockedIds.includes(v.id),
         lockReason: lockedIds.includes(v.id) ? reason : null,
         serviceSummary,
@@ -501,6 +628,7 @@ export class UserVehicleService {
     const vehicle = await this.prisma.userVehicle.findUnique({
       where: { id },
       include: {
+        user: { select: { dailyVehicleId: true, plan: true } },
         attributes: true,
         odometers: {
           where: { source: 'manual' },
@@ -583,10 +711,32 @@ export class UserVehicleService {
       });
     }
 
+    const { user, ...vehicleData } = vehicle;
+
     return {
-      ...vehicle,
+      ...vehicleData,
+      isDaily: vehicle.id === user.dailyVehicleId,
       serviceSummary: this.calculateServiceSummary(vehicle),
     };
+  }
+
+  async setDailyVehicle(userId: string, vehicleId: string) {
+    // 1. Validate vehicle ownership and existence
+    const vehicle = await this.prisma.userVehicle.findUnique({
+      where: { id: vehicleId }
+    });
+
+    if (!vehicle || vehicle.userId !== userId) {
+      throw new NotFoundException('Vehicle not found or does not belong to this user.');
+    }
+
+    // 2. Update user's daily vehicle reference
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { dailyVehicleId: vehicleId }
+    });
+
+    return { success: true, dailyVehicleId: vehicleId };
   }
 
   async createServiceEvent(vehicleId: string, dto: CreateServiceEventDto) {

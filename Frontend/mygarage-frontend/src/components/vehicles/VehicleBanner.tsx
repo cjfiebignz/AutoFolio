@@ -128,6 +128,22 @@ export function BannerStatusLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+export function BannerDailyBadge() {
+  const contrast = useHeroContrast();
+  const styles = {
+    dark: 'bg-blue-600/10 text-blue-700 border-blue-600/20',
+    light: 'bg-blue-500/20 text-blue-100 border-white/20',
+    none: 'bg-blue-600/10 text-blue-600 dark:text-blue-400 border-blue-600/10'
+  };
+
+  return (
+    <div className={`flex items-center gap-1.5 rounded-full border px-2 py-0.5 transition-colors duration-500 ${styles[contrast]}`}>
+      <div className={`h-1 w-1 rounded-full ${contrast === 'light' ? 'bg-blue-300' : 'bg-blue-600'}`} />
+      <span className="text-[8px] font-black uppercase tracking-widest">Daily</span>
+    </div>
+  );
+}
+
 export function BannerNickname({ children }: { children: React.ReactNode }) {
   const contrast = useHeroContrast();
   const styles = {

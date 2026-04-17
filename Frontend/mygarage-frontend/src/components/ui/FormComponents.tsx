@@ -80,6 +80,39 @@ export function FormTextArea({ label, ...props }: FormTextAreaProps) {
   );
 }
 
+interface FormToggleProps {
+  label: string;
+  description?: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+}
+
+export function FormToggle({ label, description, checked, onChange, disabled }: FormToggleProps) {
+  return (
+    <div className={`flex items-center justify-between gap-4 rounded-2xl border border-border-subtle bg-foreground/[0.01] p-4 transition-all ${disabled ? 'opacity-50 grayscale' : 'hover:bg-foreground/[0.03]'}`}>
+      <div className="space-y-0.5">
+        <p className="text-sm font-bold text-foreground opacity-80">{label}</p>
+        {description && <p className="text-[10px] font-medium text-muted leading-relaxed italic">{description}</p>}
+      </div>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+          checked ? 'bg-blue-600' : 'bg-foreground/10'
+        } ${disabled ? 'cursor-not-allowed' : ''}`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+            checked ? 'translate-x-5' : 'translate-x-0'
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
 export function FormSection({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className="space-y-4">

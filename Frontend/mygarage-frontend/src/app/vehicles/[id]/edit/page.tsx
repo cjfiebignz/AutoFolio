@@ -7,20 +7,33 @@ import { useSession } from "next-auth/react";
 import { getUserVehicleWithSpecs, updateVehicle, UpdateVehicleData } from '@/lib/api';
 import { usePlan } from '@/lib/plan-context';
 import { UserVehicle } from '@/types/autofolio';
-import { FormInput, FormSection } from '@/components/ui/FormComponents';
+import { FormInput, FormSection, FormToggle } from '@/components/ui/FormComponents';
 import { AppFooterBrand } from '@/components/AppFooterBrand';
-import { Car, Cpu, ArrowLeft } from 'lucide-react';
+import { Car, Cpu, ArrowLeft, AlertCircle } from 'lucide-react';
+import { useActionConfirm } from '@/lib/use-action-confirm';
 
 export default function EditVehiclePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { refreshPlan } = usePlan();
+  const { refreshPlan, vehicles } = usePlan();
+  const safeVehicles = vehicles ?? [];
   
   const [vehicle, setVehicle] = useState<UserVehicle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Daily vehicle state
+  const [isDaily, setIsDaily] = useState(false);
+  const [existingDaily, setExistingDaily] = useState<any>(null);
+  const [hasConfirmedSwap, setHasConfirmedSwap] = useState(false);
+
+  const { 
+    confirmState: confirmSwap, 
+    enterConfirm: enterSwapConfirm, 
+    cancelConfirm: cancelSwapConfirm 
+  } = useActionConfirm();
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -42,6 +55,8 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
         }
 
         setVehicle(serializedVehicle);
+        // Explicitly set local toggle state from backend source
+        setIsDaily(Boolean(serializedVehicle.isDaily));
       } catch (err: any) {
         setError(err.message || 'Failed to load vehicle');
       } finally {
@@ -54,9 +69,50 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
     }
   }, [id, status, session, router]);
 
+  // Detect existing daily vehicle (excluding the current one being edited)
+  useEffect(() => {
+    const daily = safeVehicles.find(v => v.isDaily && v.id !== id);
+    setExistingDaily(daily || null);
+  }, [safeVehicles, id]);
+
+  const handleDailyToggle = (checked: boolean) => {
+    // If disabling, just set it and reset confirmation
+    if (!checked) {
+      setIsDaily(false);
+      setHasConfirmedSwap(false);
+      return;
+    }
+
+    // If enabling and another vehicle is already daily, trigger swap confirmation
+    if (checked && existingDaily) {
+      enterSwapConfirm();
+    } else {
+      setIsDaily(true);
+      setHasConfirmedSwap(false);
+    }
+  };
+
+  const onConfirmSwap = () => {
+    setIsDaily(true);
+    setHasConfirmedSwap(true);
+    cancelSwapConfirm();
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    // MANDATORY SWAP GATE: Block submission if user enabled Daily but hasn't confirmed the swap
+    // AND another existing daily actually exists in the collection.
+    // AND the vehicle wasn't already Daily.
+    if (isDaily && existingDaily && !hasConfirmedSwap && !vehicle?.isDaily) {
+        if (!confirmSwap) {
+          enterSwapConfirm();
+          return;
+        }
+        setError("Please confirm the Daily Vehicle swap before saving.");
+        return;
+    }
 
     setIsSubmitting(true);
     setError(null);
@@ -72,6 +128,7 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
       licensePlate: formData.get('licensePlate') as string,
       vin: (formData.get('vin') as string) || undefined,
       specId: (formData.get('specId') as string) || undefined,
+      isDaily: isDaily
     };
 
     try {
@@ -192,6 +249,51 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
               />
             </div>
           </FormSection>
+
+          {/* Daily Vehicle Toggle */}
+          <section className="space-y-4">
+            <FormToggle 
+              label="Daily Vehicle"
+              description="Designate this as your primary vehicle for mileage tracking and highlights."
+              checked={isDaily}
+              onChange={handleDailyToggle}
+              disabled={isSubmitting}
+            />
+            
+            {confirmSwap && (
+              <div className="rounded-[24px] border border-blue-500/20 bg-blue-500/5 p-6 animate-in zoom-in-95 duration-300 shadow-premium">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+                    <AlertCircle size={20} />
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    <div>
+                      <h4 className="text-sm font-black uppercase tracking-tight text-foreground">Make this your Daily vehicle?</h4>
+                      <p className="text-[11px] font-medium text-muted leading-relaxed italic">
+                        <span className="font-bold text-foreground">"{existingDaily?.nickname || 'Current Daily'}"</span> will no longer be your Daily vehicle. Only one vehicle can hold this status.
+                      </p>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={onConfirmSwap}
+                        className="flex-1 h-10 rounded-xl bg-blue-600 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-blue-500 active:scale-95 shadow-lg"
+                      >
+                        Confirm Swap
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelSwapConfirm}
+                        className="flex-1 h-10 rounded-xl bg-card-overlay border border-border-subtle text-[10px] font-black uppercase tracking-widest text-muted transition-all hover:bg-card-overlay-hover active:scale-95"
+                      >
+                        Keep Existing
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
 
           <FormSection title="Technical Details" icon={<Cpu size={14} />}>
             <FormInput 

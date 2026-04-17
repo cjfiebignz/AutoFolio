@@ -176,6 +176,14 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
             {vehicle.isActive && !isLocked && (
               <span className={`h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)] ${isAdaptiveDark ? 'opacity-80' : ''}`} />
             )}
+            {rawVehicle.isDaily && !isLocked && (
+              <div className={`flex items-center gap-1 rounded-full border px-2 py-0.5 transition-colors duration-500 ${
+                isAdaptiveDark ? 'bg-blue-600/10 text-blue-700 border-blue-600/20' : 'bg-blue-500/20 text-blue-100 border-white/20'
+              }`}>
+                <div className={`h-1 w-1 rounded-full ${isAdaptiveDark ? 'bg-blue-600' : 'bg-blue-300'}`} />
+                <span className="text-[8px] font-black uppercase tracking-widest">Daily</span>
+              </div>
+            )}
             {isLocked && (
               <div className="flex items-center gap-1.5 rounded-full bg-card-overlay px-2.5 py-1 border border-subtle shadow-sm">
                 <Lock size={10} className="text-muted" />

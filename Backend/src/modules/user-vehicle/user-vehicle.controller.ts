@@ -34,6 +34,11 @@ export class UserVehicleController {
     return this.userVehicleService.findAllByUser(userId);
   }
 
+  @Get('daily/usage-summary')
+  async getDailyUsageSummary(@Body('userId') userId: string) {
+    return this.userVehicleService.getDailyUsageSummary(userId);
+  }
+
   @Get(':id/specs')
   async getVehicleSpecs(@Param('id') id: string) {
     return this.userVehicleService.getVehicleWithSpecs(id);
@@ -47,6 +52,11 @@ export class UserVehicleController {
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateUserVehicleDto: UpdateUserVehicleDto) {
     return this.userVehicleService.update(id, updateUserVehicleDto);
+  }
+
+  @Post(':id/set-daily')
+  async setDaily(@Param('id') id: string, @Body('userId') userId: string) {
+    return this.userVehicleService.setDailyVehicle(userId, id);
   }
 
   @Delete(':id')
