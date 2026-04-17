@@ -29,12 +29,12 @@ export default async function HomePage({
 
         {/* Wordmark & Slogan */}
         <header className="mb-16 space-y-6 max-w-2xl">
-          <h1 className="text-6xl font-extrabold tracking-tighter sm:text-8xl uppercase italic drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] dark:drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] light:drop-shadow-none">
-            <span className="text-white dark:text-white light:text-foreground">Auto</span>
-            <span className="text-white/50 dark:text-white/50 light:text-muted">Folio</span>
+          <h1 className="text-6xl font-extrabold tracking-tighter sm:text-8xl uppercase italic drop-shadow-[0_0_30px_var(--border-subtle)]">
+            <span className="text-foreground">Auto</span>
+            <span className="text-muted">Folio</span>
           </h1>
 
-          <p className="mx-auto max-w-xs text-sm sm:text-base font-medium leading-relaxed text-white/40 dark:text-white/40 light:text-muted tracking-[0.2em] uppercase">
+          <p className="mx-auto max-w-xs text-sm sm:text-base font-medium leading-relaxed text-muted tracking-[0.2em] uppercase">
             All your vehicles, one place.
           </p>
         </header>

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createVehicle } from '@/lib/api';
 import { FormInput, FormSection } from '@/components/ui/FormComponents';
-import { Car, Cpu, Plus, X } from 'lucide-react';
+import { Car, Cpu, Plus, X, Lock } from 'lucide-react';
 import { useVehicleLimitGate } from '@/lib/limit-gate';
 import { usePlan } from '@/lib/plan-context';
 
@@ -85,7 +85,7 @@ export function VehicleRegistrationForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-10 pb-12">
       {error && (
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-xs font-bold text-red-400 animate-in fade-in slide-in-from-top-1">
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-xs font-bold text-red-600 dark:text-red-400 animate-in fade-in slide-in-from-top-1">
           {error}
         </div>
       )}
@@ -157,37 +157,37 @@ export function VehicleRegistrationForm() {
             className="space-y-2 cursor-pointer group/spec"
             onClick={() => checkLimit(100, 1, () => {})}
           >
-            <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 ml-1">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-40 ml-1">
               SpecHUB ID (Optional)
             </label>
             <div className="relative flex items-center">
-              <div className="h-12 w-full rounded-2xl border border-white/5 bg-white/[0.01] px-4 flex items-center justify-between transition-all group-hover/spec:bg-white/[0.03] group-hover/spec:border-blue-500/20 group-hover/spec:shadow-[0_0_20px_rgba(59,130,246,0.05)]">
-                <span className="text-sm font-bold text-white/10 italic">Unlock with Pro</span>
-                <Lock size={14} className="text-white/10 group-hover/spec:text-blue-400/40 transition-colors" />
+              <div className="h-12 w-full rounded-2xl border border-border-subtle bg-foreground/[0.01] px-4 flex items-center justify-between transition-all group-hover/spec:bg-foreground/[0.03] group-hover/spec:border-blue-500/20 group-hover/spec:shadow-[0_0_20px_rgba(59,130,246,0.05)]">
+                <span className="text-sm font-bold text-muted opacity-20 italic">Unlock with Pro</span>
+                <Lock size={14} className="text-muted opacity-20 group-hover/spec:text-blue-500/40 transition-colors" />
               </div>
             </div>
           </div>
         )}
         
         <div className="px-1">
-          <p className="text-[9px] font-medium text-white/20 italic">
+          <p className="text-[9px] font-medium text-dim italic">
             Linking to SpecHUB provides automated technical reference data. {plan?.canUseSpecHub ? "You can skip this and add specs manually later." : "Upgrade to Pro to increase this limit and unlock automated technical reference data."}
           </p>
         </div>
       </FormSection>
 
       {/* Form Actions */}
-      <footer className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+      <footer className="grid grid-cols-2 gap-4 pt-4 border-t border-border-subtle">
         <Link 
           href="/vehicles"
-          className={`flex h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-sm font-bold text-white transition-all hover:bg-white/10 active:scale-[0.98] ${isSubmitting ? 'pointer-events-none opacity-50' : ''}`}
+          className={`flex h-14 items-center justify-center rounded-2xl border border-border-subtle bg-card-overlay text-sm font-bold text-foreground transition-all hover:bg-card-overlay-hover active:scale-[0.98] ${isSubmitting ? 'pointer-events-none opacity-50' : ''}`}
         >
           Cancel
         </Link>
         <button 
           type="submit"
           disabled={isSubmitting}
-          className="relative flex h-14 items-center justify-center overflow-hidden rounded-2xl bg-white text-sm font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98] disabled:opacity-50"
+          className="relative flex h-14 items-center justify-center overflow-hidden rounded-2xl bg-foreground text-sm font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
         >
           {isSubmitting ? "Registering..." : "Register Vehicle"}
         </button>

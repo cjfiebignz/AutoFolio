@@ -8,6 +8,8 @@ import { BannerCropEditor } from './BannerCropEditor';
 import { normalizeImageUrl } from '@/lib/image-utils';
 import { useActionConfirm } from '@/lib/use-action-confirm';
 import { InlineErrorMessage } from '../ui/ActionFeedback';
+import { useHeroContrast } from './VehicleBanner';
+import React from 'react';
 
 interface VehicleBannerControlsProps {
   vehicleId: string;
@@ -29,6 +31,7 @@ export function VehicleBannerControls({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isBannerAction, setIsBannerAction] = useState(false);
+  const heroContrast = useHeroContrast();
   
   const {
     isActioning: isDeleting,
@@ -109,6 +112,8 @@ export function VehicleBannerControls({
     }
   };
 
+  const isDarkHero = heroContrast === 'dark';
+
   const controls = (
     <div className="flex gap-2">
       {!confirmDelete && (
@@ -119,7 +124,7 @@ export function VehicleBannerControls({
             disabled={isBannerAction || isPending || isDeleting}
             className={`flex h-10 items-center justify-center gap-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 ${
               variant === 'overlay' 
-                ? 'bg-white px-4 text-black shadow-2xl hover:bg-white/90' 
+                ? (isDarkHero ? 'bg-foreground text-background shadow-2xl hover:opacity-90' : 'bg-white px-4 text-black shadow-2xl hover:bg-white/90') 
                 : 'bg-foreground text-background px-6 hover:opacity-90'
             }`}
           >
@@ -133,8 +138,8 @@ export function VehicleBannerControls({
               disabled={isBannerAction || isPending || isDeleting}
               className={`flex h-10 items-center justify-center gap-2 rounded-xl border px-4 text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all active:scale-95 disabled:opacity-50 ${
                 variant === 'overlay'
-                  ? 'bg-white/10 backdrop-blur-xl border-white/10 text-white hover:bg-white/20'
-                  : 'bg-card-overlay border-subtle text-muted hover:bg-card-overlay-hover hover:text-foreground'
+                  ? (isDarkHero ? 'bg-foreground/[0.03] backdrop-blur-xl border-border-subtle text-foreground hover:bg-foreground/10' : 'bg-white/10 backdrop-blur-xl border-white/10 text-white hover:bg-white/20')
+                  : 'bg-card-overlay border-border-subtle text-muted hover:bg-card-overlay-hover hover:text-foreground hover:border-border-strong'
               }`}
             >
               <Move size={14} />
@@ -153,8 +158,8 @@ export function VehicleBannerControls({
               disabled={isBannerAction || isPending || isDeleting}
               className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all border ${
                 variant === 'overlay'
-                  ? 'bg-white/10 text-white/60 hover:text-white border-white/10'
-                  : 'bg-card-overlay text-muted hover:text-foreground border-subtle'
+                  ? (isDarkHero ? 'bg-foreground/5 text-muted hover:text-foreground border-border-subtle' : 'bg-white/10 text-white/60 hover:text-white border-white/10')
+                  : 'bg-card-overlay text-muted hover:text-foreground border-border-subtle hover:border-border-strong'
               }`}
             >
               <X size={16} />
@@ -168,8 +173,8 @@ export function VehicleBannerControls({
               confirmDelete 
                 ? 'bg-red-500 text-white px-4 h-10 text-[9px] font-black uppercase tracking-widest' 
                 : variant === 'overlay'
-                  ? 'bg-black/60 text-white/60 border-white/10 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/20 h-10 w-10'
-                  : 'bg-red-500/10 text-red-500/40 border-red-500/10 hover:bg-red-500/20 hover:text-red-500 h-10 w-10'
+                  ? (isDarkHero ? 'bg-foreground/5 text-red-500/60 border-border-subtle hover:bg-red-500/10 hover:text-red-500 h-10 w-10' : 'bg-black/60 text-white/60 border-white/10 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/20 h-10 w-10')
+                  : 'bg-red-500/10 text-red-500/40 border-border-subtle hover:bg-red-500/20 hover:text-red-500 h-10 w-10'
             }`}
           >
             {isDeleting ? <Loader2 size={14} className="animate-spin" /> : confirmDelete ? 'Confirm Remove' : <Trash2 size={16} />}
@@ -183,15 +188,15 @@ export function VehicleBannerControls({
     return (
       <section className="space-y-4">
         <div className="flex items-center gap-2 px-1">
-          <Layout size={14} className="text-accent opacity-60 dark:text-blue-400/60" />
-          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">Profile Header Settings</h3>
+          <Layout size={14} className="text-muted opacity-40" />
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-40">Profile Header Settings</h3>
         </div>
         
-        <div className="relative overflow-hidden rounded-[32px] border border-subtle bg-card-overlay p-8">
+        <div className="relative overflow-hidden rounded-[32px] border border-border-subtle bg-card-overlay p-8 transition-all hover:bg-card-overlay-hover">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="space-y-1 text-center sm:text-left">
               <p className="text-sm font-bold text-foreground opacity-80">Vehicle Banner Composition</p>
-              <p className="text-[10px] font-medium text-dim uppercase tracking-widest">
+              <p className="text-[10px] font-medium text-muted opacity-40 uppercase tracking-widest">
                 {bannerImageUrl ? 'Custom header active • 16:7 Aspect Ratio' : 'No custom header active'}
               </p>
             </div>
@@ -224,8 +229,8 @@ export function VehicleBannerControls({
           )}
 
           {(isBannerAction || isPending || isDeleting) && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-              <Loader2 className="animate-spin text-white" size={24} />
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-surface/60 backdrop-blur-sm transition-colors duration-500">
+              <Loader2 className="animate-spin text-foreground opacity-40" size={24} />
             </div>
           )}
         </div>
@@ -235,7 +240,7 @@ export function VehicleBannerControls({
 
   return (
     <>
-      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 opacity-100 sm:opacity-0 backdrop-blur-[2px] transition-all sm:group-hover:opacity-100">
+      <div className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-500 ${isDarkHero ? 'bg-surface/40 backdrop-blur-sm' : 'bg-black/40 backdrop-blur-[2px]'} opacity-100 sm:opacity-0 sm:group-hover:opacity-100`}>
         {controls}
         
         <InlineErrorMessage 
@@ -265,8 +270,8 @@ export function VehicleBannerControls({
       )}
 
       {(isBannerAction || isPending || isDeleting) && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <Loader2 className="animate-spin text-white" size={24} />
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-surface/60 backdrop-blur-sm">
+          <Loader2 className="animate-spin text-foreground opacity-40" size={24} />
         </div>
       )}
     </>

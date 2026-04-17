@@ -5,7 +5,7 @@ import { PreferencesProvider } from "@/lib/preferences";
 import { VehicleLimitGateProvider } from "@/lib/limit-gate";
 import { PlanProvider } from "@/lib/plan-context";
 
-export function Providers({ children }: { children: React.Node }) {
+export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <PlanProvider>

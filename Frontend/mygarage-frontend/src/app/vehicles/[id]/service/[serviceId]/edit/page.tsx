@@ -35,17 +35,17 @@ export default function EditServicePage({ params }: { params: Promise<{ id: stri
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+      <div className="flex min-h-screen items-center justify-center bg-surface transition-colors duration-300">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-border-subtle border-t-foreground" />
       </div>
     );
   }
 
   if (error || !service) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-black px-6 text-center">
-        <p className="text-white/40 mb-4 text-sm font-bold uppercase tracking-widest">{error || 'Record not found'}</p>
-        <Link href={`/vehicles/${id}?tab=service`} className="text-white text-xs font-black uppercase tracking-widest underline underline-offset-4 decoration-white/20 hover:decoration-white transition-all">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-surface px-6 text-center text-foreground transition-colors duration-300">
+        <p className="text-muted mb-4 text-sm font-bold uppercase tracking-widest">{error || 'Record not found'}</p>
+        <Link href={`/vehicles/${id}?tab=service`} className="text-foreground text-xs font-black uppercase tracking-widest underline underline-offset-4 decoration-border-subtle hover:decoration-foreground transition-all">
           Back to Service Log
         </Link>
       </div>
@@ -53,25 +53,25 @@ export default function EditServicePage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0b0c] text-white antialiased">
+    <div className="min-h-screen bg-surface text-foreground antialiased transition-colors duration-300">
       <div className="mx-auto max-w-2xl px-6 py-8">
         
         {/* Simple Header */}
         <header className="mb-12 space-y-4">
           <Link 
             href={`/vehicles/${id}?tab=service`}
-            className="group flex items-center gap-2 text-sm font-medium text-white/40 transition-colors hover:text-white"
+            className="group flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
             Cancel
           </Link>
           
           <div className="space-y-1">
-            <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl uppercase italic">
-              Edit <span className="text-white/40">Record</span>
+            <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl uppercase italic text-foreground">
+              Edit <span className="text-muted opacity-40">Record</span>
             </h1>
-            <p className="text-sm font-medium text-white/40">
-              Updating for <span className="text-white/60">{vehicle?.nickname}</span>
+            <p className="text-sm font-medium text-muted">
+              Updating for <span className="text-foreground opacity-60">{vehicle?.nickname}</span>
             </p>
           </div>
         </header>

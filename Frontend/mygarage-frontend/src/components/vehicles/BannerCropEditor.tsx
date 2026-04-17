@@ -111,11 +111,11 @@ export function BannerCropEditor({
             <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Drag to position • Slide to zoom</p>
           </div>
           <button 
-            type="button"
+            type="button" 
             onClick={onCancel}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all"
           >
-            <X size={20} />
+            <X size={24} />
           </button>
         </header>
 

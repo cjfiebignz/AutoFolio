@@ -35,13 +35,13 @@ export function TabIntroBlurb({ tab, title, description }: TabIntroBlurbProps) {
   if (!isVisible) return null;
 
   return (
-    <div className="relative overflow-hidden rounded-[32px] border border-white/5 bg-white/[0.02] p-8 transition-all hover:bg-white/[0.03]">
+    <div className="relative overflow-hidden rounded-[32px] border border-border-subtle bg-card-overlay p-8 transition-all hover:bg-card-overlay-hover">
       {/* Background Glow */}
-      <div className="absolute -inset-4 rounded-full bg-white/[0.01] blur-3xl opacity-50" />
+      <div className="absolute -inset-4 rounded-full bg-foreground/[0.01] blur-3xl opacity-50" />
       
       <div className="relative flex flex-col items-center text-center space-y-6">
-        <p className="text-[11px] font-bold text-white/30 uppercase tracking-[0.15em] leading-relaxed italic max-w-xl">
-          {title && <span className="text-white/40 not-italic font-black mr-2 uppercase tracking-widest">{title}:</span>}
+        <p className="text-[11px] font-bold text-muted uppercase tracking-[0.15em] leading-relaxed italic max-w-xl">
+          {title && <span className="text-foreground opacity-60 not-italic font-black mr-2 uppercase tracking-widest">{title}:</span>}
           {description}
         </p>
         
@@ -50,7 +50,7 @@ export function TabIntroBlurb({ tab, title, description }: TabIntroBlurbProps) {
           <button
             type="button"
             onClick={handleDismiss}
-            className="rounded-full bg-white/5 border border-white/10 px-4 py-2 text-[8px] font-black uppercase tracking-widest text-white/40 transition-all hover:bg-white/10 hover:text-white active:scale-[0.95] shadow-lg"
+            className="rounded-full bg-foreground/5 border border-border-subtle px-4 py-2 text-[8px] font-black uppercase tracking-widest text-muted transition-all hover:bg-foreground/10 hover:text-foreground active:scale-[0.95] shadow-lg"
           >
             Don't show again
           </button>

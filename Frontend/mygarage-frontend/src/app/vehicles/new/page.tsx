@@ -28,14 +28,14 @@ export default async function NewVehiclePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0b0c] text-white antialiased">
+    <div className="min-h-screen bg-surface text-foreground antialiased transition-colors duration-300">
       <div className="mx-auto max-w-2xl px-6 py-12">
         
         {/* Simple Header */}
         <header className="mb-12 space-y-4">
           <Link 
             href="/vehicles"
-            className="group flex items-center gap-2 text-sm font-medium text-white/40 transition-colors hover:text-white"
+            className="group flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
           >
             <svg className="h-4 w-4 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -44,10 +44,10 @@ export default async function NewVehiclePage() {
           </Link>
           
           <div className="space-y-1">
-            <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl">
-              Register Vehicle
+            <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl text-foreground uppercase leading-none">
+              Register <span className="text-muted opacity-40">Vehicle</span>
             </h1>
-            <p className="text-sm font-medium text-white/40">
+            <p className="text-sm font-medium text-muted">
               Add a new vehicle to your collection.
             </p>
           </div>

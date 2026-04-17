@@ -85,79 +85,88 @@ export function ShareReportAction({
   if (variant === 'horizontal') {
     if (isPublic && shareToken) {
       return (
-        <div className={`flex h-14 w-full items-center justify-between gap-3 rounded-2xl border px-6 shadow-lg transition-all ${errorMessage ? 'border-red-500/20 bg-red-500/5' : 'border-blue-500/20 bg-blue-500/5'}`}>
-          <div className="flex items-center gap-3 min-w-0">
-            {errorMessage ? <AlertCircle size={16} className="text-red-400 shrink-0" /> : <LinkIcon size={16} className="text-blue-400 shrink-0" />}
-            <span className={`text-[10px] font-black uppercase tracking-widest truncate ${errorMessage ? 'text-red-400/80' : 'text-blue-400/80'}`}>
-              {errorMessage || "Link Active"}
-            </span>
-          </div>
-          <div className="flex items-center gap-4 shrink-0">
-            <button 
-              type="button"
-              onClick={handleCopyLink}
-              className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors underline underline-offset-4 decoration-white/10"
-            >
-              {showCopyFeedback ? "Copied" : "Copy"}
-            </button>
-            <div className="h-3 w-px bg-white/10" />
-            <button 
-              type="button"
-              onClick={handleToggleShare}
-              disabled={isUpdating || isPending}
-              className="text-[10px] font-black uppercase tracking-widest text-red-400/40 hover:text-red-400 transition-colors"
-            >
-              {isUpdating ? "..." : "Disable"}
-            </button>
+        <div className="w-full">
+          <div className={`flex items-center justify-center gap-2.5 rounded-[24px] border py-3.5 w-full shadow-lg transition-all ${errorMessage ? 'border-red-500/20 bg-red-500/5' : 'border-blue-500/20 bg-blue-500/5'}`}>
+            <div className={`shrink-0 ${errorMessage ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}>
+              {isUpdating ? <Loader2 size={18} className="animate-spin" /> : errorMessage ? <AlertCircle size={18} strokeWidth={2.5} /> : <LinkIcon size={18} strokeWidth={2.5} />}
+            </div>
+            <div className="min-w-0">
+              <span className={`block text-[9px] font-black uppercase tracking-[0.2em] mb-1 ${errorMessage ? 'text-red-600/80 dark:text-red-400/80' : 'text-blue-600/80 dark:text-blue-400/80'}`}>
+                {errorMessage || "Link Active"}
+              </span>
+              <div className="flex items-center gap-3">
+                <button 
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="text-[8px] font-black uppercase tracking-widest text-muted hover:text-foreground transition-colors underline underline-offset-4 decoration-border-subtle"
+                >
+                  {showCopyFeedback ? "Copied" : "Copy"}
+                </button>
+                <button 
+                  type="button"
+                  onClick={handleToggleShare}
+                  disabled={isUpdating || isPending}
+                  className="text-[8px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-600 transition-colors"
+                >
+                  {isUpdating ? "..." : "Disable"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       );
     }
 
     return (
-      <button
-        type="button"
-        onClick={handleToggleShare}
-        disabled={isUpdating || isPending}
-        className={`group flex h-14 w-full items-center justify-center gap-3 rounded-2xl border transition-all active:scale-[0.98] disabled:opacity-50 ${
-          errorMessage ? 'border-red-500/20 bg-red-500/5 text-red-400' : 'border-white/10 bg-white/[0.03] text-white/40 hover:bg-white/[0.06] hover:text-white'
-        }`}
-      >
-        {isUpdating ? <Loader2 size={16} className="animate-spin text-white/20" /> : errorMessage ? <AlertCircle size={16} /> : <Share size={16} className="text-white/20 group-hover:text-white transition-colors" />}
-        <span className="text-[10px] font-black uppercase tracking-widest">
-          {errorMessage || "Share Report"}
-        </span>
-      </button>
+      <div className="w-full">
+        <button
+          type="button"
+          onClick={handleToggleShare}
+          disabled={isUpdating || isPending}
+          className={`group flex items-center justify-center gap-2.5 rounded-[24px] border py-3.5 w-full transition-all active:scale-[0.98] disabled:opacity-50 ${
+            errorMessage ? 'border-red-500/20 bg-red-500/5 text-red-600' : 'border-border-subtle bg-card-overlay text-muted hover:bg-card-overlay-hover hover:text-foreground hover:border-border-strong hover:shadow-premium'
+          }`}
+        >
+          <div className={`shrink-0 transition-all ${errorMessage ? 'text-red-600' : 'text-dim group-hover:text-foreground group-hover:scale-110'}`}>
+            {isUpdating ? <Loader2 size={18} className="animate-spin" /> : errorMessage ? <AlertCircle size={18} /> : <Share size={18} strokeWidth={2.5} />}
+          </div>
+          <span className="text-[9px] font-black uppercase tracking-[0.2em]">
+            {errorMessage || "Share Report"}
+          </span>
+        </button>
+      </div>
     );
   }
 
   if (isPublic && shareToken) {
     return (
-      <div className={`group relative flex flex-col items-center justify-center gap-3 rounded-[24px] border py-6 shadow-xl transition-all ${errorMessage ? 'border-red-500/20 bg-red-500/5' : 'border-blue-500/20 bg-blue-500/5'}`}>
-        <div className={errorMessage ? 'text-red-400' : 'text-blue-400'}>
-          {isUpdating ? <Loader2 size={20} className="animate-spin" /> : errorMessage ? <AlertCircle size={20} strokeWidth={2.5} /> : <LinkIcon size={20} strokeWidth={2.5} />}
-        </div>
-        <div className="text-center space-y-1 px-2">
-          <span className={`block text-[9px] font-black uppercase tracking-[0.2em] ${errorMessage ? 'text-red-400/80' : 'text-blue-400/80'}`}>
-            {errorMessage || "Public link active"}
-          </span>
-          <div className="flex items-center justify-center gap-2">
-            <button 
-              type="button"
-              onClick={handleCopyLink}
-              className="text-[8px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors underline underline-offset-4 decoration-white/10"
-            >
-              {showCopyFeedback ? "Link copied" : "Copy link"}
-            </button>
-            <span className="text-white/10 text-[8px]">•</span>
-            <button 
-              type="button"
-              onClick={handleToggleShare}
-              disabled={isUpdating || isPending}
-              className="text-[8px] font-black uppercase tracking-widest text-red-400/40 hover:text-red-400 transition-colors"
-            >
-              {isUpdating ? "..." : "Disable"}
-            </button>
+      <div className="w-full">
+        <div className={`group relative flex items-center justify-center gap-2.5 rounded-[24px] border py-3.5 w-full shadow-xl transition-all ${errorMessage ? 'border-red-500/20 bg-red-500/5' : 'border-blue-500/20 bg-blue-500/5'}`}>
+          <div className={`shrink-0 ${errorMessage ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}>
+            {isUpdating ? <Loader2 size={18} className="animate-spin" /> : errorMessage ? <AlertCircle size={18} strokeWidth={2.5} /> : <LinkIcon size={18} strokeWidth={2.5} />}
+          </div>
+          <div className="min-w-0 space-y-1">
+            <span className={`block text-[9px] font-black uppercase tracking-[0.2em] ${errorMessage ? 'text-red-600/80 dark:text-red-400/80' : 'text-blue-600/80 dark:text-blue-400/80'}`}>
+              {errorMessage || "Public link active"}
+            </span>
+            <div className="flex items-center gap-2">
+              <button 
+                type="button"
+                onClick={handleCopyLink}
+                className="text-[8px] font-black uppercase tracking-widest text-muted hover:text-foreground transition-colors underline underline-offset-4 decoration-border-subtle"
+              >
+                {showCopyFeedback ? "Link copied" : "Copy link"}
+              </button>
+              <span className="text-muted/20 text-[8px]">•</span>
+              <button 
+                type="button"
+                onClick={handleToggleShare}
+                disabled={isUpdating || isPending}
+                className="text-[8px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-600 transition-colors"
+              >
+                {isUpdating ? "..." : "Disable"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -165,22 +174,24 @@ export function ShareReportAction({
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleToggleShare}
-      disabled={isUpdating || isPending}
-      className={`group flex flex-col items-center justify-center gap-3 rounded-[24px] border py-6 transition-all hover:shadow-xl active:scale-[0.97] disabled:opacity-50 ${
-        errorMessage ? 'border-red-500/20 bg-red-500/5' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/10'
-      }`}
-    >
-      <div className={`transition-all ${errorMessage ? 'text-red-400' : 'text-white/30 group-hover:text-white group-hover:scale-110'}`}>
-        {isUpdating ? <Loader2 size={20} className="animate-spin" /> : errorMessage ? <AlertCircle size={20} strokeWidth={2.5} /> : <Share size={20} strokeWidth={2.5} />}
-      </div>
-      <div className="text-center px-2">
-        <span className={`block text-[9px] font-black uppercase tracking-[0.2em] transition-colors ${errorMessage ? 'text-red-400/80' : 'text-white/40 group-hover:text-white'}`}>
-          {errorMessage || "Share Report"}
-        </span>
-      </div>
-    </button>
+    <div className="w-full">
+      <button
+        type="button"
+        onClick={handleToggleShare}
+        disabled={isUpdating || isPending}
+        className={`group flex items-center justify-center gap-2.5 rounded-[24px] border py-3.5 w-full transition-all hover:shadow-xl active:scale-[0.97] disabled:opacity-50 ${
+          errorMessage ? 'border-red-500/20 bg-red-500/5' : 'border-border-subtle bg-card-overlay hover:bg-card-overlay-hover hover:border-border-strong'
+        }`}
+      >
+        <div className={`shrink-0 transition-all ${errorMessage ? 'text-red-600' : 'text-dim group-hover:text-foreground group-hover:scale-110'}`}>
+          {isUpdating ? <Loader2 size={18} className="animate-spin" /> : errorMessage ? <AlertCircle size={18} strokeWidth={2.5} /> : <Share size={18} strokeWidth={2.5} />}
+        </div>
+        <div className="min-w-0">
+          <span className={`block text-[9px] font-black uppercase tracking-[0.2em] transition-colors ${errorMessage ? 'text-red-600/80 dark:text-red-400/80' : 'text-muted group-hover:text-foreground'}`}>
+            {errorMessage || "Share Report"}
+          </span>
+        </div>
+      </button>
+    </div>
   );
 }

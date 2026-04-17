@@ -10,7 +10,7 @@ import { CreateWorkJobDto } from './dto/create-work-job.dto';
 import { UpdateWorkJobDto } from './dto/update-work-job.dto';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
-import { CreateReminderDto } from './dto/create-reminder.dto';
+import { CreateReminderDto, ReminderStatus } from './dto/create-reminder.dto';
 import { UpdateReminderDto } from './dto/update-reminder.dto';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
 import { UpdateRegistrationDto } from './dto/update-registration.dto';
@@ -375,7 +375,7 @@ export class UserVehicleController {
   async updateReminderStatus(
     @Param('id') id: string,
     @Param('reminderId') reminderId: string, 
-    @Body('status') status: string
+    @Body('status') status: ReminderStatus
   ) {
     return this.userVehicleService.updateReminder(reminderId, status);
   }

@@ -12,6 +12,7 @@ import { usePlan } from '@/lib/plan-context';
 import { useVehicleLimitGate } from '@/lib/limit-gate';
 import { useActionConfirm } from '@/lib/use-action-confirm';
 import { InlineErrorMessage } from '../ui/ActionFeedback';
+import React from 'react';
 
 import { normalizeImageUrl } from '@/lib/image-utils';
 
@@ -214,7 +215,7 @@ export function VehiclePhotosDisplay({
                 <div 
                   key={photo.id} 
                   onClick={() => !isRowDeleting && !isConfirming && setSelectedPhoto(photo)}
-                  className={`group relative aspect-square overflow-hidden rounded-[24px] border border-subtle bg-card-overlay cursor-pointer ${isRowDeleting ? 'opacity-50 grayscale pointer-events-none' : ''} ${isConfirming ? 'ring-2 ring-red-500/50' : ''}`}
+                  className={`group relative aspect-square overflow-hidden rounded-[24px] border border-border-subtle bg-card-overlay cursor-pointer ${isRowDeleting ? 'opacity-50 grayscale pointer-events-none' : ''} ${isConfirming ? 'ring-2 ring-red-500/50' : ''}`}
                 >
                   <img
                     src={normalizeImageUrl(photo.url)}
@@ -231,7 +232,7 @@ export function VehiclePhotosDisplay({
                         type="button"
                         onClick={(e) => { e.stopPropagation(); cancelConfirm(); }}
                         disabled={isRowDeleting}
-                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-card-overlay text-muted hover:text-foreground transition-all shadow-xl backdrop-blur-md"
+                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-card-overlay border border-border-subtle text-muted hover:text-foreground transition-all shadow-xl backdrop-blur-md"
                         title="Cancel"
                       >
                         <X size={14} strokeWidth={3} />
@@ -265,7 +266,7 @@ export function VehiclePhotosDisplay({
           >
             <button 
               type="button"
-              className="absolute right-6 top-6 z-[110] flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all backdrop-blur-xl border border-white/10"
+              className="absolute right-6 top-6 z-[110] flex h-12 w-12 items-center justify-center rounded-full bg-foreground/5 text-muted opacity-40 hover:bg-foreground/10 hover:text-foreground transition-all backdrop-blur-xl border border-border-subtle"
               onClick={() => setSelectedPhoto(null)}
             >
               <X size={24} />
@@ -280,18 +281,18 @@ export function VehiclePhotosDisplay({
                 alt="Enlarged Vehicle"
                 className="h-full w-full object-contain rounded-2xl shadow-2xl"
               />
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 rounded-2xl border border-white/10 bg-black/40 px-6 py-3 backdrop-blur-xl">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 rounded-2xl border border-border-subtle bg-background/40 px-6 py-3 backdrop-blur-xl">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground opacity-60">
                   Captured {formatDisplayDate(selectedPhoto.createdAt)}
                 </p>
-                <div className="h-3 w-px bg-white/10" />
+                <div className="h-3 w-px bg-border-subtle" />
                 
                 {confirmDeleteId === selectedPhoto.id ? (
                   <div className="flex items-center gap-2 animate-in slide-in-from-right-2 duration-300">
                     <button
                       type="button"
                       onClick={() => cancelConfirm()}
-                      className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors"
+                      className="text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-40 hover:text-foreground transition-colors"
                     >
                       Cancel
                     </button>
@@ -309,7 +310,7 @@ export function VehiclePhotosDisplay({
                   <button
                     type="button"
                     onClick={(e) => handleDelete(e, selectedPhoto.id)}
-                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-red-400 hover:text-red-300 transition-colors"
+                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-red-600 dark:text-red-400 hover:opacity-80 transition-colors"
                   >
                     <Trash2 size={12} /> Delete
                   </button>
@@ -321,7 +322,7 @@ export function VehiclePhotosDisplay({
 
         {/* Gallery Stats */}
         {photos.length > 0 && (
-          <div className="rounded-[32px] border border-subtle bg-card-overlay p-6">
+          <div className="rounded-[32px] border border-border-subtle bg-card-overlay p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[10px] font-black uppercase tracking-widest">
               <div className="flex items-center gap-2 text-dim">
                 <span>Gallery Status</span>
@@ -333,7 +334,7 @@ export function VehiclePhotosDisplay({
                   onClick={() => checkLimit(100, 1, () => {})}
                   className="text-accent opacity-60 hover:opacity-100 transition-opacity"
                 >
-                  Free plan includes up to {maxPhotos} photos. Upgrade to Pro to increase this limit.
+                  Free plan limit reached ({maxPhotos} photos)
                 </button>
               )}
             </div>

@@ -18,7 +18,8 @@ import {
   X,
   Loader2,
   Landmark,
-  AlertTriangle
+  AlertTriangle,
+  ChevronRight
 } from 'lucide-react';
 import { VehicleViewModel } from "@/lib/mappers/vehicle";
 import { ServiceEntryViewModel, ServiceSummaryViewModel } from "@/lib/mappers/service";
@@ -111,7 +112,7 @@ export function VehicleOverviewDisplay({
       <div className="px-1">
         <div className="space-y-1.5">
           <h2 className="text-3xl font-black italic tracking-tighter text-foreground uppercase leading-none">Vehicle Overview</h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-400/60 dark:text-blue-400/50">Primary Portfolio Dashboard</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-accent opacity-70">Primary Portfolio Dashboard</p>
         </div>
       </div>
 
@@ -122,7 +123,7 @@ export function VehicleOverviewDisplay({
       </section>
 
       {/* Primary Lifecycle Card */}
-      <div className="overflow-hidden rounded-[40px] border border-border-strong bg-gradient-to-br from-foreground/5 to-transparent p-8 shadow-2xl backdrop-blur-md">
+      <div className="overflow-hidden rounded-[40px] border border-border-strong bg-gradient-to-br from-foreground/[0.03] dark:from-foreground/[0.05] to-transparent p-8 shadow-premium backdrop-blur-md">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">Ownership Lifecycle</span>
@@ -131,7 +132,7 @@ export function VehicleOverviewDisplay({
           </div>
           <button 
             onClick={() => setIsCalendarOpen(true)}
-            className="h-12 w-12 flex items-center justify-center rounded-[20px] bg-foreground/5 border border-border-strong text-muted hover:bg-foreground/10 hover:text-foreground transition-all shadow-xl active:scale-95"
+            className="h-12 w-12 flex items-center justify-center rounded-[20px] bg-card-overlay border border-border-strong text-muted hover:bg-card-overlay-hover hover:text-foreground transition-all shadow-xl active:scale-95"
             title="Open Vehicle Calendar"
           >
             <Calendar size={24} strokeWidth={1.5} />
@@ -187,9 +188,9 @@ export function VehicleOverviewDisplay({
 
           <div className="space-y-3">
             <div className={`flex items-center gap-2 ${
-              serviceSummary?.status === 'overdue' ? 'text-red-400/60' :
-              serviceSummary?.status === 'due_soon' ? 'text-yellow-400/60' :
-              'text-blue-400/60 dark:text-blue-400/40'
+              serviceSummary?.status === 'overdue' ? 'text-red-500' :
+              serviceSummary?.status === 'due_soon' ? 'text-yellow-600 dark:text-yellow-500' :
+              'text-accent'
             }`}>
               <RefreshCw size={12} />
               <span className="text-[9px] font-black uppercase tracking-widest">Next Service Due</span>
@@ -197,9 +198,9 @@ export function VehicleOverviewDisplay({
             <div className="space-y-1 px-1">
               <div className="flex flex-col">
                 <p className={`text-[13px] font-black italic tracking-tight uppercase leading-none ${
-                  serviceSummary?.status === 'overdue' ? 'text-red-400' :
-                  serviceSummary?.status === 'due_soon' ? 'text-yellow-400' :
-                  'text-blue-600 dark:text-blue-400'
+                  serviceSummary?.status === 'overdue' ? 'text-red-600' :
+                  serviceSummary?.status === 'due_soon' ? 'text-yellow-600 dark:text-yellow-500' :
+                  'text-accent'
                 }`}>
                   {serviceSummary?.nextServiceDueDate ? formatDisplayDate(serviceSummary.nextServiceDueDate) : "Not calculated"}
                 </p>
@@ -217,9 +218,9 @@ export function VehicleOverviewDisplay({
 
                   return combinedText && (
                     <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${
-                      serviceSummary.status === 'overdue' ? 'text-red-400/40 dark:text-red-400/30' :
-                      serviceSummary.status === 'due_soon' ? 'text-yellow-400/40 dark:text-yellow-400/30' :
-                      'text-blue-600/40 dark:text-blue-400/30'
+                      serviceSummary.status === 'overdue' ? 'text-red-500/50' :
+                      serviceSummary.status === 'due_soon' ? 'text-yellow-600/50 dark:text-yellow-500/30' :
+                      'text-accent opacity-40'
                     }`}>
                       {combinedText}
                     </p>
@@ -227,7 +228,7 @@ export function VehicleOverviewDisplay({
                 })()}
               </div>
               {!serviceSummary?.nextServiceDueDate && serviceSummary?.nextServiceDueKms && (
-                <p className="text-[10px] font-black text-blue-600/40 dark:text-blue-400/30 uppercase tracking-widest pt-1">
+                <p className="text-[10px] font-black text-accent opacity-40 uppercase tracking-widest pt-1">
                   {formatDistance(serviceSummary.nextServiceDueKms)}
                 </p>
               )}
@@ -276,7 +277,7 @@ export function VehicleOverviewDisplay({
         </div>
 
         {/* Secondary Output & Share Row */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
+        <div className="grid grid-cols-2 gap-4 pt-2">
           <ExportHistoryButton 
             vehicleId={vehicle.id} 
             vehicleNickname={vehicle.nickname}
@@ -295,7 +296,7 @@ export function VehicleOverviewDisplay({
       {reminders.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400/60">Upcoming Reminders</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Upcoming Reminders</h3>
             <Link href={`/vehicles/${vehicle.id}/reminders/new`} className="text-[10px] font-black uppercase tracking-widest text-muted hover:text-foreground transition-all underline underline-offset-4 decoration-border-subtle hover:decoration-border-strong">
               Create New
             </Link>
@@ -328,7 +329,7 @@ export function VehicleOverviewDisplay({
                 href={item.href || '#'}
                 className={`flex flex-col gap-1 rounded-3xl border p-5 text-xs font-black uppercase tracking-widest ring-1 ring-inset transition-all hover:scale-[1.01] active:scale-[0.99] ${
                   item.severity === 'critical' ? 'border-red-500/20 bg-red-500/5 text-red-600 dark:text-red-400/90 ring-red-500/10' :
-                  item.severity === 'warning' ? 'border-yellow-500/20 bg-yellow-500/5 text-yellow-600 dark:text-yellow-500/90 ring-yellow-500/10' :
+                  item.severity === 'warning' ? 'border-yellow-500/20 bg-yellow-500/5 text-yellow-700 dark:text-yellow-500/90 ring-yellow-500/10' :
                   'border-border-subtle bg-card-overlay text-muted ring-border-subtle'
                 }`}
               >
@@ -339,7 +340,7 @@ export function VehicleOverviewDisplay({
                 {item.subLabel && (
                   <span className={`text-[8px] font-black tracking-[0.2em] ml-5 leading-tight ${
                     item.severity === 'critical' ? 'text-red-500/50' :
-                    item.severity === 'warning' ? 'text-yellow-500/50' :
+                    item.severity === 'warning' ? 'text-yellow-600/50 dark:text-yellow-500/50' :
                     'text-muted'
                   }`}>
                     {item.subLabel}
@@ -362,7 +363,7 @@ export function VehicleOverviewDisplay({
       {/* Recent Activity */}
       <section className="space-y-4">
         <h3 className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted">Recent Journal</h3>
-        <div className="rounded-[32px] border border-border-subtle bg-card-overlay p-1.5 backdrop-blur-sm">
+        <div className="rounded-[32px] border border-border-subtle bg-card-overlay p-1.5 backdrop-blur-sm shadow-sm">
           {!hasHistory ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-card-overlay border border-border-subtle text-dim">
@@ -440,17 +441,17 @@ function MaintenanceIntelligencePanel({
     },
     due_soon: {
       label: 'Service Due Soon',
-      color: 'text-yellow-600 dark:text-yellow-400',
+      color: 'text-yellow-700 dark:text-yellow-400',
       bgColor: 'bg-yellow-500/10',
       borderColor: 'border-yellow-500/20',
-      iconColor: 'text-yellow-500',
+      iconColor: 'text-yellow-600 dark:text-yellow-500',
     },
     up_to_date: {
       label: 'Maintenance On Track',
-      color: 'text-green-600 dark:text-green-400',
+      color: 'text-green-700 dark:text-green-400',
       bgColor: 'bg-green-500/10',
       borderColor: 'border-green-500/20',
-      iconColor: 'text-green-500',
+      iconColor: 'text-green-600 dark:text-green-500',
     },
     insufficient_data: {
       label: 'No Service Baseline',
@@ -498,10 +499,10 @@ function MaintenanceIntelligencePanel({
   return (
     <Link 
       href={`/vehicles/${vehicleId}?tab=service`}
-      className={`group relative flex items-center justify-between overflow-hidden rounded-[32px] border ${config.borderColor} ${config.bgColor} p-6 shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99]`}
+      className={`group relative flex items-center justify-between overflow-hidden rounded-[32px] border ${config.borderColor} ${config.bgColor} p-6 shadow-premium transition-all hover:scale-[1.01] active:scale-[0.99]`}
     >
       <div className="flex items-center gap-5">
-        <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-foreground/5 border border-border-strong ${config.iconColor}`}>
+        <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-card-overlay border border-border-strong ${config.iconColor}`}>
           <Wrench size={24} strokeWidth={2} />
         </div>
         <div className="space-y-1.5">
@@ -516,7 +517,7 @@ function MaintenanceIntelligencePanel({
           </p>
         </div>
       </div>
-      <div className="h-10 w-10 flex items-center justify-center rounded-full bg-foreground/5 text-dim group-hover:text-muted transition-colors">
+      <div className="h-10 w-10 flex items-center justify-center rounded-full bg-card-overlay text-dim group-hover:text-muted transition-colors">
         <ArrowRight size={20} />
       </div>
     </Link>
@@ -539,9 +540,9 @@ function LifecycleItem({ label, value, secondaryText, status, href }: LifecycleI
         <div className="flex items-center gap-2.5">
           <div className={`h-2 w-2 rounded-full ${
             status === 'success' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 
-            status === 'warning' ? 'bg-yellow-500/40 shadow-[0_0_10px_rgba(234,179,8,0.2)]' : 'bg-foreground/10'
+            status === 'warning' ? 'bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.2)]' : 'bg-muted opacity-40'
           }`} />
-          <p className="text-sm font-black text-foreground/90 group-hover:text-foreground transition-colors">{value}</p>
+          <p className="text-sm font-black text-foreground opacity-90 group-hover:text-foreground transition-colors">{value}</p>
           {href && (
             <div className="ml-auto opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
               <ArrowRight size={14} className="text-dim" />
@@ -559,14 +560,14 @@ function LifecycleItem({ label, value, secondaryText, status, href }: LifecycleI
 
   if (href) {
     return (
-      <Link href={href} className="group block rounded-2xl bg-foreground/[0.02] border border-border-subtle p-4 transition-all hover:bg-foreground/[0.05] hover:border-border-strong">
+      <Link href={href} className="group block rounded-2xl bg-card-overlay border border-border-subtle p-4 transition-all hover:bg-card-overlay-hover hover:border-border-strong">
         {content}
       </Link>
     );
   }
 
   return (
-    <div className="rounded-2xl bg-foreground/[0.01] border border-border-subtle p-4">
+    <div className="rounded-2xl bg-card-overlay border border-border-subtle p-4">
       {content}
     </div>
   );
@@ -597,12 +598,12 @@ interface ActivityRowProps {
 
 function ActivityRow({ icon, title, value, date, href }: ActivityRowProps) {
   const content = (
-    <div className="flex items-center gap-4 py-3 px-4">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-card-overlay text-dim transition-all group-hover:bg-card-overlay-hover group-hover:text-muted">
+    <div className="flex items-center gap-4 py-3 px-4 transition-colors hover:bg-card-overlay-hover">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-card-overlay border border-border-subtle text-dim transition-all group-hover:text-muted">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[8px] font-black uppercase tracking-widest text-dim mb-0.5">{title}</p>
+        <p className="text-[8px] font-black uppercase tracking-widest text-muted mb-0.5">{title}</p>
         <p className="truncate text-xs font-bold text-foreground/80 group-hover:text-foreground transition-colors uppercase italic">{value}</p>
       </div>
       <div className="text-right shrink-0">
@@ -613,7 +614,7 @@ function ActivityRow({ icon, title, value, date, href }: ActivityRowProps) {
 
   if (href) {
     return (
-      <Link href={href} className="group block transition-all hover:bg-foreground/[0.02]">
+      <Link href={href} className="group block transition-all">
         {content}
       </Link>
     );
@@ -633,7 +634,7 @@ function LifetimeCostSummaryPanel({
   const displayCurrency = costSummary?.preferredCurrencyDisplay ?? 'AUD';
 
   return (
-    <div className="overflow-hidden rounded-[32px] border border-border-subtle bg-card-overlay p-8 shadow-xl transition-all hover:bg-card-overlay-hover group">
+    <div className="overflow-hidden rounded-[32px] border border-border-subtle bg-card-overlay p-8 shadow-premium transition-all hover:bg-card-overlay-hover group">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-8">
         <div className="space-y-2">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted group-hover:text-foreground/40 transition-colors">Total Lifetime Spend</p>
@@ -687,7 +688,7 @@ function ReminderItem({
 
   const urgencyStyles = {
     overdue: 'border-red-500/20 bg-red-500/5 text-red-600 dark:text-red-400/90 ring-red-500/10',
-    soon: 'border-yellow-500/20 bg-yellow-500/5 text-yellow-600 dark:text-yellow-500/90 ring-yellow-500/10',
+    soon: 'border-yellow-500/20 bg-yellow-500/5 text-yellow-700 dark:text-yellow-500/90 ring-yellow-500/10',
     upcoming: 'border-border-subtle bg-card-overlay text-muted ring-border-subtle'
   };
 
@@ -764,7 +765,7 @@ function ReminderItem({
             className={`flex h-10 items-center justify-center rounded-xl transition-all disabled:opacity-50 border ${
               confirmDelete 
                 ? 'bg-red-500 text-white px-4 text-[10px] font-black uppercase tracking-widest border-red-500/20 hover:bg-red-600' 
-                : 'bg-red-500/10 text-red-600 dark:text-red-500/40 w-10 border-red-500/10 hover:bg-red-500/20 hover:text-red-600 dark:hover:text-red-500'
+                : 'bg-red-500/10 text-red-600 dark:text-red-500/40 w-10 border-red-500/10 hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-500'
             }`}
             title={confirmDelete ? 'Click to confirm deletion' : 'Delete Reminder'}
           >

@@ -94,13 +94,13 @@ export function VehicleServiceSettingsEditor({
       />
       
       {/* Modal */}
-      <div className={`relative w-full max-w-lg overflow-hidden rounded-[32px] border border-white/10 bg-[#0b0b0c] shadow-2xl transition-all duration-300 ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
-        <div className="flex items-center justify-between border-b border-white/5 p-6">
-          <h3 className="text-xl font-black italic tracking-tight text-white uppercase">Service Settings</h3>
+      <div className={`relative w-full max-w-lg overflow-hidden rounded-[32px] border border-border-strong bg-surface shadow-2xl transition-all duration-300 ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
+        <div className="flex items-center justify-between border-b border-border-subtle p-6">
+          <h3 className="text-xl font-black italic tracking-tight text-foreground uppercase">Service Settings</h3>
           <button 
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5 text-muted opacity-40 hover:bg-foreground/10 hover:text-foreground transition-all"
           >
             <X size={20} />
           </button>
@@ -108,7 +108,7 @@ export function VehicleServiceSettingsEditor({
 
         <div className="p-8 space-y-8">
           {error && (
-            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-[11px] font-bold uppercase tracking-widest text-red-400">
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-[11px] font-bold uppercase tracking-widest text-red-600 dark:text-red-400">
               {error}
             </div>
           )}
@@ -143,7 +143,7 @@ export function VehicleServiceSettingsEditor({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-14 rounded-2xl border border-white/5 bg-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 transition-all hover:bg-white/10 hover:text-white"
+              className="flex-1 h-14 rounded-2xl border border-border-subtle bg-card-overlay text-[10px] font-black uppercase tracking-widest text-muted transition-all hover:bg-card-overlay-hover hover:text-foreground"
             >
               Cancel
             </button>
@@ -151,9 +151,9 @@ export function VehicleServiceSettingsEditor({
               type="button"
               onClick={handleSave}
               disabled={isPending}
-              className="flex-[2] flex h-14 items-center justify-center gap-3 rounded-2xl bg-white text-[10px] font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98] disabled:opacity-50"
+              className="flex-[2] flex h-14 items-center justify-center gap-3 rounded-2xl bg-foreground text-[10px] font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
             >
-              {isPending ? 'Saving...' : (
+              {isPending ? <Loader2 className="animate-spin" size={16} /> : (
                 <>
                   <Save size={16} strokeWidth={3} />
                   Save Settings
@@ -184,15 +184,15 @@ function InputField({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 px-1">
-        <div className="text-white/20">{icon}</div>
-        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{label}</label>
+        <div className="text-muted opacity-40">{icon}</div>
+        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-60">{label}</label>
       </div>
       <input
         type="number"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="h-16 w-full rounded-2xl border border-white/5 bg-white/[0.02] px-6 text-xl font-black italic tracking-tight text-white placeholder:text-white/5 focus:border-white/20 focus:bg-white/[0.04] focus:outline-none transition-all"
+        className="h-16 w-full rounded-2xl border border-border-subtle bg-foreground/[0.02] px-6 text-xl font-black italic tracking-tight text-foreground placeholder:text-muted/10 focus:border-border-strong focus:bg-foreground/[0.04] focus:outline-none transition-all"
       />
     </div>
   );

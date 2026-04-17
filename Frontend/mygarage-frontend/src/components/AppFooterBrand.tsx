@@ -9,7 +9,7 @@ export function AppFooterBrand({ className = "" }: { className?: string }) {
       <div className="opacity-20 hover:opacity-40 transition-opacity cursor-default group flex flex-col items-center">
         <AutoFolioLogo 
           height={56} 
-          className="grayscale brightness-150" 
+          className="grayscale opacity-50 dark:brightness-150" 
         />
         <div className="mt-4 flex flex-col items-center gap-1">
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted transition-colors">

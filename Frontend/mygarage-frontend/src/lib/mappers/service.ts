@@ -1,4 +1,4 @@
-import { ServiceEvent, ServiceAttachment, ServiceSummary as RawServiceSummary } from "@/types/autofolio";
+import { ServiceEvent, ServiceAttachment, ServiceSummary as RawServiceSummary, UserVehicle } from "@/types/autofolio";
 import { formatDisplayDate, formatNumber } from "@/lib/date-utils";
 
 export interface ServiceEntryViewModel {
@@ -60,7 +60,7 @@ export function mapToServiceHistoryViewModel(raw: ServiceEvent[]): ServiceEntryV
   });
 }
 
-export function mapToServiceSummaryViewModel(raw: RawServiceSummary['serviceSummary'] | null | undefined): ServiceSummaryViewModel | null {
+export function mapToServiceSummaryViewModel(raw: RawServiceSummary['serviceSummary'] | UserVehicle['serviceSummary'] | null | undefined): ServiceSummaryViewModel | null {
   if (!raw) return null;
 
   return {

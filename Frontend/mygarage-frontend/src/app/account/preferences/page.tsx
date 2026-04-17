@@ -37,17 +37,17 @@ export default function PreferencesPage() {
         {/* General / Units Section */}
         <section className="space-y-4">
           <div className="flex items-center gap-3 px-1">
-            <Globe size={16} className="text-white/20" />
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Regional & Units</h3>
+            <Globe size={16} className="text-muted opacity-40" />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">Regional & Units</h3>
           </div>
           
-          <div className="rounded-[32px] border border-white/5 bg-white/[0.02] p-8 space-y-8">
+          <div className="rounded-[32px] border border-border-subtle bg-card-overlay p-8 space-y-8">
             {/* Distance Units */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-bold text-white/80">Distance Units</p>
-                  <p className="text-xs font-medium text-white/20 mt-0.5">Select your preferred measurement system.</p>
+                  <p className="text-sm font-bold text-foreground opacity-80">Distance Units</p>
+                  <p className="text-xs font-medium text-muted mt-0.5">Select your preferred measurement system.</p>
                 </div>
               </div>
               
@@ -65,15 +65,15 @@ export default function PreferencesPage() {
               </div>
             </div>
 
-            <div className="border-t border-white/5" />
+            <div className="border-t border-border-subtle" />
 
             {/* Default Currency */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <Coins size={14} className="text-blue-400/40" />
+                <Coins size={14} className="text-blue-500/40" />
                 <div>
-                  <p className="text-sm font-bold text-white/80">Default Currency</p>
-                  <p className="text-xs font-medium text-white/20 mt-0.5">Primary currency for new records and display fallbacks.</p>
+                  <p className="text-sm font-bold text-foreground opacity-80">Default Currency</p>
+                  <p className="text-xs font-medium text-muted mt-0.5">Primary currency for new records and display fallbacks.</p>
                 </div>
               </div>
               
@@ -94,14 +94,14 @@ export default function PreferencesPage() {
         {/* Appearance Section */}
         <section className="space-y-4">
           <div className="flex items-center gap-3 px-1">
-            <Palette size={16} className="text-foreground opacity-20" />
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground opacity-40">Appearance</h3>
+            <Palette size={16} className="text-muted opacity-40" />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">Appearance</h3>
           </div>
           
-          <div className="rounded-[32px] border border-subtle bg-white/[0.02] dark:bg-white/[0.02] p-8 space-y-6">
+          <div className="rounded-[32px] border border-border-subtle bg-card-overlay p-8 space-y-6">
             <div className="space-y-1">
               <p className="text-sm font-bold text-foreground opacity-80">Interface Theme</p>
-              <p className="text-xs font-medium text-foreground opacity-20">Select your preferred visual mode.</p>
+              <p className="text-xs font-medium text-muted">Select your preferred visual mode.</p>
             </div>
             
             <div className="grid grid-cols-2 gap-3">
@@ -117,9 +117,9 @@ export default function PreferencesPage() {
               />
             </div>
 
-            <div className="mt-2 flex items-center gap-2 rounded-2xl bg-white/[0.01] border border-subtle p-4">
-              <Info size={14} className="text-foreground opacity-10 shrink-0" />
-              <p className="text-[10px] font-medium text-foreground opacity-20 leading-relaxed italic">
+            <div className="mt-2 flex items-center gap-2 rounded-2xl bg-foreground/[0.01] border border-border-subtle p-4">
+              <Info size={14} className="text-dim shrink-0" />
+              <p className="text-[10px] font-medium text-muted leading-relaxed italic">
                 AutoFolio preserves your theme preference across your local sessions.
               </p>
             </div>
@@ -129,18 +129,18 @@ export default function PreferencesPage() {
         {/* Notifications Section */}
         <section className="space-y-4">
           <div className="flex items-center gap-3 px-1">
-            <Bell size={16} className="text-white/20" />
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Notifications</h3>
+            <Bell size={16} className="text-muted opacity-40" />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">Notifications</h3>
           </div>
           
-          <div className="rounded-[32px] border border-white/5 bg-white/[0.02] p-8 space-y-6">
+          <div className="rounded-[32px] border border-border-subtle bg-card-overlay p-8 space-y-6">
             <ToggleItem 
               label="Service Reminders" 
               description="Get alerted when maintenance intervals are approaching."
               active={preferences.notifications.reminders}
               onChange={(val) => updateNotifications({ reminders: val })}
             />
-            <div className="border-t border-white/5" />
+            <div className="border-t border-border-subtle" />
             <ToggleItem 
               label="System Alerts" 
               description="Important updates regarding your vehicle collection."
@@ -152,8 +152,8 @@ export default function PreferencesPage() {
 
         {/* Persistence Notice */}
         <div className="flex flex-col items-center text-center px-8">
-          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/10 mb-2">Sync Status</p>
-          <p className="text-[10px] font-medium leading-relaxed text-white/20 max-w-xs italic">
+          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-dim mb-2">Sync Status</p>
+          <p className="text-[10px] font-medium leading-relaxed text-dim max-w-xs italic">
             Preferences are currently stored locally on this device. Cloud sync for cross-device settings is coming in a future update.
           </p>
         </div>
@@ -169,8 +169,8 @@ function OptionButton({ label, active, onClick }: { label: string; active: boole
       onClick={onClick}
       className={`flex items-center justify-between rounded-2xl border px-5 py-4 transition-all active:scale-[0.98] ${
         active 
-          ? 'border-blue-500/20 bg-blue-500/5 text-white' 
-          : 'border-white/5 bg-white/[0.01] text-white/40 hover:bg-white/[0.03] hover:border-white/10'
+          ? 'border-blue-500/20 bg-blue-500/5 text-foreground' 
+          : 'border-border-subtle bg-foreground/[0.01] text-muted hover:bg-card-overlay-hover hover:border-border-strong'
       }`}
     >
       <span className="text-xs font-bold">{label}</span>
@@ -183,14 +183,14 @@ function ToggleItem({ label, description, active, onChange }: { label: string; d
   return (
     <div className="flex items-center justify-between">
       <div className="space-y-0.5">
-        <p className="text-sm font-bold text-white/80">{label}</p>
-        <p className="text-xs font-medium text-white/20">{description}</p>
+        <p className="text-sm font-bold text-foreground opacity-80">{label}</p>
+        <p className="text-xs font-medium text-muted">{description}</p>
       </div>
       <button
         type="button"
         onClick={() => onChange(!active)}
         className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-          active ? 'bg-blue-600' : 'bg-white/10'
+          active ? 'bg-blue-600' : 'bg-foreground/10'
         }`}
       >
         <span

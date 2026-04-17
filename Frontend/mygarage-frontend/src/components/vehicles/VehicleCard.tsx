@@ -6,6 +6,7 @@ import { UserVehicle } from '@/types/autofolio';
 import { mapToRemindersViewModel } from '@/lib/mappers/reminder';
 import { mapToVehicleViewModel } from '@/lib/mappers/vehicle';
 import { mapToDocumentsViewModel } from '@/lib/mappers/document';
+import { mapToServiceSummaryViewModel } from '@/lib/mappers/service';
 import { evaluateVehicleSummaryAttention } from '@/lib/attention-utils';
 import { Bell, ArrowRight, Edit3, Trash2, Camera, Wrench, Briefcase, AlertCircle, AlertTriangle, Lock, Info, X, Loader2 } from 'lucide-react';
 import { deleteVehicle } from '@/lib/api';
@@ -14,6 +15,8 @@ import { normalizeCrop, getCropTransform } from '@/lib/cropUtils';
 import { usePlan } from '@/lib/plan-context';
 import { useActionConfirm } from '@/lib/use-action-confirm';
 import { InlineErrorMessage } from '../ui/ActionFeedback';
+import { useHeroLuminance } from '@/lib/use-hero-contrast';
+import React from 'react';
 
 import { normalizeImageUrl } from '@/lib/image-utils';
 import { MaintenanceStatusBadge, MaintenanceStatus } from './MaintenanceStatusBadge';
@@ -26,6 +29,11 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
   const router = useRouter();
   const { refreshPlan, openUpgradeModal } = usePlan();
   const [isPending, startTransition] = useTransition();
+  const contrastMode = useHeroLuminance(rawVehicle.bannerImageUrl || undefined);
+  
+  const isAdaptiveDark = contrastMode === 'dark';  // Bright background -> use Dark text
+  const isAdaptiveLight = contrastMode === 'light'; // Dark background -> use Light text
+  const isNoImage = contrastMode === 'none';
   
   const { 
     isActioning: isDeleting, 
@@ -41,6 +49,7 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
   const vehicle = mapToVehicleViewModel(rawVehicle);
   const reminders = mapToRemindersViewModel(rawVehicle.reminders || []);
   const documents = mapToDocumentsViewModel(rawVehicle.documents || []);
+  const serviceSummary = mapToServiceSummaryViewModel(rawVehicle.serviceSummary);
 
   const isLocked = vehicle.isLocked;
 
@@ -48,7 +57,7 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
     vehicle,
     reminders,
     documents,
-    serviceSummary: rawVehicle.serviceSummary
+    serviceSummary
   });
 
   // Normalize coordinates (legacy 0-100 to 0-1)
@@ -110,6 +119,13 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
     router.push(`/vehicles/${vehicle.id}/edit`);
   };
 
+  // Contrast resolving helper
+  const getContrastClass = (darkImgClass: string, lightImgClass: string, fallbackClass: string) => {
+    if (isAdaptiveDark) return darkImgClass;
+    if (isAdaptiveLight) return lightImgClass;
+    return fallbackClass;
+  };
+
   return (
     <Link 
       href={`/vehicles/${vehicle.id}`}
@@ -117,23 +133,30 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
       className={`group relative flex flex-col overflow-hidden rounded-[40px] border transition-all duration-500 ${
         isLocked 
           ? 'border-subtle bg-card-overlay opacity-60 grayscale-[0.5]' 
-          : 'border-subtle bg-card-overlay hover:border-border-strong hover:shadow-2xl active:scale-[0.99]'
+          : 'border-subtle bg-card-overlay hover:border-border-strong hover:shadow-premium active:scale-[0.99]'
       } p-8 ${isDeleting ? 'opacity-50 grayscale pointer-events-none' : ''} ${confirmDelete ? 'border-red-500/30' : ''}`}
     >
       {/* Background Layer */}
       {rawVehicle.bannerImageUrl ? (
         <>
-          <div className="absolute inset-0 z-0 overflow-hidden">
+          <div className="absolute inset-0 z-0 overflow-hidden transition-colors duration-500 bg-surface">
             <img 
               src={normalizeImageUrl(rawVehicle.bannerImageUrl)} 
               alt="" 
-              className="select-none"
+              className="select-none transition-opacity duration-700"
               style={getCropTransform(x, y, rawVehicle.bannerZoom || 1)}
             />
           </div>
           {/* Overlays for readability */}
-          <div className={`absolute inset-0 z-0 transition-colors ${isLocked ? 'bg-black/80' : 'bg-black/60 group-hover:bg-black/50'} ${confirmDelete ? 'bg-black/90' : ''}`} />
-          <div className="absolute inset-0 z-0 bg-gradient-to-t from-surface via-background/20 to-transparent" />
+          {/* If background is light (isAdaptiveDark), use a very light white fade instead of a dark one */}
+          <div className={`absolute inset-0 z-0 transition-all duration-700 ${
+            isLocked ? 'bg-black/80' : isAdaptiveDark ? 'bg-white/10 group-hover:bg-white/20' : 'bg-black/30 dark:bg-black/60 group-hover:bg-black/20 dark:group-hover:bg-black/50'
+          } ${confirmDelete ? 'bg-black/90' : ''}`} />
+          
+          {/* Bottom lift for text protection */}
+          <div className={`absolute inset-0 z-0 bg-gradient-to-t transition-opacity duration-700 ${
+            isAdaptiveDark ? 'from-white/40 via-transparent to-transparent opacity-100' : 'from-black via-transparent to-transparent opacity-20 dark:opacity-80'
+          }`} />
         </>
       ) : (
         /* Decorative gradient background element for no-banner state */
@@ -143,30 +166,44 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
       <div className="relative z-10 flex items-start justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h2 className={`text-3xl font-black italic tracking-tighter uppercase drop-shadow-lg transition-colors ${isLocked ? 'text-foreground/40' : 'text-foreground group-hover:text-foreground/90'}`}>
+            <h2 className={`text-3xl font-black italic tracking-tighter uppercase drop-shadow-lg transition-colors duration-500 ${
+              isLocked 
+                ? 'text-foreground/40' 
+                : getContrastClass('text-slate-950 group-hover:text-black', 'text-white group-hover:text-white/90', 'text-foreground group-hover:text-foreground/90')
+            }`}>
               {vehicle.nickname}
             </h2>
             {vehicle.isActive && !isLocked && (
-              <span className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)]" />
+              <span className={`h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)] ${isAdaptiveDark ? 'opacity-80' : ''}`} />
             )}
             {isLocked && (
-              <div className="flex items-center gap-1.5 rounded-full bg-card-overlay px-2.5 py-1 border border-subtle">
+              <div className="flex items-center gap-1.5 rounded-full bg-card-overlay px-2.5 py-1 border border-subtle shadow-sm">
                 <Lock size={10} className="text-muted" />
                 <span className="text-[8px] font-black uppercase tracking-widest text-muted">Locked on Free</span>
               </div>
             )}
           </div>
           <div className="space-y-1">
-            <p className={`text-[11px] font-bold uppercase tracking-tight ${isLocked ? 'text-muted' : 'text-foreground/60'}`}>
+            <p className={`text-[11px] font-bold uppercase tracking-tight transition-colors duration-500 ${
+              isLocked 
+                ? 'text-muted' 
+                : getContrastClass('text-slate-700', 'text-white/60', 'text-foreground/60')
+            }`}>
               {vehicle.year} {vehicle.make} {vehicle.model}
             </p>
             <div className="flex items-center gap-3">
-              <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isLocked ? 'text-dim' : 'text-muted'}`}>
+              <p className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-500 ${
+                isLocked 
+                  ? 'text-dim' 
+                  : getContrastClass('text-slate-500', 'text-muted dark:text-white/40', 'text-muted')
+              }`}>
                 {vehicle.licensePlate}
               </p>
               {!isLocked && rawVehicle.serviceSummary && (
                 <>
-                  <span className="h-1 w-1 rounded-full bg-foreground/20" />
+                  <span className={`h-1 w-1 rounded-full ${
+                    getContrastClass('bg-slate-900/10', 'bg-foreground/20 dark:bg-white/20', 'bg-foreground/20')
+                  }`} />
                   <MaintenanceStatusBadge 
                     status={rawVehicle.serviceSummary.status as MaintenanceStatus} 
                     size="sm" 
@@ -176,8 +213,12 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
               )}
               {vehicle.lastServiceDate && !isLocked && (
                 <>
-                  <span className="h-1 w-1 rounded-full bg-foreground/20" />
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-muted">
+                  <span className={`h-1 w-1 rounded-full ${
+                    getContrastClass('bg-slate-900/10', 'bg-foreground/20 dark:bg-white/20', 'bg-foreground/20')
+                  }`} />
+                  <p className={`text-[9px] font-bold uppercase tracking-wider transition-colors duration-500 ${
+                    getContrastClass('text-slate-500', 'text-muted dark:text-white/40', 'text-muted')
+                  }`}>
                     Last Service: {vehicle.lastServiceDate}
                   </p>
                 </>
@@ -192,7 +233,9 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); cancelConfirm(); }}
               disabled={isDeleting}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-foreground/10 text-muted hover:text-foreground transition-all backdrop-blur-md border border-subtle"
+              className={`flex h-10 w-10 items-center justify-center rounded-2xl transition-all backdrop-blur-md border ${
+                getContrastClass('bg-slate-900/5 text-slate-700 hover:text-slate-950 border-slate-900/10', 'bg-foreground/10 text-muted hover:text-foreground border-white/10 dark:border-subtle', 'bg-foreground/10 text-muted hover:text-foreground border-subtle')
+              }`}
               title="Cancel"
             >
               <X size={18} />
@@ -203,7 +246,9 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
             <button
               type="button"
               onClick={handleEdit}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-foreground/5 text-muted hover:text-foreground transition-all backdrop-blur-md border border-subtle"
+              className={`flex h-10 w-10 items-center justify-center rounded-2xl transition-all backdrop-blur-md border ${
+                getContrastClass('bg-slate-900/5 text-slate-700 hover:text-slate-950 border-slate-900/10', 'bg-foreground/5 text-muted hover:text-foreground border-white/10 dark:border-subtle', 'bg-foreground/5 text-muted hover:text-foreground border-subtle')
+              }`}
               title="Edit Vehicle"
             >
               <Edit3 size={16} />
@@ -219,7 +264,9 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
                 ? 'bg-red-500 text-white px-4 h-10 text-[9px] font-black uppercase tracking-widest' 
                 : isLocked 
                   ? 'bg-foreground/5 text-muted border-subtle hover:bg-red-500/10 hover:text-red-500/40 hover:border-red-500/20 h-10 w-10' 
-                  : 'bg-red-500/10 text-red-500/40 hover:bg-red-500/20 hover:text-red-500 border-red-500/10 h-10 w-10'
+                  : isAdaptiveDark
+                    ? 'bg-red-500/5 text-red-500/40 border-slate-900/10 hover:bg-red-500/10 hover:text-red-600 h-10 w-10'
+                    : 'bg-red-500/10 text-red-500/40 hover:bg-red-500/20 hover:text-red-500 border-red-500/10 h-10 w-10'
             }`}
             title={confirmDelete ? "Click to confirm deletion" : "Delete Vehicle"}
           >
@@ -231,32 +278,32 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
       <div className="mt-12 relative z-10 flex items-center justify-between">
         <div className="flex items-center gap-4 flex-1">
           {confirmDelete ? (
-            <div className="flex items-center gap-2 text-red-400 animate-in slide-in-from-left-2 duration-300">
+            <div className="flex items-center gap-2 text-red-500 dark:text-red-400 animate-in slide-in-from-left-2 duration-300">
               <AlertCircle size={14} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Delete vehicle and all technical history?</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Delete vehicle and history?</span>
             </div>
           ) : !isLocked ? (
             <>
               <div className="flex items-center gap-3 pr-2">
                 <div className="flex items-center gap-1.5" title="Photos">
-                  <Camera size={12} className="text-muted" />
-                  <span className="text-[10px] font-bold text-foreground/50">{vehicle.photoCount}</span>
+                  <Camera size={12} className={getContrastClass('text-slate-400', 'text-muted dark:text-white/40', 'text-muted')} />
+                  <span className={`text-[10px] font-bold transition-colors ${getContrastClass('text-slate-600', 'text-foreground/50 dark:text-white/50', 'text-foreground/50')}`}>{vehicle.photoCount}</span>
                 </div>
                 <div className="flex items-center gap-1.5" title="Service History">
-                  <Wrench size={12} className="text-muted" />
-                  <span className="text-[10px] font-bold text-foreground/50">{vehicle.serviceCount}</span>
+                  <Wrench size={12} className={getContrastClass('text-slate-400', 'text-muted dark:text-white/40', 'text-muted')} />
+                  <span className={`text-[10px] font-bold transition-colors ${getContrastClass('text-slate-600', 'text-foreground/50 dark:text-white/50', 'text-foreground/50')}`}>{vehicle.serviceCount}</span>
                 </div>
                 <div className="flex items-center gap-1.5" title="Work Log Items">
-                  <Briefcase size={12} className="text-muted" />
-                  <span className="text-[10px] font-bold text-foreground/50">{vehicle.workCount}</span>
+                  <Briefcase size={12} className={getContrastClass('text-slate-400', 'text-muted dark:text-white/40', 'text-muted')} />
+                  <span className={`text-[10px] font-bold transition-colors ${getContrastClass('text-slate-600', 'text-foreground/50 dark:text-white/50', 'text-foreground/50')}`}>{vehicle.workCount}</span>
                 </div>
               </div>
 
-              <div className="h-4 w-px bg-foreground/10" />
+              <div className={`h-4 w-px transition-colors ${getContrastClass('bg-slate-900/10', 'bg-foreground/10 dark:bg-white/10', 'bg-foreground/10')}`} />
 
               {/* Identification */}
               <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] font-bold tracking-tight text-muted">
+                <span className={`font-mono text-[10px] font-bold tracking-tight transition-colors ${getContrastClass('text-slate-400', 'text-muted dark:text-white/30', 'text-muted')}`}>
                   {vehicle.vin && vehicle.vin !== 'NO VIN' ? `${vehicle.vin.substring(0, 4)}...${vehicle.vin.substring(vehicle.vin.length - 4)}` : 'NO VIN'}
                 </span>
               </div>
@@ -265,8 +312,8 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
               {summaryAttention.hasAlerts && (
                 <div className={`flex items-center gap-2 rounded-2xl px-3 py-2 text-[10px] font-black uppercase tracking-widest ring-1 ring-inset ${
                   summaryAttention.highestSeverity === 'critical' 
-                    ? 'bg-red-500/10 text-red-500 ring-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.15)]' 
-                    : 'bg-yellow-500/10 text-yellow-500 ring-yellow-500/20'
+                    ? 'bg-red-500/10 text-red-600 dark:text-red-500 ring-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.15)]' 
+                    : 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 ring-yellow-500/20'
                 }`}>
                   {summaryAttention.highestSeverity === 'critical' 
                     ? <AlertCircle size={12} strokeWidth={3} className="animate-pulse" />

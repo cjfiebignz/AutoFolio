@@ -257,10 +257,10 @@ export function VehicleUserSpecsDisplay({
       {/* Section Header */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <Settings2 size={18} className="text-white/20" />
+          <Settings2 size={18} className="text-muted opacity-40" />
           <div className="space-y-0.5">
-            <h3 className="text-lg font-bold tracking-tight text-white/90 uppercase italic">Personal Spec Library</h3>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Personal technical reference & overrides</p>
+            <h3 className="text-lg font-bold tracking-tight text-foreground uppercase italic">Personal Spec Library</h3>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-60">Personal technical reference & overrides</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -268,7 +268,7 @@ export function VehicleUserSpecsDisplay({
             <button
               type="button"
               onClick={() => setIsRefListOpen(true)}
-              className="flex h-9 items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 text-[10px] font-black uppercase tracking-widest text-blue-400 transition-all hover:bg-blue-500/10 active:scale-95"
+              className="flex h-9 items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 transition-all hover:bg-blue-500/10 active:scale-95"
             >
               <FileText size={14} />
               Reference ({selectedIds.length})
@@ -277,10 +277,10 @@ export function VehicleUserSpecsDisplay({
           <button 
             type="button"
             onClick={() => setIsAdding(!isAdding)}
-            className={`flex h-9 items-center justify-center gap-2 rounded-xl border transition-all active:scale-95 ${
+            className={`flex h-9 items-center justify-center gap-2 rounded-xl border border-border-subtle transition-all active:scale-95 ${
               isAdding 
-                ? "border-white/10 bg-white/5 text-white/60 px-4" 
-                : "border-white/10 bg-white/5 text-white/60 px-3 hover:bg-white/10"
+                ? "bg-foreground/5 text-muted px-4" 
+                : "bg-card-overlay text-muted px-3 hover:bg-card-overlay-hover hover:border-border-strong hover:text-foreground"
             }`}
           >
             {isAdding ? <X size={14} /> : <Plus size={14} />}
@@ -306,26 +306,26 @@ export function VehicleUserSpecsDisplay({
       {/* Add Form */}
       {isAdding && (
         <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
-          <form onSubmit={handleAdd} className="rounded-[32px] border border-white/10 bg-white/[0.02] p-6 space-y-5 shadow-2xl">
+          <form onSubmit={handleAdd} className="rounded-[32px] border border-border-strong bg-card-overlay p-6 space-y-5 shadow-2xl">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Category</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Category</label>
                 <select 
                   value={formData.group}
                   onChange={(e) => setFormData({ ...formData, group: e.target.value, label: '' })}
-                  className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-white/20 appearance-none"
+                  className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-border-strong appearance-none"
                 >
                   {SPEC_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
               </div>
               
               <div className="space-y-1.5">
-                <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Spec Label</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Spec Label</label>
                 <div className="space-y-2">
                   <select 
                     value={formData.label}
                     onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                    className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-white/20 appearance-none"
+                    className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-border-strong appearance-none"
                   >
                     <option value="">Select popular label...</option>
                     {(CATEGORY_LABELS[formData.group] || []).map(l => <option key={l} value={l}>{l}</option>)}
@@ -336,7 +336,7 @@ export function VehicleUserSpecsDisplay({
                       placeholder="Enter custom label..."
                       value={customLabel}
                       onChange={(e) => setCustomLabel(e.target.value)}
-                      className="h-12 w-full rounded-2xl bg-white/5 border border-white/10 px-4 text-xs font-bold text-white placeholder:text-white/10 focus:outline-none focus:ring-1 focus:ring-white/20 animate-in fade-in duration-200"
+                      className="h-12 w-full rounded-2xl bg-card-overlay border border-border-subtle px-4 text-xs font-bold text-foreground placeholder:text-muted/30 focus:outline-none focus:ring-1 focus:ring-border-strong animate-in fade-in duration-200"
                     />
                   )}
                 </div>
@@ -345,22 +345,22 @@ export function VehicleUserSpecsDisplay({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Value</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Value</label>
                 <input 
                   placeholder="e.g. 10.5:1"
                   value={formData.value}
                   onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                  className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white placeholder:text-white/10 focus:outline-none focus:ring-1 focus:ring-white/20"
+                  className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground placeholder:text-muted/30 focus:outline-none focus:ring-1 focus:ring-border-strong"
                 />
               </div>
               
               <div className="space-y-1.5">
-                <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Unit</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Unit</label>
                 <div className="space-y-2">
                   <select 
                     value={formData.unit}
                     onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-white/20 appearance-none"
+                    className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-border-strong appearance-none"
                   >
                     <option value="none">No unit</option>
                     {COMMON_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
@@ -371,7 +371,7 @@ export function VehicleUserSpecsDisplay({
                       placeholder="e.g. bar, psi, mm"
                       value={customUnit}
                       onChange={(e) => setCustomUnit(e.target.value)}
-                      className="h-12 w-full rounded-2xl bg-white/5 border border-white/10 px-4 text-xs font-bold text-white placeholder:text-white/10 focus:outline-none focus:ring-1 focus:ring-white/20 animate-in fade-in duration-200"
+                      className="h-12 w-full rounded-2xl bg-card-overlay border border-border-subtle px-4 text-xs font-bold text-foreground placeholder:text-muted/30 focus:outline-none focus:ring-1 focus:ring-border-strong animate-in fade-in duration-200"
                     />
                   )}
                 </div>
@@ -379,19 +379,19 @@ export function VehicleUserSpecsDisplay({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Notes (Optional)</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Notes (Optional)</label>
               <textarea 
                 placeholder="Internal technical notes, part numbers, or source links..."
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full min-h-[80px] rounded-2xl bg-black/40 p-4 text-xs font-medium text-white placeholder:text-white/10 focus:outline-none focus:ring-1 focus:ring-white/20 resize-none"
+                className="w-full min-h-[80px] rounded-2xl bg-foreground/5 border border-border-subtle p-4 text-xs font-medium text-foreground placeholder:text-muted/30 focus:outline-none focus:ring-1 focus:ring-border-strong resize-none"
               />
             </div>
 
             <button 
               type="submit" 
               disabled={loadingId === 'adding'}
-              className="w-full h-12 rounded-2xl bg-white text-[10px] font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98] flex items-center justify-center gap-2 shadow-xl"
+              className="w-full h-12 rounded-2xl bg-foreground text-[10px] font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2 shadow-xl"
             >
               {loadingId === 'adding' ? <Loader2 size={16} className="animate-spin" /> : "Save to Library"}
             </button>
@@ -408,9 +408,9 @@ export function VehicleUserSpecsDisplay({
                   triggerUpgrade('spec_import');
                 }
               }}
-              className="group w-full h-14 flex items-center justify-center gap-3 rounded-2xl border border-blue-500/30 bg-blue-500/[0.06] text-[10px] font-black uppercase tracking-widest text-blue-400 hover:bg-blue-500/[0.1] hover:border-blue-500/50 transition-all active:scale-[0.98] shadow-xl shadow-blue-500/[0.05]"
+              className="group w-full h-14 flex items-center justify-center gap-3 rounded-2xl border border-blue-500/30 bg-blue-500/[0.06] text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 hover:bg-blue-500/[0.1] hover:border-blue-500/50 transition-all active:scale-[0.98] shadow-xl shadow-blue-500/[0.05]"
             >
-              <Upload size={18} className="text-blue-400 group-hover:scale-110 transition-transform" />
+              <Upload size={18} className="text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
               <span>Import Specs from CSV</span>
               <span className="ml-1 px-2 py-0.5 rounded-md bg-blue-500 text-[8px] font-black text-white tracking-normal shadow-sm">PRO</span>
             </button>
@@ -420,12 +420,12 @@ export function VehicleUserSpecsDisplay({
 
       {/* Grouped Display */}
       {customSpecs.length === 0 && !isAdding ? (
-        <div className="flex flex-col items-center justify-center rounded-[40px] border border-dashed border-white/5 bg-white/[0.01] py-20 text-center">
+        <div className="flex flex-col items-center justify-center rounded-[40px] border border-dashed border-border-subtle bg-foreground/[0.01] py-20 text-center">
           <div className="relative mb-4 opacity-20">
-            <div className="absolute -inset-4 rounded-full bg-white/5 blur-2xl" />
+            <div className="absolute -inset-4 rounded-full bg-foreground/5 blur-2xl" />
             <Settings2 size={40} strokeWidth={1} />
           </div>
-          <p className="text-xs font-bold text-white/20 uppercase tracking-widest">Personal spec library is empty</p>
+          <p className="text-xs font-bold text-muted uppercase tracking-widest italic">Personal spec library is empty</p>
         </div>
       ) : (
         <div className="space-y-4 sm:space-y-6">
@@ -437,30 +437,30 @@ export function VehicleUserSpecsDisplay({
             const contentId = `spec-category-${category.replace(/\s+/g, '-').toLowerCase()}`;
 
             return (
-              <div key={category} className="group overflow-hidden rounded-[28px] border border-white/5 bg-white/[0.01] transition-all duration-500 hover:border-white/10">
+              <div key={category} className="group overflow-hidden rounded-[28px] border border-border-subtle bg-card-overlay transition-all duration-500 hover:border-border-strong">
                 <button
                   type="button"
                   onClick={() => toggleCategory(category)}
                   aria-expanded={isExpanded}
                   aria-controls={contentId}
-                  className="flex w-full items-center justify-between p-5 outline-none transition-colors hover:bg-white/[0.02]"
+                  className="flex w-full items-center justify-between p-5 outline-none transition-colors hover:bg-foreground/[0.02]"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`flex h-8 w-8 items-center justify-center rounded-xl border transition-all duration-500 ${
                       isExpanded 
-                        ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' 
-                        : 'bg-white/5 border-white/5 text-white/20'
+                        ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' 
+                        : 'bg-foreground/5 border-border-subtle text-muted opacity-40'
                     }`}>
                       <Settings2 size={14} strokeWidth={1.5} />
                     </div>
                     <span className={`text-[11px] font-black uppercase tracking-[0.25em] transition-colors ${
-                      isExpanded ? 'text-white' : 'text-white/40 group-hover:text-white/60'
+                      isExpanded ? 'text-foreground' : 'text-muted group-hover:text-foreground/60'
                     }`}>
                       {category}
                     </span>
                   </div>
-                  <div className={`flex h-7 w-7 items-center justify-center rounded-full border border-white/5 bg-white/5 text-white/20 transition-all duration-500 ${
-                    isExpanded ? 'rotate-180 bg-blue-500/10 border-blue-500/20 text-blue-400' : ''
+                  <div className={`flex h-7 w-7 items-center justify-center rounded-full border border-border-subtle bg-foreground/5 text-muted transition-all duration-500 ${
+                    isExpanded ? 'rotate-180 bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' : ''
                   }`}>
                     <ChevronDown size={12} strokeWidth={3} />
                   </div>
@@ -483,13 +483,13 @@ export function VehicleUserSpecsDisplay({
 
                         if (isEditing) {
                           return (
-                            <div key={spec.id} className="rounded-[24px] border border-white/10 bg-white/5 p-5 space-y-4 animate-in fade-in duration-200 shadow-2xl">
+                            <div key={spec.id} className="rounded-[24px] border border-border-strong bg-card-overlay p-5 space-y-4 animate-in fade-in duration-200 shadow-2xl">
                               <div className="space-y-1.5">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Category</label>
+                                <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Category</label>
                                 <select 
                                   value={editFormData.group}
                                   onChange={(e) => setEditFormData({ ...editFormData, group: e.target.value, label: '' })}
-                                  className="h-10 w-full rounded-xl bg-black/40 px-3 text-xs font-bold text-white border border-white/5 focus:border-white/20 focus:outline-none appearance-none"
+                                  className="h-10 w-full rounded-xl bg-foreground/5 px-3 text-xs font-bold text-foreground border border-border-subtle focus:border-border-strong focus:outline-none appearance-none"
                                 >
                                   {SPEC_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                 </select>
@@ -497,12 +497,12 @@ export function VehicleUserSpecsDisplay({
 
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                  <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Label</label>
+                                  <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Label</label>
                                   <div className="space-y-2">
                                     <select 
                                       value={editFormData.label}
                                       onChange={(e) => setEditFormData({ ...editFormData, label: e.target.value })}
-                                      className="h-10 w-full rounded-xl bg-black/40 px-3 text-xs font-bold text-white border border-white/5 focus:border-white/20 focus:outline-none appearance-none"
+                                      className="h-10 w-full rounded-xl bg-foreground/5 px-3 text-xs font-bold text-foreground border border-border-subtle focus:border-border-strong focus:outline-none appearance-none"
                                     >
                                       <option value="">Select popular label...</option>
                                       {(CATEGORY_LABELS[editFormData.group] || []).map(l => <option key={l} value={l}>{l}</option>)}
@@ -512,40 +512,40 @@ export function VehicleUserSpecsDisplay({
                                       <input 
                                         value={editCustomLabel}
                                         onChange={(e) => setEditCustomLabel(e.target.value)}
-                                        className="h-10 w-full rounded-xl bg-white/5 border border-white/10 px-3 text-xs font-bold text-white focus:outline-none animate-in fade-in duration-200"
+                                        className="h-10 w-full rounded-xl bg-card-overlay border border-border-subtle px-3 text-xs font-bold text-foreground focus:outline-none animate-in fade-in duration-200"
                                         placeholder="Enter custom label..."
                                       />
                                     )}
                                   </div>
                                 </div>
                                 <div className="space-y-1.5">
-                                  <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Value</label>
+                                  <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Value</label>
                                   <input 
                                     value={editFormData.value}
                                     onChange={(e) => setEditFormData({ ...editFormData, value: e.target.value })}
-                                    className="h-10 w-full rounded-xl bg-black/40 px-3 text-xs font-bold text-white border border-white/5 focus:border-white/20 focus:outline-none"
+                                    className="h-10 w-full rounded-xl bg-foreground/5 px-3 text-xs font-bold text-foreground border border-border-subtle focus:border-border-strong focus:outline-none"
                                   />
                                 </div>
                               </div>
 
                               <div className="space-y-1.5">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Notes</label>
+                                <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Notes</label>
                                 <textarea 
                                   value={editFormData.notes}
                                   onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
-                                  className="w-full min-h-[60px] rounded-xl bg-black/40 p-3 text-xs font-medium text-white border border-white/5 focus:border-white/20 focus:outline-none resize-none"
+                                  className="w-full min-h-[60px] rounded-xl bg-foreground/5 p-3 text-xs font-medium text-foreground border border-border-subtle focus:border-border-strong focus:outline-none resize-none"
                                   placeholder="Spec notes..."
                                 />
                               </div>
 
                               <div className="flex items-center gap-3">
                                 <div className="flex-1 space-y-1.5">
-                                  <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Unit</label>
+                                  <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Unit</label>
                                   <div className="space-y-2">
                                     <select 
                                       value={editFormData.unit}
                                       onChange={(e) => setEditFormData({ ...editFormData, unit: e.target.value })}
-                                      className="h-10 w-full rounded-xl bg-black/40 px-3 text-xs font-bold text-white border border-white/5 focus:border-white/20 focus:outline-none appearance-none"
+                                      className="h-10 w-full rounded-xl bg-foreground/5 px-3 text-xs font-bold text-foreground border border-border-subtle focus:border-border-strong focus:outline-none appearance-none"
                                     >
                                       <option value="none">No unit</option>
                                       {COMMON_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
@@ -555,7 +555,7 @@ export function VehicleUserSpecsDisplay({
                                       <input 
                                         value={editCustomUnit}
                                         onChange={(e) => setEditCustomUnit(e.target.value)}
-                                        className="h-10 w-full rounded-xl bg-white/5 border border-white/10 px-3 text-xs font-bold text-white focus:outline-none animate-in fade-in duration-200"
+                                        className="h-10 w-full rounded-xl bg-card-overlay border border-border-subtle px-3 text-xs font-bold text-foreground focus:outline-none animate-in fade-in duration-200"
                                         placeholder="Custom unit..."
                                       />
                                     )}
@@ -566,14 +566,14 @@ export function VehicleUserSpecsDisplay({
                                     type="button"
                                     onClick={() => handleUpdate(spec.id)}
                                     disabled={isLoading}
-                                    className="h-10 w-10 flex items-center justify-center rounded-xl bg-white text-black hover:bg-white/90 transition-colors disabled:opacity-50 shadow-lg"
+                                    className="h-10 w-10 flex items-center justify-center rounded-xl bg-foreground text-background hover:opacity-90 transition-colors disabled:opacity-50 shadow-lg"
                                   >
                                     {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                                   </button>
                                   <button 
                                     type="button"
                                     onClick={() => setEditingId(null)}
-                                    className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 text-white/40 hover:bg-white/10 transition-colors"
+                                    className="h-10 w-10 flex items-center justify-center rounded-xl bg-foreground/5 text-muted hover:bg-foreground/10 transition-colors"
                                   >
                                     <X size={16} />
                                   </button>
@@ -589,8 +589,8 @@ export function VehicleUserSpecsDisplay({
                             onClick={() => toggleSelection(spec.id)}
                             className={`group flex items-center justify-between rounded-2xl border transition-all hover:shadow-lg cursor-pointer p-4 ${
                               isSelected 
-                                ? 'border-blue-500/30 bg-blue-500/[0.03] shadow-inner' 
-                                : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10'
+                                ? 'border-blue-500/30 bg-blue-500/[0.03] dark:bg-blue-500/[0.01] shadow-inner' 
+                                : 'border-border-subtle bg-foreground/[0.01] hover:bg-foreground/[0.03] hover:border-border-strong'
                             } ${isConfirmingDelete ? 'border-red-500/30 bg-red-500/5' : ''}`}
                           >
                             <div className="flex items-center gap-4 min-w-0">
@@ -599,7 +599,7 @@ export function VehicleUserSpecsDisplay({
                                 <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all ${
                                   isSelected 
                                     ? 'border-blue-500 bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.4)]' 
-                                    : 'border-white/10 bg-white/5 text-transparent group-hover:border-white/20'
+                                    : 'border-border-subtle bg-foreground/5 text-transparent group-hover:border-border-strong'
                                 }`}>
                                   <Check size={12} strokeWidth={4} />
                                 </div>
@@ -607,16 +607,16 @@ export function VehicleUserSpecsDisplay({
 
                               <div className="min-w-0 space-y-0.5">
                                 <p className={`text-[10px] font-bold uppercase tracking-widest truncate transition-colors ${
-                                  isSelected ? 'text-blue-400/60' : 'text-white/30'
+                                  isSelected ? 'text-blue-600 dark:text-blue-400 opacity-80' : 'text-muted opacity-40'
                                 }`}>
                                   {spec.label}
                                 </p>
                                 <div className="flex items-baseline gap-2">
-                                  <p className="text-sm font-black text-white italic">
-                                    {spec.value} <span className="text-[10px] not-italic text-white/40 font-bold ml-0.5 uppercase">{spec.unit}</span>
+                                  <p className="text-sm font-black text-foreground italic">
+                                    {spec.value} <span className="text-[10px] not-italic text-muted font-bold ml-0.5 uppercase">{spec.unit}</span>
                                   </p>
                                   {spec.notes && (
-                                    <span className="text-[8px] font-bold text-white/10 uppercase tracking-tighter truncate max-w-[100px]">
+                                    <span className="text-[8px] font-bold text-muted opacity-20 uppercase tracking-tighter truncate max-w-[100px]">
                                       • {spec.notes}
                                     </span>
                                   )}
@@ -638,7 +638,7 @@ export function VehicleUserSpecsDisplay({
                                   <button 
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
-                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/40 hover:bg-white/10"
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground/5 text-muted hover:bg-foreground/10"
                                   >
                                     <X size={14} />
                                   </button>
@@ -648,7 +648,7 @@ export function VehicleUserSpecsDisplay({
                                   <button 
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); handleEditInit(spec); }}
-                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all"
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground/5 text-muted hover:bg-foreground/10 hover:text-foreground transition-all"
                                     title="Edit Spec"
                                   >
                                     <Edit3 size={14} />
@@ -656,7 +656,7 @@ export function VehicleUserSpecsDisplay({
                                   <button 
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(spec.id); }}
-                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/5 text-red-500/20 hover:bg-red-500/10 hover:text-red-400 transition-all"
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/5 text-red-500/40 hover:bg-red-500/10 hover:text-red-500 transition-all"
                                     title="Delete Spec"
                                   >
                                     <Trash2 size={14} />
@@ -791,17 +791,17 @@ function ReferenceListModal({
 
       <div className="absolute inset-0 bg-black/90 backdrop-blur-xl print:hidden" onClick={onClose} />
       
-      <div className="print-document relative flex flex-col w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-[40px] border border-white/10 bg-[#0b0b0c] shadow-3xl print:rounded-none">
+      <div className="print-document relative flex flex-col w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-[40px] border border-border-strong bg-surface shadow-3xl print:rounded-none">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/5 p-8 print:hidden">
+        <div className="flex items-center justify-between border-b border-border-subtle p-8 print:hidden">
           <div>
-            <h3 className="text-2xl font-black italic tracking-tight text-white uppercase">Reference List</h3>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 mt-1">Quick-access technical specs</p>
+            <h3 className="text-2xl font-black italic tracking-tight text-foreground uppercase">Reference List</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-40 mt-1">Quick-access technical specs</p>
           </div>
           <button 
             type="button" 
             onClick={onClose}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-foreground/5 text-muted hover:bg-foreground/10 hover:text-foreground transition-all"
           >
             <X size={24} />
           </button>
@@ -826,19 +826,19 @@ function ReferenceListModal({
             <div key={category} className="space-y-4 print:break-inside-avoid print:space-y-2">
               <div className="flex items-center gap-3">
                 <div className="h-1.5 w-1.5 rounded-full bg-blue-500 print:bg-black" />
-                <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 print:text-black/40 print:text-[10px] print:tracking-[0.2em]">
+                <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-muted opacity-40 print:text-black/40 print:text-[10px] print:tracking-[0.2em]">
                   {category}
                 </h4>
               </div>
               
               <div className="grid gap-2 print:gap-1">
                 {specs.map(spec => (
-                  <div key={spec.id} className="flex items-center justify-between group rounded-2xl border border-white/5 bg-white/[0.01] p-4 print:border-none print:bg-transparent print:rounded-none print:p-0 print:block">
+                  <div key={spec.id} className="flex items-center justify-between group rounded-2xl border border-border-subtle bg-foreground/[0.01] p-4 print:border-none print:bg-transparent print:rounded-none print:p-0 print:block">
                     {/* On-screen layout */}
                     <div className="min-w-0 space-y-0.5 print:hidden">
-                      <p className="text-[9px] font-bold uppercase tracking-widest text-white/20">{spec.label}</p>
-                      <p className="text-base font-black text-white italic">
-                        {spec.value} <span className="text-[10px] not-italic text-white/40 font-bold ml-0.5 uppercase">{spec.unit}</span>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-muted opacity-40">{spec.label}</p>
+                      <p className="text-base font-black text-foreground italic">
+                        {spec.value} <span className="text-[10px] not-italic text-muted font-bold ml-0.5 uppercase">{spec.unit}</span>
                       </p>
                     </div>
 
@@ -854,7 +854,7 @@ function ReferenceListModal({
                     <button
                       type="button"
                       onClick={() => onRemove(spec.id)}
-                      className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/5 text-white/20 hover:bg-red-500/10 hover:text-red-400 transition-all print:hidden"
+                      className="h-8 w-8 flex items-center justify-center rounded-lg bg-foreground/5 text-muted hover:bg-red-500/10 hover:text-red-500 transition-all print:hidden"
                       title="Remove from list"
                     >
                       <Trash2 size={14} />
@@ -874,11 +874,11 @@ function ReferenceListModal({
         </div>
 
         {/* Actions */}
-        <div className="border-t border-white/5 bg-white/[0.01] p-8 flex items-center gap-4 print:hidden">
+        <div className="border-t border-border-subtle bg-foreground/[0.01] p-8 flex items-center gap-4 print:hidden">
           <button
             type="button"
             onClick={handlePrint}
-            className="flex-1 flex h-14 items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-white/10 active:scale-[0.98]"
+            className="flex-1 flex h-14 items-center justify-center gap-3 rounded-2xl border border-border-subtle bg-card-overlay text-[10px] font-black uppercase tracking-widest text-foreground transition-all hover:bg-card-overlay-hover active:scale-[0.98]"
           >
             <Printer size={18} />
             Print List
@@ -886,7 +886,7 @@ function ReferenceListModal({
           <button
             type="button"
             onClick={handlePrint}
-            className="flex-1 flex h-14 items-center justify-center gap-3 rounded-2xl bg-white text-[10px] font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98] shadow-2xl"
+            className="flex-1 flex h-14 items-center justify-center gap-3 rounded-2xl bg-foreground text-[10px] font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] shadow-2xl"
           >
             <FileDown size={18} />
             Export PDF (via Print)

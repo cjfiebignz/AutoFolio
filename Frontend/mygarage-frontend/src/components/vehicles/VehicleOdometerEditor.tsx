@@ -124,13 +124,13 @@ export function VehicleOdometerEditor({
       />
       
       {/* Modal */}
-      <div className={`relative w-full max-w-sm overflow-hidden rounded-[40px] border border-white/10 bg-[#0b0b0c] shadow-2xl transition-all duration-300 ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
-        <div className="flex items-center justify-between border-b border-white/5 p-6">
-          <h3 className="text-xl font-black italic tracking-tight text-white uppercase">Update {getUnitLabel()}</h3>
+      <div className={`relative w-full max-w-sm overflow-hidden rounded-[40px] border border-border-strong bg-surface shadow-2xl transition-all duration-300 ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
+        <div className="flex items-center justify-between border-b border-border-subtle p-6">
+          <h3 className="text-xl font-black italic tracking-tight text-foreground uppercase">Update {getUnitLabel()}</h3>
           <button 
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5 text-muted opacity-40 hover:bg-foreground/10 hover:text-foreground transition-all"
           >
             <X size={20} />
           </button>
@@ -138,16 +138,16 @@ export function VehicleOdometerEditor({
 
         <div className="p-8 space-y-6">
           {error && (
-            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-[11px] font-bold uppercase tracking-widest text-red-400">
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-[11px] font-bold uppercase tracking-widest text-red-600 dark:text-red-400">
               {error}
             </div>
           )}
 
           {/* Mode Selector */}
-          <div className="flex p-1 rounded-2xl bg-white/[0.03] border border-white/5">
+          <div className="flex p-1 rounded-2xl bg-foreground/[0.03] border border-border-subtle">
             <button
               onClick={() => setEntryMode('direct')}
-              className={`flex-1 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${entryMode === 'direct' ? 'bg-white text-black' : 'text-white/40 hover:text-white/60'}`}
+              className={`flex-1 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${entryMode === 'direct' ? 'bg-surface text-foreground shadow-sm' : 'text-muted opacity-40 hover:text-foreground'}`}
             >
               Direct Entry
             </button>
@@ -156,7 +156,7 @@ export function VehicleOdometerEditor({
                 setEntryMode('add');
                 setTimeout(() => addInputRef.current?.focus(), 10);
               }}
-              className={`flex-1 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${entryMode === 'add' ? 'bg-white text-black' : 'text-white/40 hover:text-white/60'}`}
+              className={`flex-1 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${entryMode === 'add' ? 'bg-surface text-foreground shadow-sm' : 'text-muted opacity-40 hover:text-foreground'}`}
             >
               Add Distance
             </button>
@@ -166,8 +166,8 @@ export function VehicleOdometerEditor({
             {entryMode === 'direct' ? (
               <div className="space-y-3 animate-in fade-in slide-in-from-left-2 duration-300">
                 <div className="flex items-center gap-2 px-1">
-                  <div className="text-white/20"><Gauge size={14} /></div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Full Odometer Value ({getUnitLabel()})</label>
+                  <div className="text-muted opacity-40"><Gauge size={14} /></div>
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-60">Full Odometer Value ({getUnitLabel()})</label>
                 </div>
                 <input
                   ref={inputRef}
@@ -175,24 +175,24 @@ export function VehicleOdometerEditor({
                   value={directValue}
                   onChange={(e) => setDirectValue(e.target.value)}
                   placeholder={`e.g. ${preferences.distanceUnit === 'miles' ? '28000' : '45000'}`}
-                  className="h-16 w-full rounded-2xl border border-white/5 bg-white/[0.02] px-6 text-2xl font-black italic tracking-tight text-white placeholder:text-white/5 focus:border-white/20 focus:bg-white/[0.04] focus:outline-none transition-all"
+                  className="h-16 w-full rounded-2xl border border-border-subtle bg-foreground/[0.02] px-6 text-2xl font-black italic tracking-tight text-foreground placeholder:text-muted/10 focus:border-border-strong focus:bg-foreground/[0.04] focus:outline-none transition-all"
                 />
               </div>
             ) : (
               <div className="space-y-5 animate-in fade-in slide-in-from-right-2 duration-300">
                 <div className="space-y-2.5">
-                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20 px-1">Select Baseline</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted opacity-40 px-1">Select Baseline</p>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setBaseSource('current')}
-                      className={`h-11 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${baseSource === 'current' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10'}`}
+                      className={`h-11 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${baseSource === 'current' ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' : 'bg-card-overlay border-border-subtle text-muted opacity-40 hover:bg-foreground/5'}`}
                     >
                       Current ({formatNumber(currentDisplayVal)})
                     </button>
                     <button
                       disabled={!hasMainBaseline}
                       onClick={() => setBaseSource('last_main')}
-                      className={`h-11 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${!hasMainBaseline ? 'opacity-20 grayscale' : baseSource === 'last_main' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10'}`}
+                      className={`h-11 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${!hasMainBaseline ? 'opacity-20 grayscale' : baseSource === 'last_main' ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' : 'bg-card-overlay border-border-subtle text-muted opacity-40 hover:bg-foreground/5'}`}
                     >
                       Last Main ({formatNumber(lastMainDisplayVal)})
                     </button>
@@ -201,8 +201,8 @@ export function VehicleOdometerEditor({
 
                 <div className="space-y-3 pt-1">
                   <div className="flex items-center gap-2 px-1">
-                    <div className="text-blue-500/40"><ArrowRight size={14} /></div>
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400/60">Distance Travelled ({getUnitLabel()})</label>
+                    <div className="text-blue-500 opacity-40"><ArrowRight size={14} /></div>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600/60 dark:text-blue-400/60">Distance Travelled ({getUnitLabel()})</label>
                   </div>
                   <div className="relative">
                     <input
@@ -211,7 +211,7 @@ export function VehicleOdometerEditor({
                       value={travelledAmount}
                       onChange={(e) => setTravelledAmount(e.target.value)}
                       placeholder="e.g. 1459"
-                      className="h-14 w-full rounded-2xl border border-blue-500/20 bg-blue-500/[0.03] px-6 text-xl font-black italic tracking-tight text-blue-400 placeholder:text-blue-500/20 focus:border-blue-500/40 focus:outline-none transition-all"
+                      className="h-14 w-full rounded-2xl border border-blue-500/20 bg-blue-500/[0.03] px-6 text-xl font-black italic tracking-tight text-blue-600 dark:text-blue-400 placeholder:text-blue-500/20 focus:border-blue-500/40 focus:outline-none transition-all"
                     />
                     <div className="absolute right-6 top-1/2 -translate-y-1/2">
                       <span className="text-[10px] font-black uppercase tracking-widest text-blue-500/40">+ {getUnitLabel()}</span>
@@ -223,11 +223,11 @@ export function VehicleOdometerEditor({
           </div>
 
           {/* Computed Preview */}
-          <div className="flex flex-col items-center justify-center gap-2 py-4 border-y border-white/5 bg-white/[0.01]">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20">New Odometer Result</p>
+          <div className="flex flex-col items-center justify-center gap-2 py-4 border-y border-border-subtle bg-foreground/[0.01]">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted opacity-40">New Odometer Result</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black italic tracking-tighter text-white">{formatNumber(finalValue)}</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-white/40">{getUnitLabel()}</span>
+              <span className="text-3xl font-black italic tracking-tighter text-foreground">{formatNumber(finalValue)}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted opacity-40">{getUnitLabel()}</span>
             </div>
           </div>
 
@@ -235,7 +235,7 @@ export function VehicleOdometerEditor({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-14 rounded-2xl border border-white/5 bg-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 transition-all hover:bg-white/10 hover:text-white"
+              className="flex-1 h-14 rounded-2xl border border-border-subtle bg-card-overlay text-[10px] font-black uppercase tracking-widest text-muted transition-all hover:bg-card-overlay-hover hover:text-foreground"
             >
               Cancel
             </button>
@@ -243,9 +243,9 @@ export function VehicleOdometerEditor({
               type="button"
               onClick={handleSave}
               disabled={isPending}
-              className="flex-[2] flex h-14 items-center justify-center gap-3 rounded-2xl bg-white text-[10px] font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98] disabled:opacity-50"
+              className="flex-[2] flex h-14 items-center justify-center gap-3 rounded-2xl bg-foreground text-[10px] font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
             >
-              {isPending ? 'Saving...' : (
+              {isPending ? <Loader2 className="animate-spin" size={16} /> : (
                 <>
                   <Save size={16} strokeWidth={3} />
                   Update Odometer

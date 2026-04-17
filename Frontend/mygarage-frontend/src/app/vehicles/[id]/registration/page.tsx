@@ -35,28 +35,28 @@ export default async function RegistrationPage({
   const registrations = JSON.parse(JSON.stringify(vehicle.registrations || []));
 
   return (
-    <div className="min-h-screen bg-[#0b0b0c] text-white antialiased">
+    <div className="min-h-screen bg-background text-foreground antialiased">
       <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
         <header className="mb-12 space-y-6">
           <nav>
             <Link 
               href={`/vehicles/${id}`}
-              className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 transition-colors hover:text-white"
+              className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-dim transition-colors hover:text-foreground"
             >
               <ChevronLeft size={14} className="transition-transform group-hover:-translate-x-1" />
               Back to Vehicle
             </Link>
           </nav>
           
-          <div className="flex items-end justify-between border-b border-white/5 pb-6">
+          <div className="flex items-end justify-between border-b border-border-subtle pb-6">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400/50 mb-1">Compliance Management</p>
-              <h1 className="text-4xl font-black italic tracking-tighter uppercase text-white leading-none">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-500/50 dark:text-blue-400/50 mb-1">Compliance Management</p>
+              <h1 className="text-4xl font-black italic tracking-tighter uppercase text-foreground leading-none">
                 {vehicle.nickname || 'Vehicle'}
               </h1>
             </div>
             <div className="text-right">
-              <span className="rounded-md border border-white/10 bg-white/5 px-2 py-1 font-mono text-[10px] font-bold text-white/40 uppercase">
+              <span className="rounded-md border border-border-strong bg-card-overlay px-2 py-1 font-mono text-[10px] font-bold text-muted uppercase">
                 {vehicle.licensePlate || 'No Plate'}
               </span>
             </div>

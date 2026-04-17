@@ -187,7 +187,7 @@ export interface UserVehicle {
   publicShareCreatedAt?: string | null;
   serviceSummary?: {
     currentKms: number | null;
-    baselineSource: string | null;
+    baselineSource: 'main_service' | 'settings_baseline' | 'none' | null;
     baselineDate: string | null;
     baselineKms: number | null;
     lastServiceDate: string | null;

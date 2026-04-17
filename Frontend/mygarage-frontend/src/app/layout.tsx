@@ -17,10 +17,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-background text-foreground min-h-screen antialiased transition-colors duration-300`}>
+      <body className={`${inter.className} text-foreground min-h-screen antialiased transition-colors duration-300`}>
         <Providers>
           {/* Mobile-first centered container with premium glassmorphism background */}
-          <div className="mx-auto min-h-screen max-w-2xl bg-surface shadow-[0_0_100px_rgba(0,0,0,0.2)] dark:shadow-[0_0_100px_rgba(0,0,0,0.8)] ring-1 ring-black/5 dark:ring-white/5 transition-colors duration-300">
+          <div className="mx-auto min-h-screen max-w-2xl bg-[var(--body-bg)] shadow-premium ring-1 ring-black/5 dark:ring-white/5 transition-colors duration-300">
             <main className="relative">
               {children}
             </main>

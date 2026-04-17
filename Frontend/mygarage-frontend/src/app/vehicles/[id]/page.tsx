@@ -12,7 +12,15 @@ import { VehicleOverviewDisplay } from "@/components/vehicles/VehicleOverviewDis
 import { VehicleDocumentsDisplay } from "@/components/vehicles/VehicleDocumentsDisplay";
 import { VehicleWorkDisplay } from "@/components/vehicles/VehicleWorkDisplay";
 import { VehiclePhotosDisplay } from "@/components/vehicles/VehiclePhotosDisplay";
-import { VehicleBanner } from "@/components/vehicles/VehicleBanner";
+import { 
+  VehicleBanner, 
+  BannerStatusWrapper, 
+  BannerStatusLabel, 
+  BannerNickname, 
+  BannerSubheading, 
+  BannerPlate, 
+  BannerAddedDate 
+} from "@/components/vehicles/VehicleBanner";
 import { VehicleServiceClientWrapper } from "@/components/vehicles/VehicleServiceClientWrapper";
 import { VehicleTabNavigation } from "@/components/vehicles/VehicleTabNavigation";
 import { MaintenanceStatusBadge, MaintenanceStatus } from "@/components/vehicles/MaintenanceStatusBadge";
@@ -57,14 +65,14 @@ export default async function VehicleDetailPage({
   } catch (err: any) {
     console.error("Error loading VehicleDetailPage data:", err);
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#0b0b0c] px-6 text-center text-white antialiased">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-surface px-6 text-center text-foreground antialiased">
         <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/5 p-6 shadow-2xl backdrop-blur-md">
           <h2 className="text-xl font-bold text-red-400">Connection Issue</h2>
-          <p className="mt-2 text-sm text-white/60 max-w-xs">{err.message || "Could not load vehicle details."}</p>
+          <p className="mt-2 text-sm text-muted max-w-xs">{err.message || "Could not load vehicle details."}</p>
           <div className="mt-6">
             <Link 
               href="/vehicles"
-              className="text-[10px] font-black uppercase tracking-widest text-white/40 underline underline-offset-4 decoration-white/10 hover:text-white"
+              className="text-[10px] font-black uppercase tracking-widest text-muted underline underline-offset-4 decoration-border-strong hover:text-foreground"
             >
               Back to Vehicles
             </Link>
@@ -98,7 +106,7 @@ export default async function VehicleDetailPage({
   const isOverviewTab = currentTab === 'overview' || currentTab === 'reminders';
 
   return (
-    <div className="min-h-screen bg-[#0b0b0c] text-white antialiased">
+    <div className="min-h-screen bg-surface text-foreground antialiased transition-colors duration-300">
       <VehicleBanner 
         bannerImageUrl={serializedVehicle.bannerImageUrl}
         bannerCropX={serializedVehicle.bannerCropX || 50}
@@ -112,12 +120,12 @@ export default async function VehicleDetailPage({
 
         {/* Status Bar */}
         <div className="mb-8 flex flex-wrap items-center justify-start gap-4">
-          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-            <span className={`h-1.5 w-1.5 rounded-full ${vehicle.isActive ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-white/20'}`} />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">
+          <BannerStatusWrapper>
+            <span className={`h-1.5 w-1.5 rounded-full ${vehicle.isActive ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-muted opacity-20'}`} />
+            <BannerStatusLabel>
               {vehicle.status}
-            </span>
-          </div>
+            </BannerStatusLabel>
+          </BannerStatusWrapper>
 
           {mappedServiceSummary?.status && (
             <MaintenanceStatusBadge status={mappedServiceSummary.status as MaintenanceStatus} />
@@ -126,21 +134,21 @@ export default async function VehicleDetailPage({
 
         {/* Header Section */}
         <header className="space-y-2 mt-auto pb-4">
-          <h1 className="text-5xl font-extrabold tracking-tighter sm:text-7xl uppercase italic drop-shadow-2xl">
+          <BannerNickname>
             {vehicle.nickname}
-          </h1>
+          </BannerNickname>
           <div className="space-y-1">
-            <p className="text-lg font-bold text-white/80 uppercase tracking-tight drop-shadow-md">
+            <BannerSubheading>
               {vehicle.year} {vehicle.make} {vehicle.model}
-            </p>
+            </BannerSubheading>
             <div className="flex items-center gap-3">
-              <span className="rounded-md border border-white/10 bg-white/10 backdrop-blur-md px-2 py-0.5 font-mono text-[10px] font-bold text-white/60">
+              <BannerPlate>
                 {vehicle.licensePlate}
-              </span>
-              <span className="h-1 w-1 rounded-full bg-white/20" />
-              <p className="text-[11px] font-bold uppercase tracking-widest text-white/40">
+              </BannerPlate>
+              <span className="h-1 w-1 rounded-full bg-muted opacity-20" />
+              <BannerAddedDate>
                 {vehicle.addedDate}
-              </p>
+              </BannerAddedDate>
             </div>
           </div>
         </header>

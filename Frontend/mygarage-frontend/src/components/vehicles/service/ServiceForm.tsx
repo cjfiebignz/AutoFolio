@@ -83,7 +83,7 @@ export function ServiceForm({ vehicleId, vehicleNickname, initialData, serviceId
   return (
     <form onSubmit={handleSubmit} method="POST" className="space-y-10 pb-12">
       {error && (
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-xs font-bold text-red-400">
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-xs font-bold text-red-600 dark:text-red-400">
           {error}
         </div>
       )}
@@ -92,7 +92,7 @@ export function ServiceForm({ vehicleId, vehicleNickname, initialData, serviceId
       <FormSection title="Service Details" icon={<Wrench size={14} />}>
         {/* Service Scope Selection - Top Left Position */}
         <div className="mb-8 space-y-4">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 ml-1">Service Scope</label>
+          <label className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-40 ml-1">Service Scope</label>
           <div className="grid grid-cols-2 gap-3">
             <ScopeButton 
               title="Main Service"
@@ -109,7 +109,7 @@ export function ServiceForm({ vehicleId, vehicleNickname, initialData, serviceId
               disabled={isSubmitting}
             />
           </div>
-          <p className="px-1 text-[9px] font-medium leading-relaxed text-white/20 uppercase tracking-widest">
+          <p className="px-1 text-[9px] font-medium leading-relaxed text-muted opacity-60 uppercase tracking-widest italic">
             {isMainService 
               ? "• Main Service baseline drives future service reminder calculations" 
               : "• Sub Service is logged in history but does not reset the main service baseline"}
@@ -161,8 +161,8 @@ export function ServiceForm({ vehicleId, vehicleNickname, initialData, serviceId
           />
           
           <div className="space-y-2">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 ml-1">Service Type</label>
-            <div className="flex h-12 rounded-2xl bg-white/5 p-1 ring-1 ring-white/10">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-40 ml-1">Service Type</label>
+            <div className="flex h-12 rounded-2xl bg-foreground/[0.03] p-1 border border-border-subtle">
               <TypeButton 
                 label="Workshop" 
                 active={serviceType === 'workshop'} 
@@ -200,40 +200,40 @@ export function ServiceForm({ vehicleId, vehicleNickname, initialData, serviceId
             />
           </div>
         ) : (
-          <div className="group relative flex flex-col items-center justify-center rounded-[32px] border border-dashed border-white/10 bg-white/[0.01] py-12 text-center transition-all hover:bg-white/[0.02] hover:border-white/20">
+          <div className="group relative flex flex-col items-center justify-center rounded-[32px] border border-dashed border-border-subtle bg-foreground/[0.01] py-12 text-center transition-all hover:bg-foreground/[0.02] hover:border-border-strong">
             <div className="mb-4 relative">
-              <div className="absolute -inset-4 rounded-full bg-white/5 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/5 bg-white/5 text-white/10 group-hover:text-white/20 transition-colors">
+              <div className="absolute -inset-4 rounded-full bg-foreground/5 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-border-subtle bg-card-overlay text-muted group-hover:text-foreground transition-colors">
                 <Paperclip size={24} strokeWidth={1.5} />
               </div>
             </div>
             <div className="space-y-2 px-6">
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Ready for records</p>
-              <p className="mx-auto max-w-[280px] text-[11px] font-medium leading-relaxed text-white/20">
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-muted">Ready for records</p>
+              <p className="mx-auto max-w-[280px] text-[11px] font-medium leading-relaxed text-dim">
                 You can attach receipts, invoices, and photos once this service record is initially saved.
               </p>
             </div>
             
-            <div className="mt-8 flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 border border-white/5">
+            <div className="mt-8 flex items-center gap-2 rounded-full bg-foreground/5 px-4 py-2 border border-border-subtle">
               <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[9px] font-black uppercase tracking-widest text-white/30">Save to unlock uploads</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-dim">Save to unlock uploads</span>
             </div>
           </div>
         )}
       </FormSection>
 
       {/* Form Actions */}
-      <footer className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+      <footer className="grid grid-cols-2 gap-4 pt-4 border-t border-border-subtle">
         <Link 
           href={`/vehicles/${vehicleId}?tab=service`}
-          className={`flex h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-sm font-bold text-white transition-all hover:bg-white/10 active:scale-[0.98] ${isSubmitting ? 'pointer-events-none opacity-50' : ''}`}
+          className={`flex h-14 items-center justify-center rounded-2xl border border-border-subtle bg-card-overlay text-sm font-bold text-foreground transition-all hover:bg-card-overlay-hover active:scale-[0.98] ${isSubmitting ? 'pointer-events-none opacity-50' : ''}`}
         >
           Cancel
         </Link>
         <button 
           type="submit"
           disabled={isSubmitting}
-          className="relative flex h-14 items-center justify-center overflow-hidden rounded-2xl bg-white text-sm font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98] disabled:opacity-50"
+          className="relative flex h-14 items-center justify-center overflow-hidden rounded-2xl bg-foreground text-sm font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
         >
           {isSubmitting ? "Saving..." : (serviceId ? "Save Changes" : "Add Record")}
         </button>
@@ -250,8 +250,8 @@ function TypeButton({ label, active, onClick, disabled }: { label: string; activ
       disabled={disabled}
       className={`flex flex-1 items-center justify-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
         active 
-          ? "bg-white/10 text-white shadow-[0_0_15px_rgba(255,255,255,0.05)]" 
-          : "text-white/20 hover:text-white/40"
+          ? "bg-surface text-foreground shadow-sm" 
+          : "text-muted opacity-40 hover:text-foreground"
       } disabled:opacity-50`}
     >
       {label}
@@ -268,16 +268,16 @@ function ScopeButton({ title, description, active, onClick, disabled }: { title:
       className={`group flex flex-col items-start gap-1 rounded-3xl border p-5 text-left transition-all active:scale-[0.98] disabled:opacity-50 ${
         active
           ? "border-blue-500/50 bg-blue-500/5 shadow-[0_0_20px_rgba(59,130,246,0.1)]"
-          : "border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10"
+          : "border-border-subtle bg-card-overlay hover:bg-card-overlay-hover hover:border-border-strong"
       }`}
     >
       <div className="flex w-full items-center justify-between">
-        <span className={`text-sm font-black uppercase tracking-widest ${active ? "text-blue-400" : "text-white/60"}`}>
+        <span className={`text-sm font-black uppercase tracking-widest ${active ? "text-blue-600 dark:text-blue-400" : "text-muted opacity-60"}`}>
           {title}
         </span>
-        <div className={`h-2 w-2 rounded-full transition-all ${active ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" : "bg-white/10"}`} />
+        <div className={`h-2 w-2 rounded-full transition-all ${active ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" : "bg-foreground/10"}`} />
       </div>
-      <p className="text-[10px] font-medium leading-relaxed text-white/30 uppercase tracking-wider group-hover:text-white/40 transition-colors">
+      <p className={`text-[10px] font-medium leading-relaxed uppercase tracking-wider transition-colors ${active ? "text-blue-500/60 dark:text-blue-400/60" : "text-dim opacity-40 group-hover:text-muted"}`}>
         {description}
       </p>
     </button>

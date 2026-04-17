@@ -15,14 +15,14 @@ export default async function NewServicePage({
   const vehicle = mapToVehicleViewModel(data.vehicle);
 
   return (
-    <div className="min-h-screen bg-[#0b0b0c] text-white antialiased">
+    <div className="min-h-screen bg-background text-foreground antialiased">
       <div className="mx-auto max-w-2xl px-6 py-8">
         
         {/* Simple Header */}
         <header className="mb-12 space-y-4">
           <Link 
             href={`/vehicles/${id}?tab=service`}
-            className="group flex items-center gap-2 text-sm font-medium text-white/40 transition-colors hover:text-white"
+            className="group flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
           >
             <svg className="h-4 w-4 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -31,11 +31,11 @@ export default async function NewServicePage({
           </Link>
           
           <div className="space-y-1">
-            <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl">
+            <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl text-foreground">
               New Record
             </h1>
-            <p className="text-sm font-medium text-white/40">
-              Adding to <span className="text-white/60">{vehicle.nickname}</span>
+            <p className="text-sm font-medium text-muted">
+              Adding to <span className="text-foreground opacity-60">{vehicle.nickname}</span>
             </p>
           </div>
         </header>

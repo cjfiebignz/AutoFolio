@@ -9,6 +9,8 @@
   --color-muted: var(--text-muted);
   --color-dim: var(--text-dim);
   --color-accent: var(--accent);
+  
+  --shadow-premium: var(--premium-shadow);
 }
 
 :root {
@@ -31,26 +33,33 @@
   --dropdown-bg: rgba(11, 11, 12, 0.98);
   --glass-bg: rgba(255, 255, 255, 0.02);
   --glass-border: rgba(255, 255, 255, 0.05);
+  
+  --premium-shadow: 0 0 100px rgba(0, 0, 0, 0.8);
 }
 
 [data-theme='light'] {
-  /* LIGHT THEME - ISOLATED ADDITIVE OVERRIDES */
-  --background: #f8fafc;
+  /* LIGHT THEME - ISOLATED ADDITIVE OVERRIDES (REFINED FOR PREMIUM FEEL) */
+  --background: #f8fafc; /* slate-50 */
   --surface: #ffffff;
-  --foreground: #0f172a;
-  --body-bg: #f1f5f9;
-  --accent: #2563eb;
+  --foreground: #0f172a; /* slate-900 for high readability */
+  --body-bg: #e2e8f0; /* slate-200 for better surface-to-body separation */
+  --accent: #2563eb; /* blue-600 */
   
-  --card-overlay: rgba(15, 23, 42, 0.03);
-  --card-overlay-hover: rgba(15, 23, 42, 0.05);
-  --border-subtle: rgba(15, 23, 42, 0.08);
-  --border-strong: rgba(15, 23, 42, 0.12);
-  --text-muted: rgba(15, 23, 42, 0.6);
-  --text-dim: rgba(15, 23, 42, 0.35);
+  /* Confident Light Overlays */
+  --card-overlay: #f1f5f9; /* slate-100 solid for predictable hierarchy */
+  --card-overlay-hover: #e2e8f0; /* slate-200 */
+  --border-subtle: #e2e8f0; /* slate-200 solid */
+  --border-strong: #cbd5e1; /* slate-300 solid */
   
-  --dropdown-bg: rgba(255, 255, 255, 0.98);
-  --glass-bg: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(15, 23, 42, 0.05);
+  /* Typography Hierarchy (Solid for high readability) */
+  --text-muted: #475569; /* slate-600 */
+  --text-dim: #94a3b8; /* slate-400 */
+  
+  --dropdown-bg: rgba(255, 255, 255, 0.99);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  
+  --premium-shadow: 0 10px 30px -5px rgba(2, 6, 23, 0.1), 0 4px 6px -4px rgba(2, 6, 23, 0.1);
 }
 
 html,

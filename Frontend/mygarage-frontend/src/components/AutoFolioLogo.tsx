@@ -19,8 +19,8 @@ export function AutoFolioLogo({ className = "", height = 48, showText = true }: 
       />
       {showText && (
         <span className="text-2xl font-black italic tracking-tighter uppercase">
-          <span className="text-white">Auto</span>
-          <span className="text-white/50">Folio</span>
+          <span className="text-foreground">Auto</span>
+          <span className="text-muted">Folio</span>
         </span>
       )}
     </div>

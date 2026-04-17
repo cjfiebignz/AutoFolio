@@ -1,89 +1,52 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Download, Loader2, CheckCircle2, FileArchive, AlertCircle } from 'lucide-react';
-import { 
-  exportVehicleHistory, 
-  exportServiceHistory, 
-  exportWorkHistory, 
-  exportDocumentsZip 
-} from '@/lib/api';
-import { usePlan } from '@/lib/plan-context';
-
-type ExportType = 'full' | 'service' | 'work' | 'documents';
+import { useState } from 'react';
+import { Download, Loader2, CheckCircle2, History, ChevronRight, FileDown, FileText } from 'lucide-react';
+import { exportVehicleHistoryPdf, exportServiceHistoryPdf, exportWorkHistoryPdf } from '@/lib/api';
 
 interface ExportHistoryButtonProps {
   vehicleId: string;
   vehicleNickname: string;
-  variant?: 'action' | 'minimal' | 'horizontal';
-  type?: ExportType;
+  variant?: 'minimal' | 'horizontal';
+  type?: 'full' | 'service' | 'work';
 }
 
 export function ExportHistoryButton({ 
   vehicleId, 
-  vehicleNickname,
-  variant = 'action',
+  vehicleNickname, 
+  variant = 'minimal',
   type = 'full'
 }: ExportHistoryButtonProps) {
-  const { plan, triggerUpgrade } = usePlan();
   const [isExporting, setIsExporting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (showSuccess || errorMessage) {
-      const timer = setTimeout(() => {
-        setShowSuccess(false);
-        setErrorMessage(null);
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [showSuccess, errorMessage]);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleExport = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // 1. Gating check: use direct capability flags from backend limits
-    const isAllowed = type === 'documents' ? plan?.canExportZip : plan?.canExportPdf;
-    
-    if (!isAllowed) {
-      triggerUpgrade(type === 'documents' ? 'export_zip' : 'export_pdf');
-      return;
-    }
-
     if (isExporting) return;
 
     setIsExporting(true);
-    setErrorMessage(null);
+    setError(null);
+    setIsSuccess(false);
+
     try {
-      let blob: Blob;
-      let filename: string;
+      let blob;
+      let filename;
+      const safeNickname = vehicleNickname.toLowerCase().replace(/[^a-z0-9]/g, '-');
       
-      const safeName = vehicleNickname
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
-
-      switch (type) {
-        case 'service':
-          blob = await exportServiceHistory(vehicleId);
-          filename = `autofolio-${safeName || 'vehicle'}-service-report.pdf`;
-          break;
-        case 'work':
-          blob = await exportWorkHistory(vehicleId);
-          filename = `autofolio-${safeName || 'vehicle'}-work-report.pdf`;
-          break;
-        case 'documents':
-          blob = await exportDocumentsZip(vehicleId);
-          filename = `autofolio-${safeName || 'vehicle'}-documents.zip`;
-          break;
-        default:
-          blob = await exportVehicleHistory(vehicleId);
-          filename = `autofolio-${safeName || 'vehicle'}-report.pdf`;
+      if (type === 'service') {
+        blob = await exportServiceHistoryPdf(vehicleId);
+        filename = `autofolio-${safeNickname}-service-history.pdf`;
+      } else if (type === 'work') {
+        blob = await exportWorkHistoryPdf(vehicleId);
+        filename = `autofolio-${safeNickname}-work-log.pdf`;
+      } else {
+        blob = await exportVehicleHistoryPdf(vehicleId);
+        filename = `autofolio-${safeNickname}-full-technical-portfolio.pdf`;
       }
-
+      
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -93,111 +56,92 @@ export function ExportHistoryButton({
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      setShowSuccess(true);
+      setIsSuccess(true);
+      setTimeout(() => setIsSuccess(false), 3000);
     } catch (err: any) {
-      if (err.type === 'export_pdf' || err.type === 'export_zip') {
-        setErrorMessage("This feature is available on Pro. Upgrade to continue.");
-      } else if (err.type === 'documents_empty') {
-        setErrorMessage("No documents available to download.");
-      } else {
-        setErrorMessage("Failed to download export.");
-      }
+      setError(err.message || 'Export failed');
+      setTimeout(() => setError(null), 5000);
     } finally {
       setIsExporting(false);
     }
   };
 
   const labels = {
-    full: { main: 'Download Vehicle Report', loading: 'Preparing your report...', success: 'Vehicle report downloaded' },
-    service: { main: 'Download Service Report', loading: 'Preparing service report...', success: 'Service report downloaded' },
-    work: { main: 'Download Work Report', loading: 'Preparing work report...', success: 'Work report downloaded' },
-    documents: { main: 'Download All Documents', loading: 'Preparing document bundle...', success: 'Document bundle downloaded' }
+    full: 'Portfolio',
+    service: 'Service History',
+    work: 'Work Log'
   };
 
-
-  const activeLabel = labels[type];
+  const icons = {
+    full: <History size={14} />,
+    service: <FileText size={14} />,
+    work: <FileDown size={14} />
+  };
 
   if (variant === 'minimal') {
-    const getCompactLabel = () => {
-      if (isExporting) return 'Preparing...';
-      if (showSuccess) return 'Downloaded';
-      if (errorMessage) {
-        if (errorMessage.includes('Pro')) return 'Pro Feature';
-        if (errorMessage.includes('No documents')) return 'No Files';
-        return 'Error';
-      }
-      return activeLabel.main.replace('Download ', '');
-    };
-
-    return (
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={isExporting}
-          title={errorMessage || showSuccess ? activeLabel.success : activeLabel.main}
-          className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors disabled:opacity-50 ${errorMessage ? 'text-red-400' : 'text-blue-400/60 hover:text-blue-400'}`}
-        >
-          {isExporting ? <Loader2 size={12} className="animate-spin" /> : (type === 'documents' ? <FileArchive size={12} /> : <Download size={12} />)}
-          {getCompactLabel()}
-        </button>
-      </div>
-    );
-  }
-
-  if (variant === 'horizontal') {
     return (
       <button
-        type="button"
         onClick={handleExport}
         disabled={isExporting}
-        className={`group flex h-14 w-full items-center justify-center gap-3 rounded-2xl border transition-all active:scale-[0.98] disabled:opacity-50 ${
-          showSuccess ? 'border-green-500/20 bg-green-500/5 text-green-400' : 
-          errorMessage ? 'border-red-500/20 bg-red-500/5 text-red-400' : 
-          'border-white/10 bg-white/[0.03] text-white/40 hover:bg-white/[0.06] hover:text-white'
+        className={`flex items-center gap-2 rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 border ${
+          isSuccess 
+            ? 'bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-500' 
+            : error 
+              ? 'bg-red-500/10 border-red-500/20 text-red-600'
+              : 'border-border-subtle bg-card-overlay text-muted hover:border-border-strong hover:text-foreground'
         }`}
       >
-        {isExporting ? <Loader2 size={16} className="animate-spin" /> : 
-         showSuccess ? <CheckCircle2 size={16} /> : 
-         errorMessage ? <AlertCircle size={16} /> :
-         (type === 'documents' ? <FileArchive size={16} /> : <Download size={16} />)}
-        <span className="text-[10px] font-black uppercase tracking-widest">
-          {isExporting ? 'Preparing...' : showSuccess ? 'Downloaded' : errorMessage ? 'Failed' : activeLabel.main.replace('Download ', '')}
-        </span>
+        {isExporting ? (
+          <Loader2 size={10} className="animate-spin" />
+        ) : isSuccess ? (
+          <CheckCircle2 size={10} />
+        ) : (
+          <Download size={10} />
+        )}
+        <span>{isExporting ? 'Preparing...' : isSuccess ? 'Downloaded' : `PDF ${labels[type]}`}</span>
       </button>
     );
   }
 
   return (
-    <div className="relative group w-full">
+    <div className="w-full">
       <button
-        type="button"
         onClick={handleExport}
         disabled={isExporting}
-        className={`group flex flex-col items-center justify-center gap-3 rounded-[24px] border py-6 w-full transition-all hover:bg-white/[0.06] hover:shadow-xl active:scale-[0.97] disabled:opacity-50 ${
-          showSuccess ? 'border-green-500/20 bg-green-500/5' : 
-          errorMessage ? 'border-red-500/20 bg-red-500/5' : 
-          'border-white/5 bg-white/[0.02] hover:border-white/10'
+        className={`group flex items-center justify-center gap-2.5 rounded-[24px] border py-3.5 w-full transition-all hover:bg-card-overlay-hover hover:shadow-premium active:scale-[0.97] disabled:opacity-50 ${
+          isSuccess 
+            ? 'border-green-500/30 bg-green-500/5' 
+            : error
+              ? 'border-red-500/30 bg-red-500/5'
+              : 'border-border-subtle bg-card-overlay hover:border-border-strong'
         }`}
       >
-        <div className={`transition-all ${
-          isExporting ? 'text-blue-400' : 
-          showSuccess ? 'text-green-400' : 
-          errorMessage ? 'text-red-400' :
-          'text-white/30 group-hover:text-white group-hover:scale-110'
+        <div className={`shrink-0 transition-all ${
+          isSuccess 
+            ? 'text-green-600 dark:text-green-500' 
+            : error 
+              ? 'text-red-600' 
+              : 'text-dim group-hover:text-foreground group-hover:scale-110'
         }`}>
-          {isExporting ? <Loader2 size={20} className="animate-spin" /> : 
-           showSuccess ? <CheckCircle2 size={20} strokeWidth={2.5} /> : 
-           errorMessage ? <AlertCircle size={20} strokeWidth={2.5} /> :
-           (type === 'documents' ? <FileArchive size={20} strokeWidth={2.5} /> : <Download size={20} strokeWidth={2.5} />)}
+          {isExporting ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : isSuccess ? (
+            <CheckCircle2 size={18} strokeWidth={3} />
+          ) : (
+            <Download size={18} strokeWidth={2.5} />
+          )}
         </div>
-        <span className={`text-[9px] font-black uppercase tracking-[0.2em] transition-colors text-center px-2 ${
-          showSuccess ? 'text-green-400/80' : 
-          errorMessage ? 'text-red-400/80' :
-          'text-white/40 group-hover:text-white'
-        }`}>
-          {isExporting ? activeLabel.loading : showSuccess ? activeLabel.success : errorMessage ? errorMessage : activeLabel.main}
-        </span>
+        
+        <div className="min-w-0">
+          <span className={`text-[9px] font-black uppercase tracking-[0.2em] block transition-colors ${
+            isSuccess ? 'text-green-600 dark:text-green-500' : error ? 'text-red-600' : 'text-muted group-hover:text-foreground'
+          }`}>
+            {isExporting ? 'Processing Architecture...' : isSuccess ? 'Portfolio Exported' : `Export ${labels[type]}`}
+          </span>
+          {error && (
+            <span className="text-[7px] font-bold text-red-500/60 uppercase mt-0.5 block">{error}</span>
+          )}
+        </div>
       </button>
     </div>
   );

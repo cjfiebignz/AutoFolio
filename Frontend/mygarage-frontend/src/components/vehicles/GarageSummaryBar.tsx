@@ -58,7 +58,7 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
           {/* Status Icon Group */}
           <div className="flex -space-x-2">
             {criticalCount > 0 && (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-500 ring-4 ring-background z-20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-600 dark:text-red-500 ring-4 ring-background z-20">
                 <AlertCircle size={18} strokeWidth={2.5} />
               </div>
             )}

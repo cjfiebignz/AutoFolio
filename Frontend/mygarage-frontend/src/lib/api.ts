@@ -10,7 +10,7 @@ import {
   PartPreset
 } from '@/types/autofolio';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_AUTOFOLIO_API_BASE_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_AUTOFOLIO_API_BASE_URL || 'http://127.0.0.1:3001';
 
 export async function getUserVehicles(userId: string): Promise<UserVehicle[]> {
   const url = `${API_BASE_URL}/user-vehicles/user/${userId}`;
@@ -19,13 +19,16 @@ export async function getUserVehicles(userId: string): Promise<UserVehicle[]> {
       cache: 'no-store',
     });
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to fetch vehicles: ${response.statusText}`);
+      let errorData = {};
+      try {
+        errorData = await response.json();
+      } catch (e) {}
+      throw new Error((errorData as any).message || `Failed to fetch vehicles: ${response.statusText} (${response.status})`);
     }
     return response.json();
   } catch (err: any) {
     if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
-      throw new Error(`Network error: Could not reach backend at ${API_BASE_URL}. Ensure the backend is running.`);
+      throw new Error(`Network error: Could not reach backend at ${API_BASE_URL}. Ensure the backend is running and reachable.`);
     }
     throw err;
   }
@@ -69,7 +72,7 @@ export async function getLifetimeCostSummary(id: string): Promise<LifetimeCostSu
   }
 }
 
-export async function exportVehicleHistory(id: string): Promise<Blob> {
+export async function exportVehicleHistoryPdf(id: string): Promise<Blob> {
   const url = `${API_BASE_URL}/user-vehicles/${id}/export-history`;
   const response = await fetch(url, {
     method: 'GET',
@@ -93,7 +96,7 @@ export async function exportVehicleHistory(id: string): Promise<Blob> {
   return response.blob();
 }
 
-export async function exportServiceHistory(id: string): Promise<Blob> {
+export async function exportServiceHistoryPdf(id: string): Promise<Blob> {
   const url = `${API_BASE_URL}/user-vehicles/${id}/export-service-history`;
   const response = await fetch(url, {
     method: 'GET',
@@ -109,7 +112,7 @@ export async function exportServiceHistory(id: string): Promise<Blob> {
   return response.blob();
 }
 
-export async function exportWorkHistory(id: string): Promise<Blob> {
+export async function exportWorkHistoryPdf(id: string): Promise<Blob> {
   const url = `${API_BASE_URL}/user-vehicles/${id}/export-work-history`;
   const response = await fetch(url, {
     method: 'GET',
@@ -418,15 +421,20 @@ export interface CreateDocumentData {
   serviceEventId?: string;
 }
 
-export async function createDocument(vehicleId: string, data: FormData) {
+export async function uploadDocument(vehicleId: string, file: File, title: string, category: string) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('title', title);
+  formData.append('category', category);
+
   const response = await fetch(`${API_BASE_URL}/user-vehicles/${vehicleId}/documents`, {
     method: 'POST',
-    body: data,
+    body: formData,
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to create document record');
+    throw new Error(error.message || 'Failed to upload document');
   }
 
   return response.json();
@@ -443,7 +451,7 @@ export async function getDocument(vehicleId: string, documentId: string) {
 }
 
 
-export async function updateDocument(vehicleId: string, documentId: string, data: any) {
+export async function updateDocument(vehicleId: string, documentId: string, data: Partial<CreateDocumentData>) {
   const response = await fetch(`${API_BASE_URL}/user-vehicles/${vehicleId}/documents/${documentId}`, {
     method: 'PATCH',
     headers: {
@@ -682,7 +690,15 @@ export async function deleteWorkAttachment(vehicleId: string, workJobId: string,
   }
 }
 
-export async function createCustomSpec(vehicleId: string, data: any) {
+export interface CreateCustomSpecData {
+  group: string;
+  label: string;
+  value: string;
+  unit?: string;
+  notes?: string;
+}
+
+export async function createCustomSpec(vehicleId: string, data: CreateCustomSpecData) {
   const response = await fetch(`${API_BASE_URL}/user-vehicles/${vehicleId}/custom-specs`, {
     method: 'POST',
     headers: {
@@ -699,7 +715,7 @@ export async function createCustomSpec(vehicleId: string, data: any) {
   return response.json();
 }
 
-export async function updateCustomSpec(vehicleId: string, specId: string, data: any) {
+export async function updateCustomSpec(vehicleId: string, specId: string, data: Partial<CreateCustomSpecData>) {
   const response = await fetch(`${API_BASE_URL}/user-vehicles/${vehicleId}/custom-specs/${specId}`, {
     method: 'PATCH',
     headers: {
@@ -781,17 +797,34 @@ export async function deleteRegistration(vehicleId: string, regId: string) {
 
 // --- User Preferences API Helpers ---
 
-export async function getUserPreferences(userId: string) {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}/preferences`, {
-    cache: 'no-store',
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch user preferences: ${response.statusText}`);
-  }
-  return response.json();
+export interface UpdateUserPreferencesData {
+  defaultCurrency?: string;
+  plan?: string;
 }
 
-export async function updateUserPreferences(userId: string, data: { defaultCurrency?: string; plan?: string }) {
+export async function getUserPreferences(userId: string) {
+  const url = `${API_BASE_URL}/users/${userId}/preferences`;
+  try {
+    const response = await fetch(url, {
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      let errorData = {};
+      try {
+        errorData = await response.json();
+      } catch (e) {}
+      throw new Error((errorData as any).message || `Failed to fetch user preferences: ${response.statusText} (${response.status})`);
+    }
+    return response.json();
+  } catch (err: any) {
+    if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+      throw new Error(`Network error: Could not reach backend at ${API_BASE_URL}. Ensure the backend is running and reachable.`);
+    }
+    throw err;
+  }
+}
+
+export async function updateUserPreferences(userId: string, data: UpdateUserPreferencesData) {
   // Explicitly construct the clean body object
   const body: any = {};
   if (data.defaultCurrency) body.defaultCurrency = data.defaultCurrency;
@@ -806,7 +839,7 @@ export async function updateUserPreferences(userId: string, data: { defaultCurre
     body: JSON.stringify(body),
   });
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json().catch(() => ({}));
     throw new Error(error.message || 'Failed to update user preferences');
   }
   return response.json();
@@ -947,12 +980,26 @@ export function getSpecExampleUrl() {
   return `${API_BASE_URL}/vehicle-specs/import/example`;
 }
 
-// --- Parts & Presets API Helpers ---
+export interface CreateSavedPartData {
+  category: string;
+  name: string;
+  partNumber?: string | null;
+  description?: string | null;
+  preferredBrand?: string | null;
+  supplier?: string | null;
+  purchaseUrl?: string | null;
+  lastPrice?: number | null;
+  lastPurchaseDate?: string | null;
+  defaultQuantity?: number;
+  notes?: string | null;
+}
 
-export async function createSavedPart(vehicleId: string, data: any) {
+export async function createSavedPart(vehicleId: string, data: CreateSavedPartData) {
   const response = await fetch(`${API_BASE_URL}/user-vehicles/${vehicleId}/parts`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
   if (!response.ok) {
@@ -962,7 +1009,7 @@ export async function createSavedPart(vehicleId: string, data: any) {
   return response.json();
 }
 
-export async function updateSavedPart(vehicleId: string, partId: string, data: any) {
+export async function updateSavedPart(vehicleId: string, partId: string, data: Partial<CreateSavedPartData>) {
   const response = await fetch(`${API_BASE_URL}/user-vehicles/${vehicleId}/parts/${partId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -985,7 +1032,13 @@ export async function deleteSavedPart(vehicleId: string, partId: string) {
   }
 }
 
-export async function createPartPreset(vehicleId: string, data: { name: string; notes?: string; items: { savedPartId: string; quantity: number }[] }) {
+export interface CreatePartPresetData {
+  name: string;
+  notes?: string | null;
+  items: { savedPartId: string; quantity: number }[];
+}
+
+export async function createPartPreset(vehicleId: string, data: CreatePartPresetData) {
   const response = await fetch(`${API_BASE_URL}/user-vehicles/${vehicleId}/parts/presets`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -998,7 +1051,7 @@ export async function createPartPreset(vehicleId: string, data: { name: string; 
   return response.json();
 }
 
-export async function updatePartPreset(vehicleId: string, presetId: string, data: { name?: string; notes?: string | null; items?: { savedPartId: string; quantity: number }[] }) {
+export async function updatePartPreset(vehicleId: string, presetId: string, data: Partial<CreatePartPresetData>) {
   const response = await fetch(`${API_BASE_URL}/user-vehicles/${vehicleId}/parts/presets/${presetId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

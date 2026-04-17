@@ -280,17 +280,17 @@ export function VehiclePartsDisplay({
       <div className="space-y-5 px-1">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <Package size={18} className="text-white/20" />
+            <Package size={18} className="text-muted opacity-40" />
             <div className="space-y-0.5">
-              <h3 className="text-lg font-bold tracking-tight text-white/90 uppercase italic">Parts Collection</h3>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Your verified hardware & consumables</p>
+              <h3 className="text-lg font-bold tracking-tight text-foreground uppercase italic">Parts Collection</h3>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-60">Your verified hardware & consumables</p>
             </div>
           </div>
           <div className="flex items-center gap-2 ml-auto sm:ml-0">
             <button
               type="button"
               onClick={() => setIsPresetModalOpen(true)}
-              className="flex h-9 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 text-[10px] font-black uppercase tracking-widest text-white/60 transition-all hover:bg-white/10 active:scale-95"
+              className="flex h-9 items-center justify-center gap-2 rounded-xl border border-border-subtle bg-card-overlay px-3 text-[10px] font-black uppercase tracking-widest text-muted transition-all hover:bg-card-overlay-hover hover:text-foreground active:scale-95"
             >
               <Layers size={14} />
               Presets
@@ -301,8 +301,8 @@ export function VehiclePartsDisplay({
               onClick={() => isAdding ? resetForm() : setIsAdding(true)}
               className={`flex h-9 items-center justify-center gap-2 rounded-xl border transition-all active:scale-95 ${
                 isAdding 
-                  ? "border-white/20 bg-white/10 text-white px-4" 
-                  : "border-white/10 bg-white/5 text-white/60 px-3 hover:bg-white/10"
+                  ? "border-border-strong bg-foreground/10 text-foreground px-4" 
+                  : "border-border-subtle bg-card-overlay text-muted px-3 hover:bg-card-overlay-hover hover:border-border-strong hover:text-foreground"
               }`}
             >
               {isAdding ? <X size={14} /> : <Plus size={14} />}
@@ -315,18 +315,18 @@ export function VehiclePartsDisplay({
 
         {/* Contextual Selection Row */}
         {selectedCount > 0 && (
-          <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-white/5 animate-in fade-in slide-in-from-top-2 duration-500">
+          <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-border-subtle animate-in fade-in slide-in-from-top-2 duration-500">
             <button
               type="button"
               onClick={clearSelection}
-              className="flex h-9 items-center justify-center gap-2 rounded-xl border border-white/5 bg-white/5 px-3 text-[10px] font-black uppercase tracking-widest text-white/40 transition-all hover:bg-white/10 active:scale-95"
+              className="flex h-9 items-center justify-center gap-2 rounded-xl border border-border-subtle bg-card-overlay px-3 text-[10px] font-black uppercase tracking-widest text-muted transition-all hover:bg-card-overlay-hover active:scale-95"
             >
               Clear ({selectedCount})
             </button>
             <button
               type="button"
               onClick={() => setIsCreatePresetModalOpen(true)}
-              className="flex h-9 items-center justify-center gap-2 rounded-xl border border-purple-500/20 bg-purple-500/5 px-3 text-[10px] font-black uppercase tracking-widest text-purple-400 transition-all hover:bg-purple-500/10 active:scale-95"
+              className="flex h-9 items-center justify-center gap-2 rounded-xl border border-purple-500/20 bg-purple-500/5 px-3 text-[10px] font-black uppercase tracking-widest text-purple-600 dark:text-purple-400 transition-all hover:bg-purple-500/10 active:scale-95"
             >
               <PlusCircle size={14} />
               Create Preset
@@ -334,7 +334,7 @@ export function VehiclePartsDisplay({
             <button
               type="button"
               onClick={() => setIsShoppingListOpen(true)}
-              className="flex h-9 items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 text-[10px] font-black uppercase tracking-widest text-blue-400 transition-all hover:bg-blue-500/10 active:scale-95 shadow-lg shadow-blue-500/5"
+              className="flex h-9 items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 transition-all hover:bg-blue-500/10 active:scale-95 shadow-lg shadow-blue-500/5"
             >
               <ShoppingCart size={14} />
               Shop ({selectedCount})
@@ -347,7 +347,7 @@ export function VehiclePartsDisplay({
       {(successMessage || errorMessage) && (
         <div className="px-1 animate-in fade-in slide-in-from-top-2 duration-300">
           <div className={`rounded-xl border p-3 flex items-center gap-3 ${
-            successMessage ? 'border-green-500/20 bg-green-500/5 text-green-400' : 'border-red-500/20 bg-red-500/5 text-red-400'
+            successMessage ? 'border-green-500/20 bg-green-500/5 text-green-600 dark:text-green-400' : 'border-red-500/20 bg-red-500/5 text-red-600 dark:text-red-400'
           }`}>
             {successMessage ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
             <span className="text-[10px] font-bold uppercase tracking-widest">{successMessage || errorMessage}</span>
@@ -357,9 +357,9 @@ export function VehiclePartsDisplay({
 
       {/* Add/Edit Part Form */}
       {isAdding && (
-        <form onSubmit={handleSubmit} className="rounded-[32px] border border-white/10 bg-white/[0.02] p-6 space-y-5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 ring-1 ring-white/5">
+        <form onSubmit={handleSubmit} className="rounded-[32px] border border-border-strong bg-card-overlay p-6 space-y-5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2">
+            <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted opacity-60 flex items-center gap-2">
               {editingId ? <Edit3 size={14} /> : <Plus size={14} />}
               {editingId ? "Edit Part Details" : "New Part Registration"}
             </h4>
@@ -367,22 +367,22 @@ export function VehiclePartsDisplay({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Category</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Category</label>
               <select 
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-white/20 appearance-none"
+                className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-border-strong appearance-none"
               >
                 {PART_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Part Name</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Part Name</label>
               <input 
                 placeholder="e.g. Oil Filter"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white placeholder:text-white/10 focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground placeholder:text-muted/30 focus:outline-none focus:ring-1 focus:ring-border-strong"
                 required
               />
             </div>
@@ -390,77 +390,77 @@ export function VehiclePartsDisplay({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Part Number</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Part Number</label>
               <input 
                 placeholder="e.g. 15601-BZ010"
                 value={formData.partNumber}
                 onChange={(e) => setFormData({ ...formData, partNumber: e.target.value })}
-                className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white placeholder:text-white/10 focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground placeholder:text-muted/30 focus:outline-none focus:ring-1 focus:ring-border-strong"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Preferred Brand</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Preferred Brand</label>
               <input 
                 placeholder="e.g. Toyota Genuine, Bosch"
                 value={formData.preferredBrand}
                 onChange={(e) => setFormData({ ...formData, preferredBrand: e.target.value })}
-                className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white placeholder:text-white/10 focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground placeholder:text-muted/30 focus:outline-none focus:ring-1 focus:ring-border-strong"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Supplier</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Supplier</label>
               <input 
                 placeholder="e.g. Local Dealership"
                 value={formData.supplier}
                 onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white placeholder:text-white/10 focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground placeholder:text-muted/30 focus:outline-none focus:ring-1 focus:ring-border-strong"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Purchase URL (Optional)</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Purchase URL (Optional)</label>
               <input 
                 placeholder="https://..."
                 value={formData.purchaseUrl}
                 onChange={(e) => setFormData({ ...formData, purchaseUrl: e.target.value })}
-                className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white placeholder:text-white/10 focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground placeholder:text-muted/30 focus:outline-none focus:ring-1 focus:ring-border-strong"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Price Estimate (Last Price)</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Price Estimate (Last Price)</label>
               <input 
                 type="number"
                 step="0.01"
                 placeholder="0.00"
                 value={formData.lastPrice}
                 onChange={(e) => setFormData({ ...formData, lastPrice: e.target.value })}
-                className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white placeholder:text-white/10 focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground placeholder:text-muted/30 focus:outline-none focus:ring-1 focus:ring-border-strong"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Default Qty</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Default Qty</label>
               <input 
                 type="number"
                 min="1"
                 value={formData.defaultQuantity}
                 onChange={(e) => setFormData({ ...formData, defaultQuantity: e.target.value })}
-                className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-border-strong"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Notes / Description</label>
+            <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Notes / Description</label>
             <textarea 
               placeholder="Technical specs, fitment notes, or alternative part numbers..."
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full min-h-[80px] rounded-2xl bg-black/40 p-4 text-xs font-medium text-white placeholder:text-white/10 focus:outline-none focus:ring-1 focus:ring-white/20 resize-none"
+              className="w-full min-h-[80px] rounded-2xl bg-foreground/5 border border-border-subtle p-4 text-xs font-medium text-foreground placeholder:text-muted/30 focus:outline-none focus:ring-1 focus:ring-border-strong resize-none"
             />
           </div>
 
@@ -468,14 +468,14 @@ export function VehiclePartsDisplay({
             <button 
               type="submit" 
               disabled={loadingId !== null}
-              className="flex-1 h-12 rounded-2xl bg-white text-[10px] font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98] flex items-center justify-center gap-2 shadow-xl disabled:opacity-50"
+              className="flex-1 h-12 rounded-2xl bg-foreground text-[10px] font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2 shadow-xl disabled:opacity-50"
             >
               {(loadingId === 'adding' || (loadingId !== null && loadingId === editingId)) ? <Loader2 size={16} className="animate-spin" /> : (editingId ? "Update Part" : "Save Part to Collection")}
             </button>
             <button 
               type="button" 
               onClick={resetForm}
-              className="px-6 h-12 rounded-2xl border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-white/60 hover:bg-white/10 transition-all"
+              className="px-6 h-12 rounded-2xl border border-border-subtle bg-foreground/5 text-[10px] font-black uppercase tracking-widest text-muted hover:bg-foreground/10 hover:text-foreground transition-all"
             >
               Cancel
             </button>
@@ -485,13 +485,13 @@ export function VehiclePartsDisplay({
 
       {/* Parts List */}
       {savedParts.length === 0 && !isAdding ? (
-        <div className="flex flex-col items-center justify-center rounded-[40px] border border-dashed border-white/5 bg-white/[0.01] py-20 text-center">
+        <div className="flex flex-col items-center justify-center rounded-[40px] border border-dashed border-border-subtle bg-foreground/[0.01] py-20 text-center">
           <div className="relative mb-4 opacity-20">
-            <div className="absolute -inset-4 rounded-full bg-white/5 blur-2xl" />
+            <div className="absolute -inset-4 rounded-full bg-foreground/5 blur-2xl" />
             <Package size={40} strokeWidth={1} />
           </div>
-          <p className="text-xs font-bold text-white/20 uppercase tracking-widest">No parts in your collection</p>
-          <p className="mt-2 text-[10px] text-white/10 font-medium max-w-[200px] leading-relaxed">
+          <p className="text-xs font-bold text-muted uppercase tracking-widest">No parts in your collection</p>
+          <p className="mt-2 text-[10px] text-muted opacity-40 font-medium max-w-[200px] leading-relaxed italic">
             Start adding essential parts like filters, pads, and fluids to build your technical blueprint.
           </p>
         </div>
@@ -504,28 +504,28 @@ export function VehiclePartsDisplay({
             const isExpanded = expandedCategories.includes(category);
 
             return (
-              <div key={category} className="group overflow-hidden rounded-[28px] border border-white/5 bg-white/[0.01] transition-all duration-500 hover:border-white/10">
+              <div key={category} className="group overflow-hidden rounded-[28px] border border-border-subtle bg-card-overlay transition-all duration-500 hover:border-border-strong">
                 <button
                   type="button"
                   onClick={() => toggleCategory(category)}
-                  className="flex w-full items-center justify-between p-5 outline-none transition-colors hover:bg-white/[0.02]"
+                  className="flex w-full items-center justify-between p-5 outline-none transition-colors hover:bg-foreground/[0.02]"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`flex h-8 w-8 items-center justify-center rounded-xl border transition-all duration-500 ${
                       isExpanded 
-                        ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' 
-                        : 'bg-white/5 border-white/5 text-white/20'
+                        ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' 
+                        : 'bg-foreground/5 border-border-subtle text-muted opacity-40'
                     }`}>
                       <Tag size={14} strokeWidth={1.5} />
                     </div>
                     <span className={`text-[11px] font-black uppercase tracking-[0.25em] transition-colors ${
-                      isExpanded ? 'text-white' : 'text-white/40 group-hover:text-white/60'
+                      isExpanded ? 'text-foreground' : 'text-muted group-hover:text-foreground/60'
                     }`}>
                       {category}
                     </span>
                   </div>
-                  <div className={`flex h-7 w-7 items-center justify-center rounded-full border border-white/5 bg-white/5 text-white/20 transition-all duration-500 ${
-                    isExpanded ? 'rotate-180 bg-blue-500/10 border-blue-500/20 text-blue-400' : ''
+                  <div className={`flex h-7 w-7 items-center justify-center rounded-full border border-border-subtle bg-foreground/5 text-muted transition-all duration-500 ${
+                    isExpanded ? 'rotate-180 bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' : ''
                   }`}>
                     <ChevronDown size={12} strokeWidth={3} />
                   </div>
@@ -544,26 +544,26 @@ export function VehiclePartsDisplay({
                           onClick={() => !isConfirmingDelete && toggleSelection(part.id, part.defaultQuantity)}
                           className={`group flex items-center justify-between rounded-2xl border transition-all hover:shadow-lg cursor-pointer p-4 ${
                             isSelected 
-                              ? 'border-blue-500/30 bg-blue-500/[0.03] shadow-inner' 
-                              : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10'
+                              ? 'border-blue-500/30 bg-blue-500/[0.03] dark:bg-blue-500/[0.01] shadow-inner' 
+                              : 'border-border-subtle bg-foreground/[0.01] hover:bg-foreground/[0.03] hover:border-border-strong'
                           } ${isConfirmingDelete ? 'border-red-500/30 bg-red-500/5' : ''}`}
                         >
                           <div className="flex items-center gap-4 min-w-0">
                             <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all ${
                               isSelected 
                                 ? 'border-blue-500 bg-blue-500 text-white' 
-                                : 'border-white/10 bg-white/5 text-transparent'
+                                : 'border-border-subtle bg-foreground/5 text-transparent group-hover:border-border-strong'
                             }`}>
                               <Check size={12} strokeWidth={4} />
                             </div>
 
                             <div className="min-w-0 space-y-1">
                               <div className="flex items-center gap-2">
-                                <p className={`text-sm font-black italic transition-colors ${isSelected ? 'text-white' : 'text-white/90'}`}>
+                                <p className={`text-sm font-black italic transition-colors ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-foreground opacity-90'}`}>
                                   {part.name}
                                 </p>
                                 {part.preferredBrand && (
-                                  <span className="rounded bg-white/5 px-1.5 py-0.5 text-[8px] font-black uppercase text-white/30 border border-white/5">
+                                  <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[8px] font-black uppercase text-muted border border-border-subtle">
                                     {part.preferredBrand}
                                   </span>
                                 )}
@@ -571,14 +571,14 @@ export function VehiclePartsDisplay({
                               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                 {part.partNumber && (
                                   <div className="flex items-center gap-1">
-                                    <ClipboardList size={10} className="text-white/20" />
-                                    <span className="text-[10px] font-mono text-white/40">{part.partNumber}</span>
+                                    <ClipboardList size={10} className="text-muted opacity-40" />
+                                    <span className="text-[10px] font-mono text-muted opacity-60">{part.partNumber}</span>
                                   </div>
                                 )}
                                 {part.supplier && (
                                   <div className="flex items-center gap-1">
-                                    <Store size={10} className="text-white/20" />
-                                    <span className="text-[10px] font-bold text-white/20 uppercase tracking-tighter">{part.supplier}</span>
+                                    <Store size={10} className="text-muted opacity-40" />
+                                    <span className="text-[10px] font-bold text-muted opacity-40 uppercase tracking-tighter">{part.supplier}</span>
                                   </div>
                                 )}
                                 {part.purchaseUrl && (
@@ -587,7 +587,7 @@ export function VehiclePartsDisplay({
                                     target="_blank" 
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="flex items-center gap-1 text-blue-400/60 hover:text-blue-400 transition-colors"
+                                    className="flex items-center gap-1 text-blue-600 dark:text-blue-400 opacity-60 hover:opacity-100 transition-colors"
                                   >
                                     <ExternalLink size={10} />
                                     <span className="text-[10px] font-bold uppercase tracking-tighter">Purchase Link</span>
@@ -597,7 +597,7 @@ export function VehiclePartsDisplay({
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                             {isConfirmingDelete ? (
                               <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-right-2 duration-300">
                                 <button 
@@ -606,12 +606,12 @@ export function VehiclePartsDisplay({
                                   disabled={isPartLoading}
                                   className="flex h-8 px-3 items-center justify-center rounded-lg bg-red-500 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg"
                                 >
-                                  {isPartLoading ? <Loader2 size={12} className="animate-spin" /> : "Confirm Delete"}
+                                  {isPartLoading ? <Loader2 size={12} className="animate-spin" /> : "Delete"}
                                 </button>
                                 <button 
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/40 hover:bg-white/10"
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground/5 text-muted hover:bg-foreground/10"
                                 >
                                   <X size={14} />
                                 </button>
@@ -621,7 +621,7 @@ export function VehiclePartsDisplay({
                                 <button 
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); handleEditInit(part); }}
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground/5 text-muted hover:bg-foreground/10 hover:text-foreground transition-all disabled:opacity-50"
                                   title="Edit Part"
                                 >
                                   <Edit3 size={14} />
@@ -629,7 +629,7 @@ export function VehiclePartsDisplay({
                                 <button 
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(part.id); }}
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/5 text-red-500/20 hover:bg-red-500/10 hover:text-red-400 transition-all"
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/5 text-red-500/40 hover:bg-red-500/10 hover:text-red-500 transition-all"
                                   title="Delete Part"
                                 >
                                   <Trash2 size={14} />
@@ -804,14 +804,14 @@ function ShoppingListModal({
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 print:static print:p-0 print:block print-container">
       <div className="absolute inset-0 bg-black/95 backdrop-blur-2xl print:hidden" onClick={onClose} />
       
-      <div className="relative flex flex-col w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-[40px] border border-white/10 bg-[#0b0b0c] shadow-3xl print:shadow-none print:border-none print:bg-white print:rounded-none print:max-h-none print:overflow-visible">
+      <div className="relative flex flex-col w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-[40px] border border-border-strong bg-surface shadow-3xl print:shadow-none print:border-none print:bg-white print:rounded-none print:max-h-none print:overflow-visible">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/5 p-8 print:hidden">
+        <div className="flex items-center justify-between border-b border-border-subtle p-8 print:hidden">
           <div>
-            <h3 className="text-2xl font-black italic tracking-tight text-white uppercase">Shopping List</h3>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 mt-1">Backend Verified Hardware Blueprint</p>
+            <h3 className="text-2xl font-black italic tracking-tight text-foreground uppercase">Shopping List</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-40 mt-1">Backend Verified Hardware Blueprint</p>
           </div>
-          <button onClick={onClose} className="h-12 w-12 flex items-center justify-center rounded-full bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all">
+          <button onClick={onClose} className="h-12 w-12 flex items-center justify-center rounded-full bg-foreground/5 text-muted hover:bg-foreground/10 hover:text-foreground transition-all">
             <X size={24} />
           </button>
         </div>
@@ -836,13 +836,13 @@ function ShoppingListModal({
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <Loader2 size={40} className="animate-spin text-blue-500" />
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-white/20">Syncing with Backend...</p>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-muted opacity-40">Syncing with Backend...</p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
               <AlertCircle size={40} className="text-red-500/50" />
               <p className="text-sm font-bold text-red-400 uppercase tracking-widest">Generation Failed</p>
-              <p className="text-xs text-white/40">{error}</p>
+              <p className="text-xs text-muted opacity-60">{error}</p>
             </div>
           ) : shoppingList ? (
             <div className="space-y-8 print:space-y-4">
@@ -882,19 +882,19 @@ function ShoppingListModal({
               {/* Grid for Screen */}
               <div className="grid gap-3 print:hidden">
                 {shoppingList.items.map((item: any) => (
-                  <div key={item.partId} className="group flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] p-5">
+                  <div key={item.partId} className="group flex items-center justify-between rounded-2xl border border-border-subtle bg-foreground/[0.02] p-5 transition-all hover:bg-foreground/[0.04]">
                     <div className="flex items-center gap-6 min-w-0">
                       <div className="flex flex-col items-center gap-1">
                         <button 
                           onClick={() => onUpdateQty(item.partId, item.quantity + 1)}
-                          className="h-6 w-6 flex items-center justify-center rounded-md bg-white/5 text-white/40 hover:bg-white/10"
+                          className="h-6 w-6 flex items-center justify-center rounded-md bg-foreground/5 text-muted opacity-60 hover:bg-foreground/10"
                         >
                           <Plus size={12} />
                         </button>
-                        <span className="text-xs font-black text-white">{item.quantity}</span>
+                        <span className="text-xs font-black text-foreground">{item.quantity}</span>
                         <button 
                           onClick={() => onUpdateQty(item.partId, item.quantity - 1)}
-                          className="h-6 w-6 flex items-center justify-center rounded-md bg-white/5 text-white/40 hover:bg-white/10"
+                          className="h-6 w-6 flex items-center justify-center rounded-md bg-foreground/5 text-muted opacity-60 hover:bg-foreground/10"
                         >
                           <X size={10} />
                         </button>
@@ -902,22 +902,22 @@ function ShoppingListModal({
 
                       <div className="min-w-0 space-y-1">
                         <div className="flex items-center gap-2">
-                          <p className="text-lg font-black text-white italic">{item.name}</p>
+                          <p className="text-lg font-black text-foreground italic">{item.name}</p>
                           {item.purchaseUrl && (
-                            <a href={item.purchaseUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">
+                            <a href={item.purchaseUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 opacity-60 hover:opacity-100 transition-colors">
                               <ExternalLink size={14} />
                             </a>
                           )}
                         </div>
                         <div className="flex flex-wrap items-center gap-3">
                           {item.partNumber && (
-                            <span className="text-[10px] font-mono text-white/40"># {item.partNumber}</span>
+                            <span className="text-[10px] font-mono text-muted opacity-60"># {item.partNumber}</span>
                           )}
                           {item.brand && (
-                            <span className="text-[10px] font-bold uppercase text-white/20">{item.brand}</span>
+                            <span className="text-[10px] font-bold uppercase text-muted opacity-40">{item.brand}</span>
                           )}
                           {item.supplier && (
-                            <span className="text-[10px] font-bold uppercase text-white/20">From: {item.supplier}</span>
+                            <span className="text-[10px] font-bold uppercase text-muted opacity-40">From: {item.supplier}</span>
                           )}
                         </div>
                       </div>
@@ -925,15 +925,15 @@ function ShoppingListModal({
 
                     <div className="text-right flex flex-col items-end gap-1">
                       {item.estimatedCost !== null ? (
-                        <p className="text-sm font-black text-white">
+                        <p className="text-sm font-black text-foreground">
                           ${item.estimatedCost.toFixed(2)}
                         </p>
                       ) : (
-                        <p className="text-[10px] font-bold text-white/10 italic">No Pricing</p>
+                        <p className="text-[10px] font-bold text-muted opacity-20 italic">No Pricing</p>
                       )}
                       <button
                         onClick={() => onRemove(item.partId)}
-                        className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/5 text-white/10 hover:bg-red-500/10 hover:text-red-400 transition-all"
+                        className="h-8 w-8 flex items-center justify-center rounded-lg bg-foreground/5 text-muted opacity-20 hover:bg-red-500/10 hover:text-red-600 transition-all"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -943,18 +943,18 @@ function ShoppingListModal({
               </div>
 
               {/* Totals Section */}
-              <div className="rounded-[32px] border border-white/5 bg-white/[0.01] p-8 space-y-4 print:border-none print:p-0 print:bg-transparent print:space-y-1">
+              <div className="rounded-[32px] border border-border-subtle bg-foreground/[0.01] p-8 space-y-4 print:border-none print:p-0 print:bg-transparent print:space-y-1">
                 <div className="flex items-center justify-between print:justify-end print:gap-8 border-t border-black/10 print:pt-4">
-                  <span className="text-xs font-bold uppercase tracking-widest text-white/40 print:text-black/40 print:text-[10px]">Estimated Total</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-muted opacity-40 print:text-black/40 print:text-[10px]">Estimated Total</span>
                   <div className="text-right">
-                    <p className="text-3xl font-black italic text-white print:text-black print:text-xl leading-none">
+                    <p className="text-3xl font-black italic text-foreground print:text-black print:text-xl leading-none">
                       {shoppingList.totalEstimatedCost !== null ? `$${shoppingList.totalEstimatedCost.toFixed(2)}` : "---"}
                     </p>
                   </div>
                 </div>
                 {shoppingList.hasIncompletePricing && (
                   <div className="text-right">
-                    <p className="text-[9px] font-bold text-yellow-500/50 uppercase tracking-tighter mt-1 print:text-black/40 print:text-[7px]">
+                    <p className="text-[9px] font-bold text-yellow-600 dark:text-yellow-500/50 uppercase tracking-tighter mt-1 print:text-black/40 print:text-[7px]">
                       * Pricing information is incomplete
                     </p>
                   </div>
@@ -962,7 +962,7 @@ function ShoppingListModal({
               </div>
 
               {exportError && (
-                <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 flex items-center gap-3 text-red-400 print:hidden">
+                <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 flex items-center gap-3 text-red-600 dark:text-red-400 print:hidden">
                   <AlertCircle size={16} />
                   <span className="text-[10px] font-bold uppercase tracking-widest">{exportError}</span>
                 </div>
@@ -971,18 +971,18 @@ function ShoppingListModal({
 
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center opacity-20">
-              <ShoppingCart size={48} strokeWidth={1} className="mb-4" />
-              <p className="text-sm font-bold uppercase tracking-widest">List is empty</p>
+              <ShoppingCart size={48} strokeWidth={1} className="mb-4 text-foreground" />
+              <p className="text-sm font-bold uppercase tracking-widest text-foreground">List is empty</p>
             </div>
           )}
         </div>
 
         {/* Footer Actions */}
-        <div className="border-t border-white/5 bg-white/[0.01] p-8 flex items-center gap-4 print:hidden">
+        <div className="border-t border-border-subtle bg-foreground/[0.01] p-8 flex items-center gap-4 print:hidden">
           <button
             onClick={handlePrint}
             disabled={loading || isExporting || !shoppingList}
-            className="flex-1 flex h-14 items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all disabled:opacity-30"
+            className="flex-1 flex h-14 items-center justify-center gap-3 rounded-2xl border border-border-subtle bg-card-overlay text-[10px] font-black uppercase tracking-widest text-foreground hover:bg-card-overlay-hover hover:text-foreground transition-all disabled:opacity-30"
           >
             <Printer size={18} />
             Print List
@@ -990,7 +990,7 @@ function ShoppingListModal({
           <button
             onClick={handleExportPdf}
             disabled={loading || isExporting || !shoppingList}
-            className="flex-1 flex h-14 items-center justify-center gap-3 rounded-2xl bg-white text-[10px] font-black uppercase tracking-widest text-black hover:bg-white/90 transition-all shadow-2xl disabled:opacity-30"
+            className="flex-1 flex h-14 items-center justify-center gap-3 rounded-2xl bg-foreground text-[10px] font-black uppercase tracking-widest text-background hover:opacity-90 transition-all shadow-2xl disabled:opacity-30"
           >
             {isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
             {isExporting ? 'Generating...' : 'Export PDF'}
@@ -1028,13 +1028,13 @@ function PresetModal({
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={onClose} />
       
-      <div className="relative flex flex-col w-full max-w-lg max-h-[80vh] overflow-hidden rounded-[40px] border border-white/10 bg-[#0b0b0c] shadow-3xl">
-        <div className="flex items-center justify-between border-b border-white/5 p-8">
+      <div className="relative flex flex-col w-full max-w-lg max-h-[80vh] overflow-hidden rounded-[40px] border border-border-strong bg-surface shadow-3xl">
+        <div className="flex items-center justify-between border-b border-border-subtle p-8">
           <div>
-            <h3 className="text-xl font-black italic tracking-tight text-white uppercase">Part Presets</h3>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 mt-1">Saved Hardware Groupings</p>
+            <h3 className="text-xl font-black italic tracking-tight text-foreground uppercase">Part Presets</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-40 mt-1">Saved Hardware Groupings</p>
           </div>
-          <button onClick={onClose} className="h-10 w-10 flex items-center justify-center rounded-full bg-white/5 text-white/40 hover:bg-white/10">
+          <button onClick={onClose} className="h-10 w-10 flex items-center justify-center rounded-full bg-foreground/5 text-muted opacity-60 hover:bg-foreground/10 hover:text-foreground">
             <X size={20} />
           </button>
         </div>
@@ -1043,25 +1043,25 @@ function PresetModal({
           {presets.map(preset => (
             <div 
               key={preset.id}
-              className="group rounded-3xl border border-white/5 bg-white/[0.02] p-6 hover:border-white/10 hover:bg-white/[0.04] transition-all"
+              className="group rounded-3xl border border-border-subtle bg-foreground/[0.01] p-6 hover:border-border-strong hover:bg-foreground/[0.03] transition-all"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="space-y-1">
-                  <h4 className="text-base font-black italic text-white">{preset.name}</h4>
-                  <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
+                  <h4 className="text-base font-black italic text-foreground">{preset.name}</h4>
+                  <p className="text-[10px] font-bold text-muted opacity-40 uppercase tracking-widest">
                     {preset.items.length} items included
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => onApply(preset)}
-                    className="flex h-9 px-4 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 text-[10px] font-black uppercase tracking-widest text-purple-400 hover:bg-purple-500/20 active:scale-95 transition-all"
+                    className="flex h-9 px-4 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 text-[10px] font-black uppercase tracking-widest text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 active:scale-95 transition-all"
                   >
                     Apply
                   </button>
                   <button
                     onClick={() => onEdit(preset)}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-white/20 hover:bg-white/10 hover:text-white transition-all"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground/5 text-muted opacity-40 hover:bg-foreground/10 hover:text-foreground transition-all"
                     title="Edit Preset"
                   >
                     <Edit3 size={14} />
@@ -1069,7 +1069,7 @@ function PresetModal({
                   <button
                     onClick={() => onDelete(preset.id)}
                     disabled={loadingId !== null}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/5 text-red-500/20 hover:bg-red-500/10 hover:text-red-400 transition-all disabled:opacity-50"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/5 text-red-500/40 hover:bg-red-500/10 hover:text-red-600 transition-all disabled:opacity-50"
                   >
                     {loadingId === preset.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                   </button>
@@ -1078,7 +1078,7 @@ function PresetModal({
               
               <div className="flex flex-wrap gap-2">
                 {preset.items.map(item => (
-                  <span key={item.id} className="px-2 py-1 rounded-lg bg-black/40 border border-white/5 text-[9px] font-bold text-white/30 uppercase">
+                  <span key={item.id} className="px-2 py-1 rounded-lg bg-foreground/5 border border-border-subtle text-[9px] font-bold text-muted opacity-60 uppercase">
                     {item.savedPart?.name || 'Unknown Part'} (x{item.quantity})
                   </span>
                 ))}
@@ -1088,8 +1088,8 @@ function PresetModal({
 
           {presets.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-center opacity-20">
-              <Layers size={40} strokeWidth={1} className="mb-4" />
-              <p className="text-sm font-bold uppercase tracking-widest">No presets defined</p>
+              <Layers size={40} strokeWidth={1} className="mb-4 text-foreground" />
+              <p className="text-sm font-bold uppercase tracking-widest text-foreground">No presets defined</p>
             </div>
           )}
         </div>
@@ -1174,20 +1174,20 @@ function EditPresetModal({
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={onClose} />
       
-      <div className="relative flex flex-col w-full max-w-xl max-h-[85vh] overflow-hidden rounded-[40px] border border-white/10 bg-[#0b0b0c] shadow-3xl">
-        <div className="flex items-center justify-between border-b border-white/5 p-8">
+      <div className="relative flex flex-col w-full max-w-xl max-h-[85vh] overflow-hidden rounded-[40px] border border-border-strong bg-surface shadow-3xl">
+        <div className="flex items-center justify-between border-b border-border-subtle p-8">
           <div>
-            <h3 className="text-xl font-black italic tracking-tight text-white uppercase">Edit Preset</h3>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 mt-1">Refine Hardware Grouping</p>
+            <h3 className="text-xl font-black italic tracking-tight text-foreground uppercase">Edit Preset</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-40 mt-1">Refine Hardware Grouping</p>
           </div>
-          <button onClick={onClose} className="h-10 w-10 flex items-center justify-center rounded-full bg-white/5 text-white/40 hover:bg-white/10">
+          <button onClick={onClose} className="h-10 w-10 flex items-center justify-center rounded-full bg-foreground/5 text-muted opacity-40 hover:bg-foreground/10 hover:text-foreground">
             <X size={20} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
           {localError && (
-            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 flex items-center gap-3 text-red-400 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 flex items-center gap-3 text-red-600 dark:text-red-400 animate-in fade-in slide-in-from-top-2 duration-300">
               <AlertCircle size={16} />
               <span className="text-[10px] font-bold uppercase tracking-widest">{localError}</span>
             </div>
@@ -1195,48 +1195,48 @@ function EditPresetModal({
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Preset Name</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Preset Name</label>
               <input 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-border-strong"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Notes (Optional)</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Notes (Optional)</label>
               <textarea 
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full min-h-[60px] rounded-2xl bg-black/40 p-4 text-xs font-medium text-white resize-none focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="w-full min-h-[60px] rounded-2xl bg-foreground/5 border border-border-subtle p-4 text-xs font-medium text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-border-strong"
               />
             </div>
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Included Parts ({items.length})</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-muted opacity-60 ml-1">Included Parts ({items.length})</h4>
             <div className="space-y-2">
               {items.map(item => (
-                <div key={item.savedPartId} className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] p-3 pl-4">
-                  <span className="text-xs font-bold text-white italic">{item.name || 'Unknown Part'}</span>
+                <div key={item.savedPartId} className="flex items-center justify-between rounded-2xl border border-border-subtle bg-foreground/[0.01] p-3 pl-4">
+                  <span className="text-xs font-bold text-foreground italic">{item.name || 'Unknown Part'}</span>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={() => updateQty(item.savedPartId, item.quantity - 1)}
-                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-white/5 text-white/40 hover:bg-white/10"
+                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-foreground/5 text-muted opacity-60 hover:bg-foreground/10 hover:text-foreground"
                       >
                         <X size={12} />
                       </button>
-                      <span className="text-xs font-black text-white w-4 text-center">{item.quantity}</span>
+                      <span className="text-xs font-black text-foreground w-4 text-center">{item.quantity}</span>
                       <button 
                         onClick={() => updateQty(item.savedPartId, item.quantity + 1)}
-                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-white/5 text-white/40 hover:bg-white/10"
+                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-foreground/5 text-muted opacity-60 hover:bg-foreground/10 hover:text-foreground"
                       >
                         <Plus size={12} />
                       </button>
                     </div>
                     <button 
                       onClick={() => removeItem(item.savedPartId)}
-                      className="h-8 w-8 flex items-center justify-center rounded-lg text-red-500/40 hover:bg-red-500/10 hover:text-red-500 transition-all"
+                      className="h-8 w-8 flex items-center justify-center rounded-lg text-red-500/40 hover:bg-red-500/10 hover:text-red-600 transition-all"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -1244,32 +1244,32 @@ function EditPresetModal({
                 </div>
               ))}
               {items.length === 0 && (
-                <div className="py-8 text-center border border-dashed border-white/5 rounded-2xl">
-                  <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Preset is empty</p>
+                <div className="py-8 text-center border border-dashed border-border-subtle rounded-2xl">
+                  <p className="text-[10px] font-bold text-muted opacity-20 uppercase tracking-widest italic">Preset is empty</p>
                 </div>
               )}
             </div>
           </div>
 
           <div className="space-y-3 pt-2">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Add More Parts</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-muted opacity-60 ml-1">Add More Parts</h4>
             <div className="relative">
               <input 
                 placeholder="Search collection..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-border-strong"
               />
               {searchQuery && filteredParts.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 z-10 rounded-2xl border border-white/10 bg-black p-2 shadow-2xl animate-in fade-in slide-in-from-top-2">
+                <div className="absolute top-full left-0 right-0 mt-2 z-10 rounded-2xl border border-border-strong bg-surface p-2 shadow-2xl animate-in fade-in slide-in-from-top-2">
                   {filteredParts.map(part => (
                     <button
                       key={part.id}
                       onClick={() => addItem(part)}
-                      className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 text-left transition-all"
+                      className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-foreground/5 text-left transition-all"
                     >
-                      <span className="text-[11px] font-bold text-white">{part.name}</span>
-                      <PlusCircle size={14} className="text-blue-400" />
+                      <span className="text-[11px] font-bold text-foreground">{part.name}</span>
+                      <PlusCircle size={14} className="text-blue-600 dark:text-blue-400" />
                     </button>
                   ))}
                 </div>
@@ -1278,17 +1278,17 @@ function EditPresetModal({
           </div>
         </div>
 
-        <div className="border-t border-white/5 p-8 flex gap-3">
+        <div className="border-t border-border-subtle p-8 flex gap-3">
           <button 
             onClick={handleSave}
             disabled={loading || !name || items.length === 0}
-            className="flex-1 h-12 rounded-2xl bg-white text-[10px] font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-30"
+            className="flex-1 h-12 rounded-2xl bg-foreground text-[10px] font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-30"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : "Save Changes"}
           </button>
           <button 
             onClick={onClose}
-            className="px-6 h-12 rounded-2xl border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-white/60 hover:bg-white/10 transition-all"
+            className="px-6 h-12 rounded-2xl border border-border-subtle bg-foreground/5 text-[10px] font-black uppercase tracking-widest text-muted opacity-60 hover:bg-foreground/10 hover:text-foreground transition-all"
           >
             Cancel
           </button>
@@ -1329,31 +1329,31 @@ function CreatePresetModal({
   return createPortal(
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-[40px] border border-white/10 bg-[#0b0b0c] p-8 shadow-3xl">
+      <div className="relative w-full max-w-md rounded-[40px] border border-border-strong bg-surface p-8 shadow-3xl">
         <div className="space-y-6">
           <div className="space-y-1">
-            <h3 className="text-2xl font-black italic tracking-tight text-white uppercase">New Preset</h3>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Creating grouping for {selectedCount} items</p>
+            <h3 className="text-2xl font-black italic tracking-tight text-foreground uppercase leading-none">New Preset</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-40">Creating grouping for {selectedCount} items</p>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Preset Name</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Preset Name</label>
               <input 
                 placeholder="e.g. Minor Service Pack"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="h-12 w-full rounded-2xl bg-black/40 px-4 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="h-12 w-full rounded-2xl bg-foreground/5 border border-border-subtle px-4 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-border-strong"
                 autoFocus
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Notes (Optional)</label>
+              <label className="text-[9px] font-black uppercase tracking-widest text-muted opacity-40 ml-1">Notes (Optional)</label>
               <textarea 
                 placeholder="Description of when to use this preset..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full min-h-[80px] rounded-2xl bg-black/40 p-4 text-xs font-medium text-white resize-none focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="w-full min-h-[80px] rounded-2xl bg-foreground/5 border border-border-subtle p-4 text-xs font-medium text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-border-strong"
               />
             </div>
           </div>
@@ -1362,13 +1362,14 @@ function CreatePresetModal({
             <button 
               onClick={() => onSave(name, notes)}
               disabled={loading || !name}
-              className="flex-1 h-12 rounded-2xl bg-white text-[10px] font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98] disabled:opacity-30"
+              className="flex-1 h-12 rounded-2xl bg-foreground text-[10px] font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-30"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : "Create Preset"}
             </button>
             <button 
+              type="button"
               onClick={onClose}
-              className="px-6 h-12 rounded-2xl border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-white/60 hover:bg-white/10 transition-all"
+              className="px-6 h-12 rounded-2xl border border-border-subtle bg-foreground/5 text-[10px] font-black uppercase tracking-widest text-muted opacity-60 hover:bg-foreground/10 hover:text-foreground transition-all"
             >
               Cancel
             </button>

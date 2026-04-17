@@ -18,7 +18,7 @@ export function GarageCalendarTrigger({ vehicles }: GarageCalendarTriggerProps) 
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.03] border border-white/5 ring-1 ring-white/5 shadow-xl text-white/40 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+        className="flex h-12 w-12 items-center justify-center rounded-2xl bg-card-overlay border border-border-subtle shadow-xl text-muted transition-all hover:bg-card-overlay-hover hover:text-foreground hover:border-border-strong active:scale-95"
         title="Open Garage Calendar"
       >
         <Calendar size={20} strokeWidth={2} />

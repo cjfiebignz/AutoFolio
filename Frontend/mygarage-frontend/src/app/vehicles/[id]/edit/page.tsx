@@ -86,17 +86,17 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
 
   if (isLoading || status === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+      <div className="flex min-h-screen items-center justify-center bg-surface">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-border-strong border-t-foreground" />
       </div>
     );
   }
 
   if (!vehicle && !isLoading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-black px-6 text-center">
-        <p className="text-white/40 mb-4 text-sm font-bold uppercase tracking-widest">{error || 'Vehicle not found'}</p>
-        <Link href="/vehicles" className="text-white text-xs font-black uppercase tracking-widest underline underline-offset-4 decoration-white/20 hover:decoration-white transition-all">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-surface px-6 text-center">
+        <p className="text-muted mb-4 text-sm font-bold uppercase tracking-widest">{error || 'Vehicle not found'}</p>
+        <Link href="/vehicles" className="text-foreground text-xs font-black uppercase tracking-widest underline underline-offset-4 decoration-border-subtle hover:decoration-foreground transition-all">
           Back to Vehicles
         </Link>
       </div>
@@ -122,21 +122,21 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
   };
 
   return (
-    <main className="min-h-screen bg-black px-6 pt-20 pb-12">
+    <main className="min-h-screen bg-background px-6 pt-20 pb-12">
       <div className="mx-auto max-w-xl">
         {/* Header */}
         <header className="mb-12">
           <Link 
             href={`/vehicles/${id}`}
-            className={`group mb-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 transition-colors hover:text-white ${isSubmitting ? 'pointer-events-none opacity-50' : ''}`}
+            className={`group mb-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-dim transition-colors hover:text-foreground ${isSubmitting ? 'pointer-events-none opacity-50' : ''}`}
           >
             <ArrowLeft className="h-3 w-3 transition-transform group-hover:-translate-x-1" />
             Back to Vehicle
           </Link>
-          <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase italic text-white/90">
-            Edit <span className="text-white/40">Vehicle</span>
+          <h1 className="text-4xl font-black italic tracking-tighter text-foreground uppercase italic text-foreground/90">
+            Edit <span className="text-muted">Vehicle</span>
           </h1>
-          <p className="mt-2 text-xs font-medium text-white/40">
+          <p className="mt-2 text-xs font-medium text-muted">
             Update the primary identity and technical link for your vehicle.
           </p>
         </header>
@@ -208,27 +208,27 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
             />
           </FormSection>
 
-          <footer className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+          <footer className="grid grid-cols-2 gap-4 pt-4 border-t border-border-subtle">
             <Link 
               href={`/vehicles/${id}`}
-              className={`flex h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-sm font-bold text-white transition-all hover:bg-white/10 active:scale-[0.98] ${isSubmitting ? 'pointer-events-none opacity-50' : ''}`}
+              className={`flex h-14 items-center justify-center rounded-2xl border border-border-strong bg-card-overlay text-sm font-bold text-foreground transition-all hover:bg-card-overlay-hover active:scale-[0.98] ${isSubmitting ? 'pointer-events-none opacity-50' : ''}`}
             >
               Cancel
             </Link>
             <button 
               type="submit"
               disabled={isSubmitting}
-              className="relative flex h-14 items-center justify-center overflow-hidden rounded-2xl bg-white text-sm font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98] disabled:opacity-50"
+              className="relative flex h-14 items-center justify-center overflow-hidden rounded-2xl bg-foreground text-sm font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
             >
               {isSubmitting ? "Saving..." : "Save Changes"}
             </button>
           </footer>
         </form>
 
-        <div className="mt-20 border-t border-white/5 pt-10">
+        <div className="mt-20 border-t border-border-subtle pt-10">
           <div className="rounded-[32px] border border-red-500/10 bg-red-500/[0.02] p-8">
             <h3 className="text-sm font-black uppercase tracking-widest text-red-400">Danger Zone</h3>
-            <p className="mt-2 text-xs font-medium text-white/30">
+            <p className="mt-2 text-xs font-medium text-dim">
               Permanently remove this vehicle and all its associated service history, documents, and reminders.
             </p>
             <button

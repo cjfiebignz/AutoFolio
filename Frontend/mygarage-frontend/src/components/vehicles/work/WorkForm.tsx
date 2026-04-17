@@ -218,18 +218,18 @@ export function WorkForm({ vehicleId, initialData, workJobId }: WorkFormProps) {
           {/* Selected Parts */}
           <div className="grid gap-2">
             {selectedParts.map(part => (
-              <div key={part.savedPartId} className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] p-3 pl-4">
+              <div key={part.savedPartId} className="flex items-center justify-between rounded-2xl border border-border-subtle bg-card-overlay p-3 pl-4">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-black text-white/80 uppercase italic truncate">{part.name}</p>
-                  {part.partNumber && <p className="text-[9px] font-mono text-white/20">#{part.partNumber}</p>}
+                  <p className="text-[11px] font-black text-foreground opacity-80 uppercase italic truncate">{part.name}</p>
+                  {part.partNumber && <p className="text-[9px] font-mono text-dim">#{part.partNumber}</p>}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <div className="flex items-center gap-2 bg-black/20 rounded-xl p-1 px-2 border border-white/5">
-                    <button type="button" onClick={() => updatePartQty(part.savedPartId, part.quantity - 1)} className="text-white/40 hover:text-white transition-colors">
+                  <div className="flex items-center gap-2 bg-foreground/5 rounded-xl p-1 px-2 border border-border-subtle">
+                    <button type="button" onClick={() => updatePartQty(part.savedPartId, part.quantity - 1)} className="text-muted hover:text-foreground transition-colors">
                       <X size={10} strokeWidth={3} />
                     </button>
-                    <span className="text-[10px] font-black text-white w-4 text-center">{part.quantity}</span>
-                    <button type="button" onClick={() => updatePartQty(part.savedPartId, part.quantity + 1)} className="text-white/40 hover:text-white transition-colors">
+                    <span className="text-[10px] font-black text-foreground w-4 text-center">{part.quantity}</span>
+                    <button type="button" onClick={() => updatePartQty(part.savedPartId, part.quantity + 1)} className="text-muted hover:text-foreground transition-colors">
                       <Plus size={10} strokeWidth={3} />
                     </button>
                   </div>
@@ -248,32 +248,32 @@ export function WorkForm({ vehicleId, initialData, workJobId }: WorkFormProps) {
           {/* Search/Add Part */}
           <div className="relative">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={14} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-dim" size={14} />
               <input 
                 placeholder="Link parts from collection..." 
                 value={partSearch}
                 onChange={(e) => setPartSearch(e.target.value)}
-                className="h-12 w-full rounded-2xl bg-black/40 pl-11 pr-4 text-xs font-bold text-white placeholder:text-white/10 focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="h-12 w-full rounded-2xl bg-foreground/5 pl-11 pr-4 text-xs font-bold text-foreground placeholder:text-dim focus:outline-none focus:ring-1 focus:ring-border-strong"
               />
             </div>
             {partSearch && (
-              <div className="absolute top-full left-0 right-0 mt-2 z-10 rounded-2xl border border-white/10 bg-[#0b0b0c] p-2 shadow-2xl animate-in fade-in slide-in-from-top-2">
+              <div className="absolute top-full left-0 right-0 mt-2 z-10 rounded-2xl border border-border-strong bg-surface p-2 shadow-2xl animate-in fade-in slide-in-from-top-2">
                 {filteredParts.length > 0 ? filteredParts.map(part => (
                   <button
                     key={part.id}
                     type="button"
                     onClick={() => addPart(part)}
-                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 text-left transition-all"
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-foreground/5 text-left transition-all"
                   >
                     <div>
-                      <p className="text-[11px] font-bold text-white uppercase italic">{part.name}</p>
-                      <p className="text-[9px] text-white/20 uppercase tracking-widest">{part.category}</p>
+                      <p className="text-[11px] font-bold text-foreground uppercase italic">{part.name}</p>
+                      <p className="text-[9px] text-muted uppercase tracking-widest">{part.category}</p>
                     </div>
-                    <Plus size={12} className="text-blue-400" />
+                    <Plus size={12} className="text-blue-500" />
                   </button>
                 )) : (
                   <div className="p-4 text-center">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20">No parts found</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-dim">No parts found</p>
                   </div>
                 )}
               </div>
@@ -287,12 +287,12 @@ export function WorkForm({ vehicleId, initialData, workJobId }: WorkFormProps) {
         <div className="space-y-4">
           {/* Search Specs */}
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={14} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-dim" size={14} />
             <input 
               placeholder="Search specifications..." 
               value={specSearch}
               onChange={(e) => setSpecSearch(e.target.value)}
-              className="h-12 w-full rounded-2xl bg-black/40 pl-11 pr-4 text-xs font-bold text-white placeholder:text-white/10 focus:outline-none focus:ring-1 focus:ring-white/20"
+              className="h-12 w-full rounded-2xl bg-foreground/5 pl-11 pr-4 text-xs font-bold text-foreground placeholder:text-dim focus:outline-none focus:ring-1 focus:ring-border-strong"
             />
           </div>
 
@@ -305,7 +305,7 @@ export function WorkForm({ vehicleId, initialData, workJobId }: WorkFormProps) {
                   key={id}
                   type="button"
                   onClick={() => toggleSpec(id)}
-                  className="flex items-center gap-2 rounded-full bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-purple-400 hover:bg-purple-500/20 transition-all"
+                  className="flex items-center gap-2 rounded-full bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 transition-all"
                 >
                   {spec.label}: {spec.value} {spec.unit}
                   <X size={10} strokeWidth={3} />
@@ -325,17 +325,17 @@ export function WorkForm({ vehicleId, initialData, workJobId }: WorkFormProps) {
                   className={`flex flex-col items-start p-3 rounded-2xl border transition-all text-left ${
                     isSelected 
                       ? 'bg-purple-500/10 border-purple-500/30 ring-1 ring-purple-500/20' 
-                      : 'bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04]'
+                      : 'bg-foreground/[0.01] border-border-subtle hover:border-border-strong hover:bg-foreground/[0.03]'
                   }`}
                 >
-                  <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em]">{spec.group}</span>
-                  <span className="text-[10px] font-bold text-white/80 mt-0.5">{spec.label}</span>
-                  <span className="text-xs font-black text-blue-400 mt-1 italic">{spec.value} {spec.unit}</span>
+                  <span className="text-[8px] font-black text-dim uppercase tracking-[0.2em]">{spec.group}</span>
+                  <span className="text-[10px] font-bold text-foreground opacity-80 mt-0.5">{spec.label}</span>
+                  <span className="text-xs font-black text-blue-500 dark:text-blue-400 mt-1 italic">{spec.value} {spec.unit}</span>
                 </button>
               )
             }) : (
               <div className="col-span-full py-10 text-center">
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/20">
+                <p className="text-[10px] font-black uppercase tracking-widest text-dim">
                   {specSearch ? 'No matching specs found' : 'No custom specs found'}
                 </p>
               </div>
@@ -367,40 +367,40 @@ export function WorkForm({ vehicleId, initialData, workJobId }: WorkFormProps) {
             />
           </div>
         ) : (
-          <div className="group relative flex flex-col items-center justify-center rounded-[32px] border border-dashed border-white/10 bg-white/[0.01] py-12 text-center transition-all hover:bg-white/[0.02] hover:border-white/20">
+          <div className="group relative flex flex-col items-center justify-center rounded-[32px] border border-dashed border-border-subtle bg-foreground/[0.01] py-12 text-center transition-all hover:bg-foreground/[0.02] hover:border-border-strong">
             <div className="mb-4 relative">
-              <div className="absolute -inset-4 rounded-full bg-white/5 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/5 bg-white/5 text-white/10 group-hover:text-white/20 transition-colors">
+              <div className="absolute -inset-4 rounded-full bg-foreground/5 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-border-subtle bg-card-overlay text-muted group-hover:text-foreground transition-colors">
                 <Paperclip size={24} strokeWidth={1.5} />
               </div>
             </div>
             <div className="space-y-2 px-6">
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Reference Material</p>
-              <p className="mx-auto max-w-[280px] text-[11px] font-medium leading-relaxed text-white/20">
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-muted">Reference Material</p>
+              <p className="mx-auto max-w-[280px] text-[11px] font-medium leading-relaxed text-dim">
                 You can attach parts lists, technical diagrams, and quotes once this work record is initially saved.
               </p>
             </div>
             
-            <div className="mt-8 flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 border border-white/5">
+            <div className="mt-8 flex items-center gap-2 rounded-full bg-foreground/5 px-4 py-2 border border-border-subtle">
               <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[9px] font-black uppercase tracking-widest text-white/30">Save to unlock uploads</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-dim">Save to unlock uploads</span>
             </div>
           </div>
         )}
       </FormSection>
 
       {/* Form Actions */}
-      <footer className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+      <footer className="grid grid-cols-2 gap-4 pt-4 border-t border-border-subtle">
         <Link 
           href={`/vehicles/${vehicleId}?tab=work`}
-          className={`flex h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-sm font-bold text-white transition-all hover:bg-white/10 active:scale-[0.98] ${isSubmitting ? 'pointer-events-none opacity-50' : ''}`}
+          className={`flex h-14 items-center justify-center rounded-2xl border border-border-subtle bg-card-overlay text-sm font-bold text-foreground transition-all hover:bg-card-overlay-hover active:scale-[0.98] ${isSubmitting ? 'pointer-events-none opacity-50' : ''}`}
         >
           Cancel
         </Link>
         <button 
           type="submit"
           disabled={isSubmitting}
-          className="relative flex h-14 items-center justify-center overflow-hidden rounded-2xl bg-white text-sm font-black uppercase tracking-widest text-black transition-all hover:bg-white/90 active:scale-[0.98] disabled:opacity-50"
+          className="relative flex h-14 items-center justify-center overflow-hidden rounded-2xl bg-foreground text-sm font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
         >
           {isSubmitting ? "Saving..." : (workJobId ? "Save Changes" : "Save Job")}
         </button>

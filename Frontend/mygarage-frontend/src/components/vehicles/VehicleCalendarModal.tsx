@@ -1,23 +1,25 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import { 
+  X, ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
+  Wrench, Bell, Edit3, ArrowRight, Clock
+} from 'lucide-react';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday as isDateToday, startOfWeek, endOfWeek } from 'date-fns';
+import { VehicleViewModel } from '@/lib/mappers/vehicle';
+import { ServiceEntryViewModel, ServiceSummaryViewModel } from '@/lib/mappers/service';
+import { WorkJobViewModel } from '@/lib/mappers/work';
+import { DocumentViewModel } from '@/lib/mappers/document';
+import { ReminderViewModel } from '@/lib/mappers/reminder';
 import Link from 'next/link';
-import { X, ChevronLeft, ChevronRight, Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
-import { ServiceEntryViewModel, ServiceSummaryViewModel } from "@/lib/mappers/service";
-import { WorkJobViewModel } from "@/lib/mappers/work";
-import { DocumentViewModel } from "@/lib/mappers/document";
-import { ReminderViewModel } from "@/lib/mappers/reminder";
-import { formatDisplayDate } from "@/lib/date-utils";
-import { usePreferences } from "@/lib/preferences";
 
 interface CalendarEvent {
   id: string;
   date: Date;
+  type: 'service' | 'work' | 'reminder';
   title: string;
-  category: 'service' | 'work' | 'reminder' | 'registration' | 'insurance' | 'document';
-  href: string;
-  subtitle?: string;
+  subtitle: string;
+  severity?: 'critical' | 'soon' | 'upcoming' | 'overdue';
 }
 
 interface VehicleCalendarModalProps {
@@ -31,248 +33,180 @@ interface VehicleCalendarModalProps {
   serviceSummary?: ServiceSummaryViewModel | null;
 }
 
-export function VehicleCalendarModal({
-  isOpen,
-  onClose,
+export function VehicleCalendarModal({ 
+  isOpen, 
+  onClose, 
   vehicle,
   services,
   workItems,
-  documents,
   reminders,
   serviceSummary
 }: VehicleCalendarModalProps) {
-  const { formatDistance } = usePreferences();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
-  const [isMobileAgendaOpen, setIsMobileAgendaOpen] = useState(false);
 
-  // 1. Normalize all dated items into events
-  const events = useMemo(() => {
-    const allEvents: CalendarEvent[] = [];
+  // Aggregate all events for this specific vehicle
+  const allEvents = useMemo(() => {
+    const events: CalendarEvent[] = [];
 
-    // Services
+    // 1. Services
     services.forEach(s => {
       if (s.date) {
-        allEvents.push({
+        events.push({
           id: `service-${s.id}`,
           date: new Date(s.date),
+          type: 'service',
           title: s.title,
-          category: 'service',
-          href: `/vehicles/${vehicle.id}?tab=service`,
-          subtitle: 'Service Record'
+          subtitle: 'Service History'
         });
       }
     });
 
-    // Next Service Due (from Summary)
-    if (serviceSummary?.nextServiceDueDate) {
-      allEvents.push({
-        id: 'next-service-due',
-        date: new Date(serviceSummary.nextServiceDueDate),
-        title: 'Next Service Due',
-        category: 'service',
-        href: `/vehicles/${vehicle.id}?tab=service`,
-        subtitle: serviceSummary.nextServiceDueKms ? `Approx. ${formatDistance(serviceSummary.nextServiceDueKms)}` : 'Calculated interval'
-      });
-    }
-
-    // Work Jobs
+    // 2. Work Items
     workItems.forEach(w => {
       if (w.date) {
-        allEvents.push({
+        events.push({
           id: `work-${w.id}`,
           date: new Date(w.date),
+          type: 'work',
           title: w.title,
-          category: 'work',
-          href: `/vehicles/${vehicle.id}?tab=work`,
-          subtitle: 'Planned Work'
+          subtitle: w.status.replace('-', ' ')
         });
       }
     });
 
-    // Reminders
+    // 3. Reminders
     reminders.forEach(r => {
-      if (r.dueDate) {
-        allEvents.push({
+      if (r.dueDate && r.status !== 'done') {
+        events.push({
           id: `reminder-${r.id}`,
           date: new Date(r.dueDate),
+          type: 'reminder',
           title: r.title,
-          category: 'reminder',
-          href: `/vehicles/${vehicle.id}?tab=overview`,
-          subtitle: 'Reminder'
+          subtitle: 'Pending Task',
+          severity: r.urgency
         });
       }
     });
 
-    // Documents
-    documents.forEach(d => {
-      if (d.date) {
-        allEvents.push({
-          id: `document-${d.id}`,
-          date: new Date(d.date),
-          title: d.title,
-          category: 'document',
-          href: `/vehicles/${vehicle.id}?tab=documents`,
-          subtitle: 'Document'
-        });
-      }
-    });
-
-    // Registration Expiry
-    if (vehicle.registrationExpiryDate) {
-      allEvents.push({
-        id: 'reg-expiry',
-        date: new Date(vehicle.registrationExpiryDate),
-        title: 'Registration Expiry',
-        category: 'registration',
-        href: `/vehicles/${vehicle.id}/registration`,
-        subtitle: vehicle.nickname
+    // 4. Next Service Due (from intelligence)
+    if (serviceSummary?.nextServiceDueDate) {
+      events.push({
+        id: 'next-service-predicted',
+        date: new Date(serviceSummary.nextServiceDueDate),
+        type: 'service',
+        title: 'Next Service Due',
+        subtitle: 'Predicted Requirement',
+        severity: serviceSummary.status === 'overdue' ? 'critical' : 'soon'
       });
     }
 
-    // Insurance Expiry
-    if (vehicle.insuranceExpiryDate) {
-      allEvents.push({
-        id: 'ins-expiry',
-        date: new Date(vehicle.insuranceExpiryDate),
-        title: 'Insurance Expiry',
-        category: 'insurance',
-        href: `/vehicles/${vehicle.id}/insurance`,
-        subtitle: vehicle.nickname
-      });
-    }
+    return events;
+  }, [services, workItems, reminders, serviceSummary]);
 
-    return allEvents;
-  }, [vehicle, services, workItems, documents, reminders]);
+  const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
 
-  // 2. Calendar Logic
-  const daysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  const startDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(monthStart);
+  const startDate = startOfWeek(monthStart);
+  const endDate = endOfWeek(monthEnd);
 
-  const handlePrevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
-  const handleNextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  const calendarDays = eachDayOfInterval({
+    start: startDate,
+    end: endDate,
+  });
 
-  const isSameDay = (d1: Date, d2: Date) => 
-    d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+  const monthLabel = format(currentMonth, 'MMMM yyyy');
 
-  const monthLabel = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
-
-  const calendarDays = useMemo(() => {
-    const days = [];
-    const numDays = daysInMonth(currentMonth);
-    const startDay = startDayOfMonth(currentMonth);
-
-    // Padding for start of month
-    for (let i = 0; i < startDay; i++) days.push(null);
-
-    // Days of month
-    for (let i = 1; i <= numDays; i++) {
-      days.push(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i));
-    }
-
-    return days;
-  }, [currentMonth]);
-
-  const selectedEvents = useMemo(() => {
+  const selectedDateEvents = useMemo(() => {
     if (!selectedDate) return [];
-    return events.filter(e => isSameDay(e.date, selectedDate));
-  }, [events, selectedDate]);
-
-  const handleDayClick = (day: Date) => {
-    setSelectedDate(day);
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-      setIsMobileAgendaOpen(true);
-    }
-  };
+    return allEvents.filter(event => isSameDay(event.date, selectedDate));
+  }, [allEvents, selectedDate]);
 
   if (!isOpen) return null;
 
-  return createPortal(
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-black/90 backdrop-blur-xl transition-opacity" onClick={onClose} />
-      
-      <div className="relative w-full max-w-4xl overflow-hidden rounded-[40px] border border-white/10 bg-[#0b0b0c] shadow-2xl transition-all">
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-md p-4 sm:p-6 transition-all animate-in fade-in duration-300">
+      <div className="relative w-full max-w-4xl overflow-hidden rounded-[40px] border border-border-strong bg-surface shadow-premium transition-all">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/5 p-6 sm:p-8">
+        <div className="flex items-center justify-between border-b border-border-subtle p-6 sm:p-8">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 flex items-center justify-center rounded-2xl bg-white/5 text-white/20">
+            <div className="h-12 w-12 flex items-center justify-center rounded-2xl bg-card-overlay border border-border-subtle text-muted">
               <CalendarIcon size={24} strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-xl font-black italic tracking-tight text-white uppercase">Vehicle Calendar</h3>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400/50 mt-1">{vehicle.nickname} Pipeline</p>
+              <h3 className="text-xl font-black italic tracking-tighter text-foreground uppercase truncate max-w-[200px] sm:max-w-none">
+                {vehicle.nickname} Timeline
+              </h3>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent opacity-70">Fleet logistics view</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={onClose}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all active:scale-90"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-card-overlay text-muted hover:bg-card-overlay-hover hover:text-foreground transition-all active:scale-90"
           >
             <X size={24} />
           </button>
         </div>
 
-        <div className="flex flex-col lg:flex-row h-[calc(100vh-200px)] max-h-[700px] overflow-hidden">
-          {/* Calendar Grid Section */}
-          <div className="flex-1 p-6 sm:p-8 border-b lg:border-b-0 lg:border-r border-white/5 overflow-y-auto no-scrollbar">
+        <div className="flex flex-col lg:flex-row h-[600px] lg:h-[500px]">
+          {/* Calendar Grid */}
+          <div className="flex-1 p-6 sm:p-8 border-b lg:border-b-0 lg:border-r border-border-subtle overflow-y-auto no-scrollbar">
             <div className="flex items-center justify-between mb-8">
-              <h4 className="text-sm font-black uppercase tracking-[0.2em] text-white/80">{monthLabel}</h4>
+              <h4 className="text-sm font-black uppercase tracking-[0.2em] text-foreground opacity-80">{monthLabel}</h4>
               <div className="flex gap-2">
-                <button onClick={handlePrevMonth} className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all active:scale-90">
+                <button onClick={handlePrevMonth} className="h-10 w-10 flex items-center justify-center rounded-xl bg-card-overlay text-muted hover:text-foreground hover:bg-card-overlay-hover transition-all active:scale-90">
                   <ChevronLeft size={20} />
                 </button>
-                <button onClick={handleNextMonth} className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all active:scale-90">
+                <button onClick={handleNextMonth} className="h-10 w-10 flex items-center justify-center rounded-xl bg-card-overlay text-muted hover:text-foreground hover:bg-card-overlay-hover transition-all active:scale-90">
                   <ChevronRight size={20} />
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-7 gap-2 text-center mb-4">
-              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                <div key={i} className="text-[10px] font-black text-white/20 uppercase tracking-widest">{day}</div>
+            <div className="grid grid-cols-7 gap-px bg-border-subtle border border-border-subtle rounded-2xl overflow-hidden">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} className="bg-surface p-2 text-center text-[10px] font-black text-dim uppercase tracking-widest">{day}</div>
               ))}
-            </div>
-
-            <div className="grid grid-cols-7 gap-2">
               {calendarDays.map((day, i) => {
-                if (!day) return <div key={`empty-${i}`} className="aspect-square" />;
-                
-                const dayEvents = events.filter(e => isSameDay(e.date, day));
-                const categories = Array.from(new Set(dayEvents.map(e => e.category)));
+                const isCurrentMonth = isSameMonth(day, monthStart);
                 const isSelected = selectedDate && isSameDay(day, selectedDate);
-                const isToday = isSameDay(day, new Date());
+                const isToday = isDateToday(day);
+                const dayEvents = allEvents.filter(event => isSameDay(event.date, day));
+                const hasEvents = dayEvents.length > 0;
 
                 return (
                   <button
                     key={i}
-                    onClick={() => handleDayClick(day)}
-                    className={`group relative aspect-square rounded-2xl border transition-all duration-200 flex flex-col items-center justify-center active:scale-95 active:bg-blue-500/20
-                      ${isSelected 
-                        ? 'border-blue-500/50 bg-blue-500/10 text-white shadow-[0_0_20px_rgba(59,130,246,0.2)]' 
-                        : 'border-white/5 bg-white/[0.02] text-white/40 hover:border-white/20 hover:bg-white/5'}
-                      ${isToday && !isSelected ? 'ring-1 ring-inset ring-white/20' : ''}
-                      ${dayEvents.length > 0 && !isSelected ? 'hover:shadow-[0_0_15px_rgba(59,130,246,0.1)]' : ''}
-                    `}
+                    onClick={() => setSelectedDate(day)}
+                    className={`relative min-h-[60px] p-2 transition-all group overflow-hidden ${
+                      !isCurrentMonth ? 'bg-background opacity-20' : 'bg-surface'
+                    } ${
+                      isSelected 
+                        ? 'z-10 ring-2 ring-inset ring-accent bg-accent/[0.03]' 
+                        : 'border-border-subtle bg-card-overlay text-muted hover:border-accent/40 hover:bg-card-overlay-hover'
+                    } ${isToday && !isSelected ? 'ring-1 ring-inset ring-accent/40' : ''}`}
                   >
-                    <span className={`text-sm font-black italic ${isSelected ? 'scale-110' : ''}`}>{day.getDate()}</span>
+                    <span className={`text-xs font-black italic tracking-tighter ${isSelected ? 'text-accent' : isToday ? 'text-accent' : 'text-foreground'}`}>
+                      {format(day, 'd')}
+                    </span>
                     
-                    {/* Category Indicators */}
-                    {categories.length > 0 && (
-                      <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-0.5 px-1">
-                        {categories.slice(0, 4).map(cat => (
+                    {hasEvents && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {dayEvents.slice(0, 3).map((event, idx) => (
                           <div 
-                            key={cat}
-                            className={`h-0.5 w-2 rounded-full ${
-                              cat === 'service' ? 'bg-blue-500' :
-                              cat === 'work' ? 'bg-yellow-500' :
-                              cat === 'reminder' ? 'bg-red-500' :
-                              cat === 'registration' ? 'bg-purple-500' :
-                              cat === 'insurance' ? 'bg-green-500' :
-                              'bg-white/40'
-                            } ${isSelected ? 'bg-white' : ''}`}
+                            key={idx} 
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              event.type === 'service' ? 'bg-blue-500' :
+                              event.type === 'work' ? 'bg-purple-500' :
+                              event.severity === 'critical' || event.severity === 'overdue' ? 'bg-red-500' :
+                              'bg-accent opacity-60'
+                            }`} 
                           />
                         ))}
-                        {categories.length > 4 && (
-                          <div className={`h-0.5 w-0.5 rounded-full bg-white/20`} />
+                        {dayEvents.length > 3 && (
+                          <div className={`h-0.5 w-0.5 rounded-full bg-dim`} />
                         )}
                       </div>
                     )}
@@ -282,90 +216,100 @@ export function VehicleCalendarModal({
             </div>
           </div>
 
-          {/* Events Side Panel (Desktop) */}
-          <div className="hidden lg:flex w-full lg:w-80 bg-white/[0.01] flex-col overflow-hidden">
-            <div className="p-6 sm:p-8 border-b border-white/5 bg-white/[0.02]">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 mb-1">Agenda for</p>
-              <h4 className="text-sm font-black italic text-white uppercase leading-none">
-                {selectedDate ? formatDisplayDate(selectedDate) : 'Select a date'}
+          {/* Agenda Sidebar */}
+          <div className="hidden lg:flex w-full lg:w-80 bg-background/50 flex-col overflow-hidden">
+            <div className="p-6 sm:p-8 border-b border-border-subtle bg-card-overlay">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted mb-1">Agenda for</p>
+              <h4 className="text-base font-black italic tracking-tighter text-foreground uppercase truncate">
+                {selectedDate ? format(selectedDate, 'do MMMM yyyy') : 'Select Date'}
               </h4>
             </div>
-
-            <div className="flex-1 overflow-y-auto p-6 sm:p-8 no-scrollbar">
-              <div className="space-y-4">
-                {selectedEvents.length === 0 ? (
-                  <div className="py-12 text-center">
-                    <div className="mx-auto h-1 w-8 rounded-full bg-white/5 mb-4" />
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/10 italic">No events recorded</p>
-                  </div>
-                ) : (
-                  selectedEvents.map(event => (
-                    <EventCard key={event.id} event={event} onClose={onClose} />
-                  ))
-                )}
-              </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-4 no-scrollbar">
+              {selectedDateEvents.length === 0 ? (
+                <div className="text-center py-10 opacity-30">
+                  <div className="mx-auto h-1 w-8 rounded-full bg-border-subtle mb-4" />
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-dim italic">No records</p>
+                </div>
+              ) : (
+                selectedDateEvents.map(event => (
+                  <EventRow key={event.id} event={event} vehicleId={vehicle.id} />
+                ))
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Mobile Agenda Overlay */}
-        <div className={`absolute inset-0 z-[10] flex flex-col bg-[#0b0b0c] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] lg:hidden ${isMobileAgendaOpen ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'}`}>
-          <div className="flex items-center justify-between border-b border-white/5 p-6">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 mb-1">Agenda for</p>
-              <h4 className="text-lg font-black italic text-white uppercase leading-none">
-                {selectedDate ? formatDisplayDate(selectedDate) : ''}
-              </h4>
-            </div>
-            <button 
-              onClick={() => setIsMobileAgendaOpen(false)}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all active:scale-90"
-            >
-              <X size={20} />
-            </button>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
-            {selectedEvents.length === 0 ? (
-              <div className="py-20 text-center">
-                <div className="mx-auto h-1 w-8 rounded-full bg-white/5 mb-4" />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/10 italic">No events recorded for this day</p>
+          {/* Mobile Agenda Drawer */}
+          <div className="lg:hidden border-t border-border-subtle p-6 bg-surface overflow-y-auto flex-1">
+            <div className="flex items-center justify-between border-b border-border-subtle pb-4 mb-6">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted mb-1">Agenda for</p>
+                <h4 className="text-sm font-black italic tracking-tighter text-foreground uppercase">
+                  {selectedDate ? format(selectedDate, 'do MMM') : 'Select Date'}
+                </h4>
               </div>
-            ) : (
-              selectedEvents.map(event => (
-                <EventCard key={event.id} event={event} onClose={onClose} />
-              ))
-            )}
+              <button
+                onClick={() => setSelectedDate(null)}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-card-overlay text-muted hover:bg-card-overlay-hover hover:text-foreground transition-all active:scale-90"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {selectedDateEvents.length === 0 ? (
+                <div className="text-center py-6 opacity-30">
+                  <div className="mx-auto h-1 w-8 rounded-full bg-border-subtle mb-4" />
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-dim italic">No records for this day</p>
+                </div>
+              ) : (
+                selectedDateEvents.map(event => (
+                  <EventRow key={event.id} event={event} vehicleId={vehicle.id} />
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
 }
 
-function EventCard({ event, onClose }: { event: CalendarEvent, onClose: () => void }) {
+function EventRow({ event, vehicleId }: { event: CalendarEvent; vehicleId: string }) {
+  const icons = {
+    service: <Wrench size={14} />,
+    work: <Edit3 size={14} />,
+    reminder: <Bell size={14} />
+  };
+
   return (
     <Link 
-      href={event.href}
-      onClick={onClose}
-      className="group block rounded-3xl border border-white/5 bg-white/[0.02] p-5 transition-all hover:border-white/10 hover:bg-white/[0.04] active:scale-[0.98]"
+      href={`/vehicles/${vehicleId}?tab=${event.type === 'reminder' ? 'overview' : event.type}`}
+      className="group block rounded-3xl border border-border-subtle bg-card-overlay p-5 transition-all hover:border-border-strong hover:bg-card-overlay-hover active:scale-[0.98]"
     >
       <div className="flex items-center justify-between mb-2">
-        <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ring-1 ring-inset
-          ${event.category === 'service' ? 'bg-blue-500/10 text-blue-400 ring-blue-500/20' :
-            event.category === 'work' ? 'bg-yellow-500/10 text-yellow-400 ring-yellow-500/20' :
-            event.category === 'reminder' ? 'bg-red-500/10 text-red-400 ring-red-500/20' :
-            'bg-white/5 text-white/40 ring-white/10'}
-        `}>
-          {event.category}
-        </span>
-        <ArrowRight size={12} className="text-white/0 group-hover:text-white/20 transition-all" />
+        <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${
+          event.type === 'service' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-1 ring-inset ring-blue-500/20' :
+          event.type === 'work' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 ring-1 ring-inset ring-purple-500/20' :
+          event.severity === 'critical' || event.severity === 'overdue' ? 'bg-red-500/10 text-red-600 dark:text-red-400 ring-1 ring-inset ring-red-500/20' :
+          'bg-card-overlay text-muted ring-1 ring-inset ring-border-subtle'
+        }`}>
+          {icons[event.type]}
+        </div>
+        <ArrowRight size={12} className="text-dim opacity-0 group-hover:opacity-100 transition-all" />
       </div>
-      <h5 className="text-sm font-black italic tracking-tight text-white/90 group-hover:text-white transition-colors">{event.title}</h5>
-      {event.subtitle && (
-        <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-white/20">{event.subtitle}</p>
-      )}
+      <h5 className="text-sm font-black italic tracking-tight text-foreground opacity-90 group-hover:text-foreground transition-colors">{event.title}</h5>
+      <div className="flex items-center gap-2 mt-1">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted">{event.subtitle}</p>
+        {event.type === 'work' && (
+          <>
+            <div className="h-1 w-1 rounded-full bg-border-subtle" />
+            <div className="flex items-center gap-1 text-[8px] font-black text-accent uppercase tracking-tighter">
+              <Clock size={8} /> Active Item
+            </div>
+          </>
+        )}
+      </div>
     </Link>
   );
 }

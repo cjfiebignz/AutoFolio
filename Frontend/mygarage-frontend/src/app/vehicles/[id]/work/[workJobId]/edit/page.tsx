@@ -28,17 +28,17 @@ export default function EditWorkJobPage({ params }: { params: Promise<{ id: stri
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+      <div className="flex min-h-screen items-center justify-center bg-surface transition-colors duration-300">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-border-subtle border-t-foreground" />
       </div>
     );
   }
 
   if (error || !workJob) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-black px-6 text-center">
-        <p className="text-white/40 mb-4 text-sm font-bold uppercase tracking-widest">{error || 'Job not found'}</p>
-        <Link href={`/vehicles/${id}?tab=work`} className="text-white text-xs font-black uppercase tracking-widest underline underline-offset-4 decoration-white/20 hover:decoration-white transition-all">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-surface px-6 text-center text-foreground transition-colors duration-300">
+        <p className="text-muted mb-4 text-sm font-bold uppercase tracking-widest">{error || 'Job not found'}</p>
+        <Link href={`/vehicles/${id}?tab=work`} className="text-foreground text-xs font-black uppercase tracking-widest underline underline-offset-4 decoration-border-subtle hover:decoration-foreground transition-all">
           Back to Work Log
         </Link>
       </div>
@@ -46,21 +46,21 @@ export default function EditWorkJobPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <main className="min-h-screen bg-black px-6 pt-20 pb-12">
+    <main className="min-h-screen bg-surface px-6 pt-20 pb-12 transition-colors duration-300 text-foreground">
       <div className="mx-auto max-w-xl">
         {/* Header */}
         <header className="mb-12">
           <Link 
             href={`/vehicles/${id}?tab=work`}
-            className="group mb-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 transition-colors hover:text-white"
+            className="group mb-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-3 w-3 transition-transform group-hover:-translate-x-1" />
             Cancel
           </Link>
-          <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase italic">
-            Edit <span className="text-white/40">Job</span>
+          <h1 className="text-4xl font-black italic tracking-tighter text-foreground uppercase">
+            Edit <span className="text-muted opacity-40">Job</span>
           </h1>
-          <p className="mt-2 text-xs font-medium text-white/40">
+          <p className="mt-2 text-xs font-medium text-muted">
             Update your planned task or record completed work.
           </p>
         </header>

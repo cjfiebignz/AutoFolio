@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FileCheck, Plus, Trash2, Edit3, Calendar, ExternalLink, Clock, X, Loader2, Landmark } from 'lucide-react';
 import { deleteRegistration } from '@/lib/api';
-import { formatCurrency, formatDisplayDate, getExpiryStatus } from '@/lib/date-utils';
+import { formatCurrency, formatDisplayDate, formatLifecycleStatus } from '@/lib/date-utils';
 import { useActionConfirm } from '@/lib/use-action-confirm';
 import { InlineErrorMessage } from '../ui/ActionFeedback';
 import { RegistrationForm } from './RegistrationForm';
@@ -96,7 +96,7 @@ export function VehicleRegistrationDisplay({ vehicleId, registrations = [], disp
       ) : (
         <div className="grid gap-3">
           {registrations.map((record) => {
-            const expiry = getExpiryStatus(record.expiryDate);
+            const status = formatLifecycleStatus(record.expiryDate, record.registrationStatus);
             const isConfirming = confirmDeleteId === record.id;
             const isRowDeleting = isDeleting && deletingId === record.id;
 
@@ -108,7 +108,7 @@ export function VehicleRegistrationDisplay({ vehicleId, registrations = [], disp
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all ${
-                      expiry.status === 'expired' 
+                      status.tone === 'warning' 
                         ? 'bg-red-500/10 border-red-500/20 text-red-500' 
                         : 'bg-foreground/5 border-subtle text-muted'
                     }`}>
@@ -116,13 +116,13 @@ export function VehicleRegistrationDisplay({ vehicleId, registrations = [], disp
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <h4 className="text-sm font-black italic tracking-tight uppercase text-foreground truncate">{record.jurisdiction}</h4>
-                        {record.isPrimary && (
+                        <h4 className="text-sm font-black italic tracking-tight uppercase text-foreground truncate">{record.region}</h4>
+                        {record.isCurrent && (
                           <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[7px] font-black uppercase tracking-widest text-accent ring-1 ring-inset ring-accent/20">Active</span>
                         )}
                       </div>
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">
-                        {record.plateNumber || 'No Plate Recorded'}
+                        {record.regNumber || 'No Plate Recorded'}
                       </p>
                     </div>
                   </div>
@@ -187,24 +187,13 @@ export function VehicleRegistrationDisplay({ vehicleId, registrations = [], disp
                         Exp: {formatDisplayDate(record.expiryDate)}
                       </p>
                     </div>
-                    {expiry.status !== 'valid' && (
-                      <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full ${expiry.status === 'expired' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-500'}`}>
+                    {status.tone !== 'success' && (
+                      <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full ${status.tone === 'warning' ? 'bg-red-500/10 text-red-500' : 'bg-foreground/5 text-muted'}`}>
                         <Clock size={8} />
-                        <span className="text-[7px] font-black uppercase tracking-widest">{expiry.label}</span>
+                        <span className="text-[7px] font-black uppercase tracking-widest">{status.label}</span>
                       </div>
                     )}
                   </div>
-                  {record.documentUrl && (
-                    <a 
-                      href={record.documentUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-accent opacity-60 hover:opacity-100 transition-opacity"
-                    >
-                      <ExternalLink size={10} />
-                      View Certificate
-                    </a>
-                  )}
                 </div>
               </div>
             );
