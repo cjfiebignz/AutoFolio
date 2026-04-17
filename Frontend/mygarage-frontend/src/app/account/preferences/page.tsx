@@ -10,7 +10,9 @@ import {
   Check, 
   ChevronRight,
   Info,
-  Coins
+  Coins,
+  Bluetooth,
+  Cpu
 } from "lucide-react";
 
 export default function PreferencesPage() {
@@ -150,6 +152,56 @@ export default function PreferencesPage() {
           </div>
         </section>
 
+        {/* Connection Section (Future-facing) */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-3 px-1">
+            <Bluetooth size={16} className="text-muted opacity-40" />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">Connection</h3>
+          </div>
+          
+          <div className="rounded-[32px] border border-border-subtle bg-card-overlay p-8 space-y-8">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-foreground opacity-80">Device Connection</p>
+                <p className="text-xs font-medium text-muted leading-relaxed">
+                  Manage future Bluetooth connections to compatible vehicle hardware and diagnostic tools.
+                </p>
+              </div>
+              <div className="shrink-0 px-2 py-1 rounded-md bg-foreground/5 border border-border-subtle">
+                <span className="text-[8px] font-black uppercase tracking-widest text-muted opacity-40">Coming Soon</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <StatusBadge label="Connection Status" value="Not connected" />
+              <StatusBadge label="Paired Device" value="No device paired" />
+            </div>
+
+            <div className="border-t border-border-subtle" />
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Cpu size={14} className="text-blue-500/40" />
+                <p className="text-sm font-bold text-foreground opacity-80">Bluetooth Setup</p>
+              </div>
+              
+              <button
+                disabled
+                className="w-full flex h-14 items-center justify-center gap-3 rounded-2xl border border-dashed border-border-subtle bg-foreground/[0.01] text-[10px] font-black uppercase tracking-widest text-muted opacity-40 cursor-not-allowed"
+              >
+                Set Up Bluetooth
+              </button>
+              
+              <div className="px-1 flex items-start gap-2">
+                <Info size={12} className="text-dim shrink-0 mt-0.5" />
+                <p className="text-[10px] font-medium text-muted leading-relaxed italic">
+                  AutoFolio hardware integration will allow for real-time telemetry and automated service tracking in a future update.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Persistence Notice */}
         <div className="flex flex-col items-center text-center px-8">
           <p className="text-[9px] font-black uppercase tracking-[0.3em] text-dim mb-2">Sync Status</p>
@@ -199,6 +251,15 @@ function ToggleItem({ label, description, active, onChange }: { label: string; d
           }`}
         />
       </button>
+    </div>
+  );
+}
+
+function StatusBadge({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-1 rounded-2xl bg-foreground/[0.02] border border-border-subtle p-4">
+      <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted opacity-40">{label}</span>
+      <span className="text-xs font-bold text-foreground opacity-60 italic">{value}</span>
     </div>
   );
 }
