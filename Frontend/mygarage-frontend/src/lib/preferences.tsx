@@ -4,10 +4,10 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { useSession } from 'next-auth/react';
 import { getUserPreferences, updateUserPreferences } from './api';
 
-export type DistanceUnit = 'kilometres' | 'miles';
+export type MeasurementSystem = 'metric' | 'imperial';
 
 export interface UserPreferences {
-  distanceUnit: DistanceUnit;
+  measurementSystem: MeasurementSystem;
   defaultCurrency: string;
   theme: 'dark' | 'light' | 'system';
   notifications: {
@@ -17,7 +17,7 @@ export interface UserPreferences {
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
-  distanceUnit: 'kilometres',
+  measurementSystem: 'metric',
   defaultCurrency: 'AUD',
   theme: 'dark',
   notifications: {
@@ -61,6 +61,13 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
+        
+        // Handle legacy data migration if needed
+        if (parsed.distanceUnit) {
+          parsed.measurementSystem = parsed.distanceUnit === 'miles' ? 'imperial' : 'metric';
+          delete parsed.distanceUnit;
+        }
+
         setPreferences(prev => ({ ...prev, ...parsed }));
       } catch (e) {
         console.error('Failed to parse preferences', e);
@@ -137,26 +144,26 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const formatDistance = useCallback((km: number | null | undefined, showUnit = true) => {
     if (km === null || km === undefined) return 'Not recorded';
     
-    const useMiles = mounted && preferences.distanceUnit === 'miles';
-    const value = useMiles ? convertKmToMiles(km) : km;
+    const isImperial = mounted && preferences.measurementSystem === 'imperial';
+    const value = isImperial ? convertKmToMiles(km) : km;
     const formattedValue = new Intl.NumberFormat('en-US').format(Math.round(value));
     
     if (!showUnit) return formattedValue;
     
-    const unitLabel = useMiles ? 'MILES' : 'KMS';
+    const unitLabel = isImperial ? 'MILES' : 'KMS';
     return `${formattedValue} ${unitLabel}`;
-  }, [mounted, preferences.distanceUnit]);
+  }, [mounted, preferences.measurementSystem]);
 
   const getDistanceValue = useCallback((km: number | null | undefined) => {
     if (km === null || km === undefined) return null;
-    const useMiles = mounted && preferences.distanceUnit === 'miles';
-    const value = useMiles ? convertKmToMiles(km) : km;
+    const isImperial = mounted && preferences.measurementSystem === 'imperial';
+    const value = isImperial ? convertKmToMiles(km) : km;
     return Math.round(value);
-  }, [mounted, preferences.distanceUnit]);
+  }, [mounted, preferences.measurementSystem]);
 
   const getUnitLabel = useCallback(() => {
-    return (mounted && preferences.distanceUnit === 'miles') ? 'MILES' : 'KMS';
-  }, [mounted, preferences.distanceUnit]);
+    return (mounted && preferences.measurementSystem === 'imperial') ? 'MILES' : 'KMS';
+  }, [mounted, preferences.measurementSystem]);
 
   return (
     <PreferencesContext.Provider value={{

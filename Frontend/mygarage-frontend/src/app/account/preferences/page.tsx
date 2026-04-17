@@ -1,7 +1,7 @@
 'use client';
 
 import { AccountPageShell } from "@/components/AccountPageShell";
-import { usePreferences, DistanceUnit } from "@/lib/preferences";
+import { usePreferences, MeasurementSystem } from "@/lib/preferences";
 import { 
   Settings, 
   Bell, 
@@ -44,25 +44,25 @@ export default function PreferencesPage() {
           </div>
           
           <div className="rounded-[32px] border border-border-subtle bg-card-overlay p-8 space-y-8">
-            {/* Distance Units */}
+            {/* Measurement System */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-bold text-foreground opacity-80">Distance Units</p>
-                  <p className="text-xs font-medium text-muted mt-0.5">Select your preferred measurement system.</p>
+                  <p className="text-sm font-bold text-foreground opacity-80">Measurement System</p>
+                  <p className="text-xs font-medium text-muted mt-0.5">Governs distance, fuel, and other measurement-based values.</p>
                 </div>
               </div>
               
               <div className="grid grid-cols-2 gap-3">
                 <OptionButton 
-                  label="Kilometres" 
-                  active={preferences.distanceUnit === 'kilometres'} 
-                  onClick={() => updatePreferences({ distanceUnit: 'kilometres' })}
+                  label="Metric" 
+                  active={preferences.measurementSystem === 'metric'} 
+                  onClick={() => updatePreferences({ measurementSystem: 'metric' })}
                 />
                 <OptionButton 
-                  label="Miles" 
-                  active={preferences.distanceUnit === 'miles'} 
-                  onClick={() => updatePreferences({ distanceUnit: 'miles' })}
+                  label="Imperial" 
+                  active={preferences.measurementSystem === 'imperial'} 
+                  onClick={() => updatePreferences({ measurementSystem: 'imperial' })}
                 />
               </div>
             </div>
