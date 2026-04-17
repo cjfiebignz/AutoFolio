@@ -1,5 +1,6 @@
 'use client';
-import { useState, useTransition } from 'react';
+
+import { useState, useTransition, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -19,7 +20,8 @@ import {
   Loader2,
   Landmark,
   AlertTriangle,
-  ChevronRight
+  ChevronRight,
+  Check
 } from 'lucide-react';
 import { VehicleViewModel } from "@/lib/mappers/vehicle";
 import { ServiceEntryViewModel, ServiceSummaryViewModel } from "@/lib/mappers/service";
@@ -37,6 +39,7 @@ import { VehicleCalendarModal } from './VehicleCalendarModal';
 import { MaintenanceStatusBadge, MaintenanceStatus } from './MaintenanceStatusBadge';
 import { useActionConfirm } from '@/lib/use-action-confirm';
 import { InlineErrorMessage } from '../ui/ActionFeedback';
+import { isMaintenanceAcknowledged, acknowledgeMaintenance } from '@/lib/maintenance-ack-utils';
 
 interface OverviewProps {
   vehicle: VehicleViewModel;
@@ -61,9 +64,29 @@ export function VehicleOverviewDisplay({
   const [isPending, startTransition] = useTransition();
   const { formatDistance, mounted } = usePreferences();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isAcknowledged, setIsAcknowledged] = useState(false);
 
   // Map reminders on the client-side to ensure "now" is consistent with other UI checks
-  const reminders = mapToRemindersViewModel(rawReminders || []);
+  const reminders = useMemo(() => mapToRemindersViewModel(rawReminders || []), [rawReminders]);
+
+  // Acknowledgement Persistence Logic (Hardened & Isolated per Vehicle)
+  useEffect(() => {
+    if (!mounted || !serviceSummary) return;
+    
+    // Use the centralized utility with 'main-service' as the specific alertKey for this panel
+    if (isMaintenanceAcknowledged(vehicle.id, 'main-service', serviceSummary.status)) {
+      setIsAcknowledged(true);
+    } else {
+      setIsAcknowledged(false);
+    }
+  }, [mounted, vehicle.id, serviceSummary?.status]);
+
+  const handleAcknowledge = () => {
+    if (!serviceSummary) return;
+    // Persist via centralized utility
+    acknowledgeMaintenance(vehicle.id, 'main-service', serviceSummary.status);
+    setIsAcknowledged(true);
+  };
 
   const handleMarkReminderDone = async (reminderId: string) => {
     try {
@@ -116,11 +139,16 @@ export function VehicleOverviewDisplay({
         </div>
       </div>
 
-      {/* Maintenance Intelligence */}
-      <section className="space-y-4">
-        <h3 className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted">Maintenance Intelligence</h3>
-        <MaintenanceIntelligencePanel vehicleId={vehicle.id} serviceSummary={serviceSummary} />
-      </section>
+      {/* Maintenance Panel (No Header) */}
+      {!isAcknowledged && serviceSummary && (
+        <section className="animate-in fade-in slide-in-from-top-4 duration-500">
+          <MaintenanceIntelligencePanel 
+            vehicleId={vehicle.id} 
+            serviceSummary={serviceSummary} 
+            onAcknowledge={handleAcknowledge}
+          />
+        </section>
+      )}
 
       {/* Primary Lifecycle Card */}
       <div className="overflow-hidden rounded-[40px] border border-border-strong bg-gradient-to-br from-foreground/[0.03] dark:from-foreground/[0.05] to-transparent p-8 shadow-premium backdrop-blur-md">
@@ -198,7 +226,7 @@ export function VehicleOverviewDisplay({
             <div className="space-y-1 px-1">
               <div className="flex flex-col">
                 <p className={`text-[13px] font-black italic tracking-tight uppercase leading-none ${
-                  serviceSummary?.status === 'overdue' ? 'text-red-600' :
+                  serviceSummary?.status === 'overdue' ? 'text-red-500' :
                   serviceSummary?.status === 'due_soon' ? 'text-yellow-600 dark:text-yellow-500' :
                   'text-accent'
                 }`}>
@@ -420,10 +448,12 @@ export function VehicleOverviewDisplay({
 
 function MaintenanceIntelligencePanel({ 
   vehicleId, 
-  serviceSummary 
+  serviceSummary,
+  onAcknowledge
 }: { 
   vehicleId: string; 
-  serviceSummary?: ServiceSummaryViewModel | null 
+  serviceSummary?: ServiceSummaryViewModel | null;
+  onAcknowledge: () => void;
 }) {
   const { formatDistance } = usePreferences();
   
@@ -497,11 +527,13 @@ function MaintenanceIntelligencePanel({
   };
 
   return (
-    <Link 
-      href={`/vehicles/${vehicleId}?tab=service`}
-      className={`group relative flex items-center justify-between overflow-hidden rounded-[32px] border ${config.borderColor} ${config.bgColor} p-6 shadow-premium transition-all hover:scale-[1.01] active:scale-[0.99]`}
+    <div 
+      className={`group relative flex items-center justify-between overflow-hidden rounded-[32px] border ${config.borderColor} ${config.bgColor} p-6 shadow-premium transition-all hover:scale-[1.01]`}
     >
-      <div className="flex items-center gap-5">
+      <Link 
+        href={`/vehicles/${vehicleId}?tab=service`}
+        className="flex flex-1 items-center gap-5"
+      >
         <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-card-overlay border border-border-strong ${config.iconColor}`}>
           <Wrench size={24} strokeWidth={2} />
         </div>
@@ -516,11 +548,27 @@ function MaintenanceIntelligencePanel({
             {getSubLabel()}
           </p>
         </div>
+      </Link>
+
+      {/* Action Column */}
+      <div className="flex flex-col gap-2 ml-4">
+        <Link 
+          href={`/vehicles/${vehicleId}?tab=service`}
+          className="h-10 w-10 flex items-center justify-center rounded-full bg-card-overlay border border-border-subtle text-dim hover:text-muted hover:border-border-strong transition-all shadow-sm active:scale-90"
+          title="View Service Details"
+        >
+          <ArrowRight size={20} />
+        </Link>
+        <button
+          type="button"
+          onClick={onAcknowledge}
+          className="h-10 w-10 flex items-center justify-center rounded-full bg-card-overlay border border-border-subtle text-dim hover:text-green-500 hover:border-green-500/20 transition-all shadow-sm active:scale-90"
+          title="Acknowledge Status"
+        >
+          <Check size={18} strokeWidth={3} />
+        </button>
       </div>
-      <div className="h-10 w-10 flex items-center justify-center rounded-full bg-card-overlay text-dim group-hover:text-muted transition-colors">
-        <ArrowRight size={20} />
-      </div>
-    </Link>
+    </div>
   );
 }
 
@@ -694,11 +742,11 @@ function ReminderItem({
 
   const handleDelete = async () => {
     if (!confirmDelete) {
-      enterConfirm();
+      enterConfirm(reminder.id);
       return;
     }
 
-    startAction();
+    startAction(reminder.id);
     try {
       await deleteReminder(vehicleId, reminder.id);
       router.refresh();

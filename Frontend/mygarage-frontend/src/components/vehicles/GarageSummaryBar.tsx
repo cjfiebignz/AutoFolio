@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { UserVehicle } from "@/types/autofolio";
 import { evaluateVehicleAttention, AttentionItem } from "@/lib/attention-utils";
 import { mapToVehicleViewModel } from "@/lib/mappers/vehicle";
@@ -9,6 +9,8 @@ import { mapToDocumentsViewModel } from "@/lib/mappers/document";
 import { mapToServiceSummaryViewModel } from "@/lib/mappers/service";
 import { AlertCircle, AlertTriangle, Bell, ChevronRight } from "lucide-react";
 import { GarageAlertsModal } from "./GarageAlertsModal";
+import { isMaintenanceAcknowledged } from '@/lib/maintenance-ack-utils';
+import React, { useEffect } from 'react';
 
 interface GarageSummaryBarProps {
   vehicles: UserVehicle[];
@@ -16,44 +18,67 @@ interface GarageSummaryBarProps {
 
 export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Aggregate all high-signal attention items across all vehicles
-  const allAttentionItems: (AttentionItem & { vehicleName: string })[] = [];
+  const [mounted, setMounted] = React.useState(false);
   
-  vehicles.forEach(rawVehicle => {
-    const vehicle = mapToVehicleViewModel(rawVehicle);
-    // Use raw reminders and map them on client to ensure "now" is consistent
-    const reminders = mapToRemindersViewModel(rawVehicle.reminders || []);
-    const documents = mapToDocumentsViewModel(rawVehicle.documents || []);
-    const serviceSummary = mapToServiceSummaryViewModel(rawVehicle.serviceSummary);
-    
-    const items = evaluateVehicleAttention({
-      vehicle,
-      reminders,
-      documents,
-      serviceSummary
-    });
+  // Track dismissals locally to trigger re-renders without full page refresh
+  const [dismissalCount, setDismissalCount] = useState(0);
 
-    // Filter for only critical and warning items
-    items.filter(i => i.severity === 'critical' || i.severity === 'warning').forEach(item => {
-      allAttentionItems.push({
-        ...item,
-        vehicleName: vehicle.nickname
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Aggregate and filter alerts
+  const activeAlerts = useMemo(() => {
+    const alerts: (AttentionItem & { vehicleName: string; vehicleId: string; status: string })[] = [];
+    
+    vehicles.forEach(rawVehicle => {
+      const vehicle = mapToVehicleViewModel(rawVehicle);
+      const reminders = mapToRemindersViewModel(rawVehicle.reminders || []);
+      const documents = mapToDocumentsViewModel(rawVehicle.documents || []);
+      const serviceSummary = mapToServiceSummaryViewModel(rawVehicle.serviceSummary);
+      
+      const items = evaluateVehicleAttention({
+        vehicle,
+        reminders,
+        documents,
+        serviceSummary
+      });
+
+      // Filter for only critical and warning items
+      items.filter(i => i.severity === 'critical' || i.severity === 'warning').forEach(item => {
+        // Hydration-safe persistent filter
+        const status = serviceSummary?.status || 'unknown';
+        if (!mounted || !isMaintenanceAcknowledged(vehicle.id, item.key, status)) {
+          alerts.push({
+            ...item,
+            vehicleName: vehicle.nickname,
+            vehicleId: vehicle.id,
+            status
+          });
+        }
       });
     });
-  });
 
-  if (allAttentionItems.length === 0) {
+    return alerts;
+  }, [vehicles, mounted, dismissalCount]);
+
+  if (activeAlerts.length === 0) {
     return null;
   }
 
-  const criticalCount = allAttentionItems.filter(i => i.severity === 'critical').length;
-  const warningCount = allAttentionItems.filter(i => i.severity === 'warning').length;
-  const vehiclesWithAlerts = new Set(allAttentionItems.map(i => i.vehicleName)).size;
+  const criticalCount = activeAlerts.filter(i => i.severity === 'critical').length;
+  const warningCount = activeAlerts.filter(i => i.severity === 'warning').length;
+  const vehiclesWithAlerts = new Set(activeAlerts.map(i => i.vehicleName)).size;
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    // Bump count to force useMemo to re-evaluate after potential dismissals in modal
+    setDismissalCount(prev => prev + 1);
+  };
 
   return (
     <>
-      <div className="mb-8 overflow-hidden rounded-[28px] border border-subtle bg-card-overlay p-1 shadow-2xl backdrop-blur-sm transition-colors duration-300">
+      <div className="mb-8 overflow-hidden rounded-[28px] border border-subtle bg-card-overlay p-1 shadow-2xl backdrop-blur-sm transition-colors duration-300 animate-in fade-in slide-in-from-top-2 duration-500">
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 px-6 py-4">
           {/* Status Icon Group */}
           <div className="flex -space-x-2">
@@ -88,7 +113,7 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
           >
             <Bell size={12} className="text-muted group-hover:text-foreground transition-colors" />
             <span className="text-[10px] font-black text-muted group-hover:text-foreground uppercase tracking-tighter transition-colors">
-              {allAttentionItems.length} Garage Alerts
+              {activeAlerts.length} Garage Alerts
             </span>
             <div className="flex h-5 w-5 items-center justify-center rounded-full bg-foreground/5 text-muted group-hover:bg-foreground/10 group-hover:text-foreground transition-all">
               <ChevronRight size={12} strokeWidth={3} />
@@ -99,8 +124,8 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
 
       <GarageAlertsModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        alerts={allAttentionItems} 
+        onClose={handleModalClose} 
+        alerts={activeAlerts} 
       />
     </>
   );
