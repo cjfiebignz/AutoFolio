@@ -380,3 +380,12 @@ export interface PartPresetItem {
   savedPart?: SavedPart;
   quantity: number;
 }
+
+export interface DailyVehicleStreak {
+  currentStreak: number;
+  lastUpdatedAt: string | null;
+  updatedToday: boolean;
+  dailyVehicleId: string | null;
+  dailyVehicleNickname: string | null;
+  currentOdometerKms: number | null;
+}

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Patch, Delete, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, BadRequestException, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, BadRequestException, Res, Query } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { UserVehicleService } from './user-vehicle.service';
@@ -30,13 +30,18 @@ export class UserVehicleController {
   }
 
   @Get('user/:userId')
-  async findAllByUser(@Param('userId') userId: string) {
+  findAllByUser(@Param('userId') userId: string) {
     return this.userVehicleService.findAllByUser(userId);
   }
 
   @Get('daily/usage-summary')
-  async getDailyUsageSummary(@Body('userId') userId: string) {
+  async getDailyUsageSummary(@Query('userId') userId: string) {
     return this.userVehicleService.getDailyUsageSummary(userId);
+  }
+
+  @Get('daily/streak')
+  async getDailyStreak(@Query('userId') userId: string) {
+    return this.userVehicleService.getDailyStreak(userId);
   }
 
   @Get(':id/specs')

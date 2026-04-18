@@ -7,10 +7,42 @@ import {
   ImportSpecRow,
   ImportCommitResponse,
   SavedPart,
-  PartPreset
+  PartPreset,
+  DailyVehicleStreak
 } from '@/types/autofolio';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_AUTOFOLIO_API_BASE_URL || 'http://127.0.0.1:3001';
+
+export async function getDailyVehicleStreak(userId: string): Promise<DailyVehicleStreak> {
+  const url = `${API_BASE_URL}/user-vehicles/daily/streak?userId=${userId}`;
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to fetch daily streak');
+  }
+  return response.json();
+}
+
+export async function updateVehicleOdometer(vehicleId: string, odometerKms: number): Promise<UserVehicle> {
+  // Ensure we use the general vehicle update route: PATCH /user-vehicles/:id
+  const url = `${API_BASE_URL}/user-vehicles/${vehicleId}`;
+  
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: { 
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({ currentOdometer: odometerKms }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to update odometer (Status: ${response.status})`);
+  }
+
+  return response.json();
+}
 
 export async function getUserVehicles(userId: string): Promise<UserVehicle[]> {
   const url = `${API_BASE_URL}/user-vehicles/user/${userId}`;

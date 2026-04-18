@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoFolio Debug Tool</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #0a0a0a; color: #fff; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        header { border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { margin: 0; font-size: 24px; font-weight: 900; italic: true; text-transform: uppercase; letter-spacing: -1px; }
+        .status { padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .status.active { background: #22c55e; color: #000; }
+        .status.idle { background: #333; color: #999; }
+        
+        .controls { display: grid; grid-template-cols: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        button { border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: all 0.2s; font-size: 14px; }
+        button:active { transform: scale(0.98); }
+        .btn-start { background: #fff; color: #000; }
+        .btn-copy { background: #2563eb; color: #fff; }
+        .btn-stop { background: #ef4444; color: #fff; }
+        .btn-clear { background: #333; color: #fff; }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .note-section { background: #1a1a1a; padding: 20px; border-radius: 20px; margin-bottom: 30px; border: 1px solid #333; }
+        textarea { width: 100%; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; padding: 15px; margin-bottom: 15px; resize: none; box-sizing: border-box; }
+        .btn-note { background: #3b82f6; color: #fff; width: 100%; }
+
+        .log-preview { background: #000; padding: 20px; border-radius: 20px; border: 1px solid #333; height: 350px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        .log-entry { margin-bottom: 8px; border-bottom: 1px solid #111; padding-bottom: 8px; line-height: 1.4; }
+        .type-error, .type-exception { color: #ef4444; border-left: 3px solid #ef4444; padding-left: 10px; }
+        .type-warn { color: #f59e0b; border-left: 3px solid #f59e0b; padding-left: 10px; }
+        .type-note { color: #3b82f6; border-left: 3px solid #3b82f6; padding-left: 10px; }
+        .type-route { color: #a855f7; border-left: 3px solid #a855f7; padding-left: 10px; }
+        .type-request { color: #22c55e; border-left: 3px solid #22c55e; padding-left: 10px; }
+        .type-bridge_init { color: #3b82f6; font-style: italic; border-left: 3px solid #3b82f6; padding-left: 10px; }
+        .timestamp { color: #555; margin-right: 10px; }
+        .event-type { font-weight: bold; margin-right: 10px; text-transform: uppercase; width: 80px; display: inline-block; }
+        
+        .bridge-code { background: #1a1a1a; padding: 20px; border-radius: 20px; margin-top: 30px; border: 1px dashed #333; }
+        pre { background: #000; padding: 15px; border-radius: 10px; overflow-x: auto; font-size: 11px; color: #888; white-space: pre-wrap; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AutoFolio Debug Companion</h1>
+            <div id="statusIndicator" class="status idle">Idle</div>
+        </header>
+
+        <div class="controls">
+            <button id="startBtn" class="btn-start">Start Session</button>
+            <button id="copyBtn" class="btn-copy">Copy Injector</button>
+            <button id="stopBtn" class="btn-stop" disabled>Stop & Save</button>
+            <button id="clearBtn" class="btn-clear">Clear Data</button>
+        </div>
+
+        <div class="note-section">
+            <textarea id="noteText" placeholder="Add a manual marker or note (e.g. 'Clicked update button')..." rows="3"></textarea>
+            <button id="noteBtn" class="btn-note" disabled>Add Manual Note</button>
+        </div>
+
+        <h3>Live Event Stream</h3>
+        <div id="logPreview" class="log-preview">
+            <div class="log-entry" style="color: #666;">No active session. Events will appear here.</div>
+        </div>
+
+        <div class="bridge-code">
+            <h4>Application Bridge v1.4</h4>
+            <p style="font-size: 12px; color: #888;">Paste this snippet into AutoFolio's browser console (F12) to capture its activity:</p>
+            <pre id="bridgeSnippet">
+(function(){const s=document.createElement('script');s.src='http://localhost:3005/bridge.js';document.head.appendChild(s);})();</pre>
+            <p style="font-size: 11px; color: #555; margin-top: 10px;">This script injects the bridge from the tool's public folder, ensuring it is always up to date.</p>
+        </div>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const noteBtn = document.getElementById('noteBtn');
+        const noteText = document.getElementById('noteText');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const logPreview = document.getElementById('logPreview');
+
+        let lastEventCount = 0;
+
+        copyBtn.onclick = async () => {
+            const snippet = "(function(){const s=document.createElement('script');s.src='http://localhost:3005/bridge.js';document.head.appendChild(s);})();";
+            try {
+                await navigator.clipboard.writeText(snippet);
+                const originalText = copyBtn.innerText;
+                copyBtn.innerText = 'Copied!';
+                copyBtn.style.background = '#22c55e';
+                setTimeout(() => {
+                    copyBtn.innerText = originalText;
+                    copyBtn.style.background = '#2563eb';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy to clipboard.');
+            }
+        };
+
+        function addEventToUI(event) {
+            const entry = document.createElement('div');
+            entry.className = `log-entry type-${event.type}`;
+            
+            const time = new Date(event.timestamp).toLocaleTimeString();
+            let dataStr = typeof event.data === 'string' ? event.data : JSON.stringify(event.data);
+            
+            // Truncate very long data
+            if (dataStr.length > 200) dataStr = dataStr.substring(0, 197) + '...';
+
+            entry.innerHTML = `
+                <span class="timestamp">[${time}]</span>
+                <span class="event-type">${event.type}</span>
+                <span class="event-data">${dataStr}</span>
+            `;
+            logPreview.prepend(entry);
+        }
+
+        async function updateStatus() {
+            try {
+                const res = await fetch('/api/session/status');
+                const data = await res.json();
+                
+                if (data.active) {
+                    statusIndicator.innerText = 'Recording';
+                    statusIndicator.className = 'status active';
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    noteBtn.disabled = false;
+                } else {
+                    statusIndicator.innerText = 'Idle';
+                    statusIndicator.className = 'status idle';
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    noteBtn.disabled = true;
+                }
+                return data;
+            } catch (e) {
+                console.error('Failed to update status', e);
+            }
+        }
+
+        startBtn.onclick = async () => {
+            await fetch('/api/session/start', { method: 'POST' });
+            logPreview.innerHTML = '<div class="log-entry" style="color: #22c55e;">Session Started.</div>';
+            updateStatus();
+        };
+
+        stopBtn.onclick = async () => {
+            const res = await fetch('/api/session/stop', { method: 'POST' });
+            const data = await res.json();
+            alert(`Session saved!\n\nLog: ${data.txt}`);
+            updateStatus();
+        };
+
+        clearBtn.onclick = async () => {
+            await fetch('/api/session/clear', { method: 'POST' });
+            logPreview.innerHTML = '<div style="color: #666;">Session cleared.</div>';
+            updateStatus();
+        };
+
+        noteBtn.onclick = async () => {
+            const text = noteText.value.trim();
+            if (!text) return;
+            const res = await fetch('/api/log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'note', data: { text } })
+            });
+            if (res.ok) {
+                addEventToUI({
+                    timestamp: new Date().toISOString(),
+                    type: 'note',
+                    data: { text }
+                });
+                noteText.value = '';
+            }
+        };
+
+        // Poll for events in preview
+        setInterval(async () => {
+            const status = await updateStatus();
+            if (status && status.active && status.eventCount > lastEventCount) {
+                // In a real v1 we might fetch events, but for this standalone
+                // we'll just update the UI manually for the 'note' button
+                // and the log file will have everything.
+                // NOTE: To properly show bridge events, we would need an endpoint 
+                // to fetch recent events. For now, we rely on the stop/save flow.
+                lastEventCount = status.eventCount;
+            }
+        }, 2000);
+
+        updateStatus();
+    </script>
+</body>
+</html>

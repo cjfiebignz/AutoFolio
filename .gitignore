@@ -47,6 +47,9 @@ yarn-error.log*
 # Project specific
 /Backend/dist/
 /Backend/node_modules/
+/Backend/uploads/
+/Debug Tool/node_modules/
+/Debug Tool/Debug Logs/*.txt
 /Frontend/mygarage-frontend/.next/
 /Frontend/mygarage-frontend/node_modules/
 /Frontend/mygarage-frontend/out/

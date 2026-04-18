@@ -88,28 +88,6 @@ export default async function VehiclesPage() {
               All your vehicles, one place.
             </p>
           </div>
-
-          <div className="flex items-center justify-between border-t border-border-subtle pt-8">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-card-overlay border border-border-subtle shadow-xl">
-                <span className="text-xl font-black text-foreground opacity-90">
-                  {vehicles.length}
-                </span>
-              </div>
-              <div>
-                <p className="text-[8px] font-black uppercase tracking-widest text-dim">
-                  Vehicles Active
-                </p>
-                <p className="text-[10px] font-bold text-muted opacity-60">
-                  Across your garage
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-dim hidden sm:block">Garage Pipeline</span>
-              <GarageCalendarTrigger vehicles={vehicles} />
-            </div>
-          </div>
         </header>
 
         {/* Vehicles List */}

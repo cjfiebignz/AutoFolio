@@ -6,6 +6,8 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
+  // app.setGlobalPrefix('api'); // Removed to align with existing frontend contract
+
   app.enableCors({
     origin: true, // In development, allow any origin to support LAN/Mobile testing
     credentials: true,

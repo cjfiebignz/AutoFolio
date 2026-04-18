@@ -129,7 +129,6 @@ export class UserVehicleService {
     }
 
     // Get odometer readings for the daily vehicle
-    // We only need the last ~30 readings to compute a current streak and last 7 days activity
     const readings = await this.prisma.odometerReading.findMany({
       where: { vehicleId: user.dailyVehicleId },
       orderBy: { readingDate: 'desc' },
@@ -166,9 +165,7 @@ export class UserVehicleService {
     let currentStreak = 0;
     const latestLoggedDay = sortedLoggedDays[0];
 
-    // Streak logic:
-    // If user logged today OR yesterday, the streak is alive.
-    // If they last logged before yesterday, streak is 0.
+    // Streak logic:Alive if logged today OR yesterday
     if (latestLoggedDay === todayKey || latestLoggedDay === yesterdayKey) {
       currentStreak = 1;
       let checkDate = new Date(latestLoggedDay);
@@ -206,6 +203,60 @@ export class UserVehicleService {
       currentStreak,
       lastLoggedAt,
       activeDaysLast7,
+    };
+  }
+
+  async getDailyStreak(userId: string) {
+    const summary = await this.getDailyUsageSummary(userId);
+    
+    // Check if updated today
+    const today = new Date().toISOString().split('T')[0];
+    const lastLogged = summary.lastLoggedAt ? summary.lastLoggedAt.toISOString().split('T')[0] : null;
+
+    let currentOdometerKms = null;
+    let dailyVehicleNickname = null;
+
+    if (summary.dailyVehicleId) {
+      const vehicle = await this.prisma.userVehicle.findUnique({
+        where: { id: summary.dailyVehicleId },
+        include: {
+          odometers: {
+            where: { source: 'manual' },
+            take: 1,
+            orderBy: { readingDate: 'desc' },
+            select: {
+              value: true,
+              readingDate: true,
+              createdAt: true,
+            }
+          },
+          services: {
+            orderBy: { eventDate: 'desc' },
+            select: { 
+              id: true, 
+              eventDate: true, 
+              isMainService: true,
+              odometerAtEvent: true,
+              createdAt: true,
+            },
+          },
+        }
+      });
+
+      if (vehicle) {
+        dailyVehicleNickname = vehicle.nickname || null;
+        const svc = this.calculateServiceSummary(vehicle);
+        currentOdometerKms = svc.currentKms;
+      }
+    }
+
+    return {
+      dailyVehicleId: summary.dailyVehicleId,
+      dailyVehicleNickname,
+      currentStreak: summary.currentStreak,
+      updatedToday: lastLogged === today,
+      lastLoggedAt: summary.lastLoggedAt,
+      currentOdometerKms,
     };
   }
 
@@ -418,6 +469,11 @@ export class UserVehicleService {
           where: { source: 'manual' },
           take: 1,
           orderBy: { readingDate: 'desc' },
+          select: {
+            value: true,
+            readingDate: true,
+            createdAt: true,
+          }
         },
         services: {
           orderBy: { eventDate: 'desc' },
@@ -426,7 +482,8 @@ export class UserVehicleService {
             eventDate: true, 
             title: true, 
             isMainService: true,
-            odometerAtEvent: true
+            odometerAtEvent: true,
+            createdAt: true,
           },
         },
         workJobs: {
@@ -525,13 +582,20 @@ export class UserVehicleService {
     let currentKms = vehicle.currentOdometer;
     const latestManualReading = vehicle.odometers?.find(o => o.source === 'manual') || null;
     
-    const manualDate = latestManualReading?.readingDate.getTime() || 0;
+    const manualDate = latestManualReading?.readingDate ? latestManualReading.readingDate.getTime() : 0;
     const mainServiceDate = (latestMainService?.eventDate && latestMainService?.odometerAtEvent !== null) 
       ? latestMainService.eventDate.getTime() 
       : 0;
 
     if (latestManualReading && latestMainService && latestMainService.odometerAtEvent !== null) {
-      currentKms = manualDate >= mainServiceDate ? latestManualReading.value : latestMainService.odometerAtEvent;
+      // If dates are identical, use createdAt as a secondary tie-breaker if available.
+      if (manualDate === mainServiceDate && latestManualReading.createdAt && latestMainService.createdAt) {
+        currentKms = latestManualReading.createdAt.getTime() >= latestMainService.createdAt.getTime()
+          ? latestManualReading.value
+          : latestMainService.odometerAtEvent;
+      } else {
+        currentKms = manualDate >= mainServiceDate ? latestManualReading.value : latestMainService.odometerAtEvent;
+      }
     } else if (latestManualReading) {
       currentKms = latestManualReading.value;
     } else if (latestMainService && latestMainService.odometerAtEvent !== null) {

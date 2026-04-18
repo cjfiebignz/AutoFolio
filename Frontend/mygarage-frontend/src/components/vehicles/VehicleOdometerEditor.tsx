@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
-import { X, Save, Gauge, ArrowRight } from 'lucide-react';
+import { X, Save, Gauge, ArrowRight, Loader2 } from 'lucide-react';
 import { updateVehicle } from '@/lib/api';
 import { formatNumber } from '@/lib/date-utils';
 import { usePreferences, KM_TO_MILES } from '@/lib/preferences';

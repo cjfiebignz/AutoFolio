@@ -9,7 +9,7 @@ import { usePlan } from '@/lib/plan-context';
 import { UserVehicle } from '@/types/autofolio';
 import { FormInput, FormSection, FormToggle } from '@/components/ui/FormComponents';
 import { AppFooterBrand } from '@/components/AppFooterBrand';
-import { Car, Cpu, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Car, Cpu, ArrowLeft, AlertCircle, Trash2, X, Loader2 } from 'lucide-react';
 import { useActionConfirm } from '@/lib/use-action-confirm';
 
 export default function EditVehiclePage({ params }: { params: Promise<{ id: string }> }) {
@@ -29,10 +29,18 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
   const [existingDaily, setExistingDaily] = useState<any>(null);
   const [hasConfirmedSwap, setHasConfirmedSwap] = useState(false);
 
+  // Swap confirmation state
   const { 
     confirmState: confirmSwap, 
     enterConfirm: enterSwapConfirm, 
     cancelConfirm: cancelSwapConfirm 
+  } = useActionConfirm();
+
+  // Delete confirmation state
+  const {
+    confirmState: confirmDelete,
+    enterConfirm: enterDeleteConfirm,
+    cancelConfirm: cancelDeleteConfirm
   } = useActionConfirm();
 
   useEffect(() => {
@@ -161,11 +169,9 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
   }
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this vehicle? This action cannot be undone.')) {
-      return;
-    }
-
     setIsSubmitting(true);
+    setError(null);
+
     try {
       const { deleteVehicle } = await import('@/lib/api');
       await deleteVehicle(id);
@@ -175,6 +181,7 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
     } catch (err: any) {
       setError(err.message || 'Failed to delete vehicle');
       setIsSubmitting(false);
+      cancelDeleteConfirm();
     }
   };
 
@@ -333,14 +340,53 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
             <p className="mt-2 text-xs font-medium text-dim">
               Permanently remove this vehicle and all its associated service history, documents, and reminders.
             </p>
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={isSubmitting}
-              className="mt-6 flex h-12 w-full items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-[10px] font-black uppercase tracking-widest text-red-400 transition-all hover:bg-red-500/20 active:scale-[0.98] disabled:opacity-50"
-            >
-              {isSubmitting ? "Deleting..." : "Delete Vehicle"}
-            </button>
+            
+            {confirmDelete ? (
+              <div className="mt-6 rounded-[24px] border border-red-500/20 bg-red-500/5 p-6 animate-in zoom-in-95 duration-300 shadow-premium">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-500">
+                    <AlertCircle size={20} />
+                  </div>
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <h4 className="text-sm font-black uppercase tracking-tight text-foreground">Delete vehicle?</h4>
+                      <p className="text-[11px] font-medium text-muted leading-relaxed italic">
+                        This will permanently remove <span className="font-bold text-foreground">"{vehicle?.nickname}"</span> and its associated records. This action cannot be undone.
+                      </p>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={handleDelete}
+                        disabled={isSubmitting}
+                        className="flex-1 h-12 flex items-center justify-center gap-2 rounded-xl bg-red-600 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-red-500 active:scale-95 shadow-lg"
+                      >
+                        {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <Trash2 size={14} />}
+                        Delete Vehicle
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelDeleteConfirm}
+                        disabled={isSubmitting}
+                        className="flex-1 h-12 flex items-center justify-center gap-2 rounded-xl bg-card-overlay border border-border-subtle text-[10px] font-black uppercase tracking-widest text-muted transition-all hover:bg-card-overlay-hover active:scale-95"
+                      >
+                        <X size={14} />
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => enterDeleteConfirm()}
+                disabled={isSubmitting}
+                className="mt-6 flex h-12 w-full items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-[10px] font-black uppercase tracking-widest text-red-400 transition-all hover:bg-red-500/20 active:scale-[0.98] disabled:opacity-50"
+              >
+                Delete Vehicle
+              </button>
+            )}
           </div>
         </div>
 

@@ -1,0 +1,13 @@
+{
+  "name": "autofolio-debug-tool",
+  "version": "1.0.0",
+  "description": "Standalone debug companion for AutoFolio",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  }
+}
