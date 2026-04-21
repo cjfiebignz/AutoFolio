@@ -15,9 +15,12 @@ export interface VehicleViewModel {
   isActive: boolean;
   // Ownership specific data
   hasRegistration: boolean;
+  currentRegistrationId?: string;
   registrationStatus?: string;
   registrationExpiryDate?: string;
   hasInsurance: boolean;
+  currentInsuranceId?: string;
+  currentInsuranceProvider?: string;
   insuranceStatus?: string;
   insuranceExpiryDate?: string;
   ownershipDuration: string;
@@ -56,6 +59,9 @@ export function mapToVehicleViewModel(raw: UserVehicle): VehicleViewModel {
     lastServiceDate = formatDisplayDate(sortedServices[0].eventDate);
   }
 
+  const currentReg = raw.registrations?.find(r => r.isCurrent);
+  const currentIns = raw.insurance?.find(i => i.isCurrent);
+
   return {
     id: raw.id,
     nickname: raw.nickname || "My Vehicle",
@@ -67,12 +73,15 @@ export function mapToVehicleViewModel(raw: UserVehicle): VehicleViewModel {
     status: raw.status,
     addedDate: formatDisplayDate(createdDate),
     isActive: raw.status === 'active',
-    hasRegistration: !!raw.registrations?.some(r => r.isCurrent),
-    registrationStatus: raw.registrations?.find(r => r.isCurrent)?.registrationStatus,
-    registrationExpiryDate: raw.registrations?.find(r => r.isCurrent)?.expiryDate,
-    hasInsurance: !!raw.insurance?.some(i => i.isCurrent),
-    insuranceStatus: raw.insurance?.find(i => i.isCurrent)?.insuranceStatus,
-    insuranceExpiryDate: raw.insurance?.find(i => i.isCurrent)?.expiryDate,
+    hasRegistration: !!currentReg,
+    currentRegistrationId: currentReg?.id,
+    registrationStatus: currentReg?.registrationStatus,
+    registrationExpiryDate: currentReg?.expiryDate,
+    hasInsurance: !!currentIns,
+    currentInsuranceId: currentIns?.id,
+    currentInsuranceProvider: currentIns?.provider,
+    insuranceStatus: currentIns?.insuranceStatus,
+    insuranceExpiryDate: currentIns?.expiryDate,
     ownershipDuration: duration,
     photoCount: raw.photos?.length || 0,
     lastServiceDate,

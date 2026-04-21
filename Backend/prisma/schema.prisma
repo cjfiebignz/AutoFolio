@@ -23,6 +23,7 @@ model User {
   image           String?
   role            String    @default("user") // "user" or "admin"
   defaultCurrency String    @default("AUD")
+  measurementSystem String  @default("metric") // "metric" or "imperial"
   plan            AccountPlan @default(free)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

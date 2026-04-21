@@ -11,7 +11,20 @@ import {
   DailyVehicleStreak
 } from '@/types/autofolio';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_AUTOFOLIO_API_BASE_URL || 'http://127.0.0.1:3001';
+const API_BASE_URL = (() => {
+  const envBaseUrl = process.env.NEXT_PUBLIC_AUTOFOLIO_API_BASE_URL;
+  if (envBaseUrl) return envBaseUrl;
+
+  // On the server, we MUST use an absolute URL.
+  // 127.0.0.1 is the authoritative backend on the same machine.
+  if (typeof window === 'undefined') {
+    return 'http://127.0.0.1:3001';
+  }
+
+  // In development (browser), use a relative path proxied by Next.js rewrites.
+  // This is hydration-safe and ensures mobile devices don't try to hit localhost.
+  return '/api-proxy';
+})();
 
 export async function getDailyVehicleStreak(userId: string): Promise<DailyVehicleStreak> {
   const url = `${API_BASE_URL}/user-vehicles/daily/streak?userId=${userId}`;
@@ -842,10 +855,31 @@ export async function deleteRegistration(vehicleId: string, regId: string) {
   }
 }
 
+export interface RenewRegistrationData {
+  expiryDate: string;
+  registrationStartDate?: string;
+  cost?: number;
+  notes?: string;
+}
+
+export async function renewRegistration(vehicleId: string, registrationId: string, data: RenewRegistrationData) {
+  const response = await fetch(`${API_BASE_URL}/user-vehicles/${vehicleId}/registrations/${registrationId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...data, renew: true }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to renew registration');
+  }
+  return response.json();
+}
+
 // --- User Preferences API Helpers ---
 
 export interface UpdateUserPreferencesData {
   defaultCurrency?: string;
+  measurementSystem?: string;
   plan?: string;
 }
 
@@ -875,6 +909,7 @@ export async function updateUserPreferences(userId: string, data: UpdateUserPref
   // Explicitly construct the clean body object
   const body: any = {};
   if (data.defaultCurrency) body.defaultCurrency = data.defaultCurrency;
+  if (data.measurementSystem) body.measurementSystem = data.measurementSystem;
   if (data.plan) body.plan = data.plan;
 
   const response = await fetch(`${API_BASE_URL}/users/${userId}/preferences`, {
@@ -942,6 +977,26 @@ export async function deleteInsurance(vehicleId: string, insId: string) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to delete insurance record');
   }
+}
+
+export interface RenewInsuranceData {
+  expiryDate: string;
+  policyStartDate?: string;
+  premiumAmount?: number;
+  notes?: string;
+}
+
+export async function renewInsurance(vehicleId: string, insId: string, data: RenewInsuranceData) {
+  const response = await fetch(`${API_BASE_URL}/user-vehicles/${vehicleId}/insurance/${insId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...data, renew: true }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to renew insurance');
+  }
+  return response.json();
 }
 
 export async function getPublicReport(token: string) {
@@ -1088,7 +1143,9 @@ export interface CreatePartPresetData {
 export async function createPartPreset(vehicleId: string, data: CreatePartPresetData) {
   const response = await fetch(`${API_BASE_URL}/user-vehicles/${vehicleId}/parts/presets`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
   if (!response.ok) {
@@ -1101,7 +1158,9 @@ export async function createPartPreset(vehicleId: string, data: CreatePartPreset
 export async function updatePartPreset(vehicleId: string, presetId: string, data: Partial<CreatePartPresetData>) {
   const response = await fetch(`${API_BASE_URL}/user-vehicles/${vehicleId}/parts/presets/${presetId}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
   if (!response.ok) {

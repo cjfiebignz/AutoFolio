@@ -20,6 +20,8 @@ import { CreateRegistrationDto } from './dto/create-registration.dto';
 import { UpdateRegistrationDto } from './dto/update-registration.dto';
 import { CreateInsuranceDto } from './dto/create-insurance.dto';
 import { UpdateInsuranceDto } from './dto/update-insurance.dto';
+import { RenewRegistrationDto } from './dto/renew-registration.dto';
+import { RenewInsuranceDto } from './dto/renew-insurance.dto';
 import { CreateCustomSpecDto } from './dto/create-custom-spec.dto';
 import { UpdateCustomSpecDto } from './dto/update-custom-spec.dto';
 import { SpecHubClientService, SpecHubGetSpecResponse } from './spec-hub-client.service';
@@ -61,6 +63,7 @@ export class UserVehicleService {
       where: { id: userId },
       select: { 
         defaultCurrency: true,
+        measurementSystem: true,
         plan: true,
       },
     });
@@ -77,6 +80,7 @@ export class UserVehicleService {
 
     return {
       defaultCurrency: user.defaultCurrency,
+      measurementSystem: user.measurementSystem,
       plan: user.plan || 'free',
       vehicleLimit: limits.maxVehicles,
       currentVehicleCount,
@@ -85,7 +89,7 @@ export class UserVehicleService {
     };
   }
 
-  async updateUserPreferences(userId: string, defaultCurrency?: string, plan?: 'free' | 'pro') {
+  async updateUserPreferences(userId: string, defaultCurrency?: string, plan?: 'free' | 'pro', measurementSystem?: string) {
     const data: any = {};
     
     if (defaultCurrency) {
@@ -97,6 +101,13 @@ export class UserVehicleService {
 
     if (plan) {
       data.plan = plan;
+    }
+
+    if (measurementSystem) {
+      if (measurementSystem !== 'metric' && measurementSystem !== 'imperial') {
+        throw new BadRequestException(`Invalid measurement system: "${measurementSystem}". Expected 'metric' or 'imperial'.`);
+      }
+      data.measurementSystem = measurementSystem;
     }
 
     if (Object.keys(data).length === 0) {
@@ -871,6 +882,12 @@ export class UserVehicleService {
         workJobs: {
           select: { estimate: true, status: true },
         },
+        registrations: {
+          select: { cost: true },
+        },
+        insurance: {
+          select: { premiumAmount: true },
+        },
       },
     });
 
@@ -883,8 +900,6 @@ export class UserVehicleService {
     const totalServiceCost = vehicle.services.reduce((acc, s) => acc + (s.totalCost ? Number(s.totalCost) : 0), 0);
     
     // 2. Work: Split into Done vs Predicted
-    // Rule: Predicted = status is 'planned' or 'in-progress'
-    // Rule: Done = status is 'done'
     const totalDoneWorkCost = vehicle.workJobs
       .filter(w => w.status === 'done')
       .reduce((acc, w) => acc + (w.estimate ? Number(w.estimate) : 0), 0);
@@ -893,26 +908,31 @@ export class UserVehicleService {
       .filter(w => w.status !== 'done')
       .reduce((acc, w) => acc + (w.estimate ? Number(w.estimate) : 0), 0);
 
-    // Rule: Lifetime total includes all services and only done work.
-    // Predicted/planned work is explicitly excluded from the lifetime spend.
-    const totalLifetimeCost = totalServiceCost + totalDoneWorkCost;
+    // 3. Registration: All costs counted
+    const totalRegistrationCost = vehicle.registrations.reduce((acc, r) => acc + (r.cost ? Number(r.cost) : 0), 0);
 
-    // Currency Resolution Policy (FIXED):
-    // 1. User default/preferred currency (Source of Truth)
-    // 2. System fallback: AUD
-    // Registration/Insurance record currencies are ignored for display summaries.
+    // 4. Insurance: All costs counted
+    const totalInsuranceCost = vehicle.insurance.reduce((acc, i) => acc + (i.premiumAmount ? Number(i.premiumAmount) : 0), 0);
+
+    // Rule: Lifetime total includes all services, done work, registrations, and insurance premiums.
+    const totalLifetimeCost = totalServiceCost + totalDoneWorkCost + totalRegistrationCost + totalInsuranceCost;
+
     const preferredCurrencyDisplay = vehicle.user?.defaultCurrency || 'AUD';
 
     return {
       totalServiceCost,
       totalDoneWorkCost,
       totalPredictedWorkCost,
+      totalRegistrationCost,
+      totalInsuranceCost,
       totalLifetimeCost,
       preferredCurrencyDisplay,
       costBreakdownMeta: {
         serviceRecordCount: vehicle.services.length,
         doneWorkJobCount: vehicle.workJobs.filter(w => w.status === 'done').length,
         predictedWorkJobCount: vehicle.workJobs.filter(w => w.status !== 'done').length,
+        registrationRecordCount: vehicle.registrations.length,
+        insuranceRecordCount: vehicle.insurance.length,
       },
     };
   }
@@ -1124,8 +1144,10 @@ export class UserVehicleService {
       throw new BadRequestException('Registration expiry date must be after the start date');
     }
 
+    const effectiveIsCurrent = isCurrent ?? true;
+
     try {
-      if (isCurrent) {
+      if (effectiveIsCurrent) {
         await this.deactivatePreviousCurrent(vehicleId, 'registrationRecord');
       }
 
@@ -1134,7 +1156,7 @@ export class UserVehicleService {
           ...rest,
           cost: cost !== undefined ? new Prisma.Decimal(cost) : null,
           vehicleId,
-          isCurrent: isCurrent ?? true,
+          isCurrent: effectiveIsCurrent,
           registrationStatus: dto.registrationStatus || RegistrationStatus.active,
         },
       });
@@ -1162,6 +1184,16 @@ export class UserVehicleService {
     // Safety check: record exists and belongs to vehicle
     const existing = await this.findOneRegistration(vehicleId, regId);
 
+    // If it's a renewal, delegate to specialized logic to create new historical record
+    if (dto.renew) {
+      return this.renewRegistration(vehicleId, regId, {
+        expiryDate: dto.expiryDate || existing.expiryDate,
+        registrationStartDate: dto.registrationStartDate,
+        cost: dto.cost,
+        notes: dto.notes,
+      });
+    }
+
     if (dto.countryCode) {
       this.validateCountryRules(dto.countryCode, dto.region || existing.region);
     } else if (dto.region) {
@@ -1180,7 +1212,7 @@ export class UserVehicleService {
         await this.deactivatePreviousCurrent(vehicleId, 'registrationRecord', regId);
       }
 
-      const { cost, ...updateData } = dto;
+      const { cost, renew, ...updateData } = dto;
       const data: Prisma.RegistrationRecordUpdateInput = { ...updateData };
       if (cost !== undefined) {
         data.cost = cost !== null ? new Prisma.Decimal(cost) : null;
@@ -1233,6 +1265,44 @@ export class UserVehicleService {
     });
   }
 
+  async renewRegistration(vehicleId: string, regId: string, dto: RenewRegistrationDto) {
+    await this.ensureVehicleNotLocked(vehicleId);
+    const existing = await this.findOneRegistration(vehicleId, regId);
+
+    // Logic: 
+    // 1. Deactivate current active records
+    await this.deactivatePreviousCurrent(vehicleId, 'registrationRecord');
+
+    // 2. Create new record based on existing, but with new expiry and cost
+    const newReg = await this.prisma.registrationRecord.create({
+      data: {
+        vehicleId,
+        regNumber: existing.regNumber,
+        countryCode: existing.countryCode,
+        region: existing.region,
+        issuingBody: existing.issuingBody,
+        registrationStartDate: dto.registrationStartDate || existing.expiryDate,
+        expiryDate: dto.expiryDate,
+        cost: dto.cost !== undefined ? new Prisma.Decimal(dto.cost) : null,
+        currency: existing.currency,
+        isCurrent: true,
+        registrationStatus: RegistrationStatus.active,
+        notes: dto.notes || `Renewed from record ${regId}`,
+      },
+    });
+
+    // 3. Create reminder for new record
+    await this.upsertAutoReminder(
+      vehicleId,
+      newReg.id,
+      ReminderSourceType.registration,
+      `Registration Renewal: ${newReg.regNumber}`,
+      newReg.expiryDate,
+    );
+
+    return newReg;
+  }
+
   // --- INSURANCE ---
 
   async findOneInsurance(vehicleId: string, insId: string) {
@@ -1255,8 +1325,10 @@ export class UserVehicleService {
       throw new BadRequestException('Insurance expiry date must be after the policy start date');
     }
 
+    const effectiveIsCurrent = isCurrent ?? true;
+
     try {
-      if (isCurrent) {
+      if (effectiveIsCurrent) {
         await this.deactivatePreviousCurrent(vehicleId, 'insuranceRecord');
       }
 
@@ -1265,7 +1337,7 @@ export class UserVehicleService {
           ...rest,
           premiumAmount: premiumAmount !== undefined ? new Prisma.Decimal(premiumAmount) : null,
           vehicleId,
-          isCurrent: isCurrent ?? true,
+          isCurrent: effectiveIsCurrent,
           insuranceStatus: dto.insuranceStatus || InsuranceStatus.active,
         },
       });
@@ -1292,6 +1364,16 @@ export class UserVehicleService {
     // Safety check: record exists and belongs to vehicle
     const existing = await this.findOneInsurance(vehicleId, insId);
 
+    // If it's a renewal, delegate to specialized logic to create new historical record
+    if (dto.renew) {
+      return this.renewInsurance(vehicleId, insId, {
+        expiryDate: dto.expiryDate || existing.expiryDate,
+        policyStartDate: dto.policyStartDate,
+        premiumAmount: dto.premiumAmount,
+        notes: dto.notes,
+      });
+    }
+
     // Validation: Expiry must be after start date
     const start = dto.policyStartDate || existing.policyStartDate;
     const expiry = dto.expiryDate || existing.expiryDate;
@@ -1304,7 +1386,7 @@ export class UserVehicleService {
         await this.deactivatePreviousCurrent(vehicleId, 'insuranceRecord', insId);
       }
 
-      const { premiumAmount, ...updateData } = dto;
+      const { premiumAmount, renew, ...updateData } = dto;
       const data: Prisma.InsuranceRecordUpdateInput = { ...updateData };
       if (premiumAmount !== undefined) {
         data.premiumAmount = premiumAmount !== null ? new Prisma.Decimal(premiumAmount) : null;
@@ -1355,6 +1437,44 @@ export class UserVehicleService {
       where: { vehicleId },
       orderBy: { expiryDate: 'desc' },
     });
+  }
+
+  async renewInsurance(vehicleId: string, insId: string, dto: RenewInsuranceDto) {
+    await this.ensureVehicleNotLocked(vehicleId);
+    const existing = await this.findOneInsurance(vehicleId, insId);
+
+    // Logic:
+    // 1. Deactivate current active records
+    await this.deactivatePreviousCurrent(vehicleId, 'insuranceRecord');
+
+    // 2. Create new record based on existing, but with new expiry and premium
+    const newIns = await this.prisma.insuranceRecord.create({
+      data: {
+        vehicleId,
+        provider: existing.provider,
+        policyNumber: existing.policyNumber,
+        policyType: existing.policyType,
+        policyStartDate: dto.policyStartDate || existing.expiryDate,
+        expiryDate: dto.expiryDate,
+        premiumAmount: dto.premiumAmount !== undefined ? new Prisma.Decimal(dto.premiumAmount) : null,
+        currency: existing.currency,
+        paymentFrequency: existing.paymentFrequency,
+        isCurrent: true,
+        insuranceStatus: InsuranceStatus.active,
+        notes: dto.notes || `Renewed from record ${insId}`,
+      },
+    });
+
+    // 3. Create reminder for new record
+    await this.upsertAutoReminder(
+      vehicleId,
+      newIns.id,
+      ReminderSourceType.insurance,
+      `Insurance Renewal: ${newIns.provider}`,
+      newIns.expiryDate,
+    );
+
+    return newIns;
   }
 
   async createWorkJob(vehicleId: string, dto: CreateWorkJobDto) {

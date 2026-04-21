@@ -40,6 +40,7 @@ import { MaintenanceStatusBadge, MaintenanceStatus } from './MaintenanceStatusBa
 import { useActionConfirm } from '@/lib/use-action-confirm';
 import { InlineErrorMessage } from '../ui/ActionFeedback';
 import { isMaintenanceAcknowledged, acknowledgeMaintenance } from '@/lib/maintenance-ack-utils';
+import { RenewalModal } from './RenewalModal';
 
 interface OverviewProps {
   vehicle: VehicleViewModel;
@@ -65,6 +66,10 @@ export function VehicleOverviewDisplay({
   const { formatDistance, mounted } = usePreferences();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isAcknowledged, setIsAcknowledged] = useState(false);
+
+  // Renewal Modal State
+  const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
+  const [renewalType, setRenewalType] = useState<'registration' | 'insurance'>('registration');
 
   // Map reminders on the client-side to ensure "now" is consistent with other UI checks
   const reminders = useMemo(() => mapToRemindersViewModel(rawReminders || []), [rawReminders]);
@@ -97,6 +102,16 @@ export function VehicleOverviewDisplay({
     } catch (err) {
       console.error('Failed to update reminder:', err);
     }
+  };
+
+  const openRegistrationRenewal = () => {
+    setRenewalType('registration');
+    setIsRenewalModalOpen(true);
+  };
+
+  const openInsuranceRenewal = () => {
+    setRenewalType('insurance');
+    setIsRenewalModalOpen(true);
   };
 
   const hasHistory = services.length > 0 || workItems.length > 0 || documents.length > 0 || reminders.length > 0;
@@ -178,6 +193,7 @@ export function VehicleOverviewDisplay({
                 secondaryText={status.subLabel}
                 status={status.tone}
                 href={`/vehicles/${vehicle.id}/registration`}
+                onRenew={vehicle.hasRegistration ? openRegistrationRenewal : undefined}
               />
             );
           })()}
@@ -192,6 +208,7 @@ export function VehicleOverviewDisplay({
                 secondaryText={status.subLabel}
                 status={status.tone}
                 href={`/vehicles/${vehicle.id}/insurance`}
+                onRenew={vehicle.hasInsurance ? openInsuranceRenewal : undefined}
               />
             );
           })()}
@@ -442,6 +459,14 @@ export function VehicleOverviewDisplay({
         reminders={reminders}
         serviceSummary={serviceSummary}
       />
+      <RenewalModal 
+        isOpen={isRenewalModalOpen}
+        onClose={() => setIsRenewalModalOpen(false)}
+        vehicleId={vehicle.id}
+        type={renewalType}
+        currentRecordId={(renewalType === 'registration' ? vehicle.currentRegistrationId : vehicle.currentInsuranceId) || ''}
+        providerName={renewalType === 'insurance' ? vehicle.currentInsuranceProvider : undefined}
+      />
     </div>
   );
 }
@@ -578,12 +603,27 @@ interface LifecycleItemProps {
   secondaryText?: string;
   status: 'success' | 'warning' | 'neutral';
   href?: string;
+  onRenew?: () => void;
 }
 
-function LifecycleItem({ label, value, secondaryText, status, href }: LifecycleItemProps) {
+function LifecycleItem({ label, value, secondaryText, status, href, onRenew }: LifecycleItemProps) {
   const content = (
     <div className="space-y-2 group">
-      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-muted group-hover:text-foreground transition-colors">{label}</p>
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-black uppercase tracking-[0.15em] text-muted group-hover:text-foreground transition-colors">{label}</p>
+        {onRenew && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onRenew();
+            }}
+            className="text-[9px] font-black uppercase tracking-widest text-accent hover:text-foreground transition-colors px-3 py-1.5 rounded-lg bg-accent/10 hover:bg-accent/20"
+          >
+            Renew
+          </button>
+        )}
+      </div>
       <div className="space-y-1">
         <div className="flex items-center gap-2.5">
           <div className={`h-2 w-2 rounded-full ${

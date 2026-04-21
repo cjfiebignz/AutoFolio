@@ -16,6 +16,8 @@ import { CreateRegistrationDto } from './dto/create-registration.dto';
 import { UpdateRegistrationDto } from './dto/update-registration.dto';
 import { CreateInsuranceDto } from './dto/create-insurance.dto';
 import { UpdateInsuranceDto } from './dto/update-insurance.dto';
+import { RenewRegistrationDto } from './dto/renew-registration.dto';
+import { RenewInsuranceDto } from './dto/renew-insurance.dto';
 import { CreateCustomSpecDto } from './dto/create-custom-spec.dto';
 import { UpdateCustomSpecDto } from './dto/update-custom-spec.dto';
 import { UpdateBannerMetadataDto } from './dto/update-banner-metadata.dto';
@@ -207,18 +209,18 @@ export class UserVehicleController {
     return this.userVehicleService.findAllRegistrations(id);
   }
 
-  @Patch(':id/registrations/:regId')
+  @Patch(':vehicleId/registrations/:registrationId')
   async updateRegistration(
-    @Param('id') id: string,
-    @Param('regId') regId: string,
+    @Param('vehicleId') vehicleId: string,
+    @Param('registrationId') registrationId: string,
     @Body() dto: UpdateRegistrationDto,
   ) {
-    return this.userVehicleService.updateRegistration(id, regId, dto);
+    return this.userVehicleService.updateRegistration(vehicleId, registrationId, dto);
   }
 
-  @Delete(':id/registrations/:regId')
-  async removeRegistration(@Param('id') id: string, @Param('regId') regId: string) {
-    return this.userVehicleService.removeRegistration(id, regId);
+  @Delete(':vehicleId/registrations/:registrationId')
+  async removeRegistration(@Param('vehicleId') vehicleId: string, @Param('registrationId') registrationId: string) {
+    return this.userVehicleService.removeRegistration(vehicleId, registrationId);
   }
 
   // --- INSURANCE ---
@@ -233,18 +235,18 @@ export class UserVehicleController {
     return this.userVehicleService.findAllInsurance(id);
   }
 
-  @Patch(':id/insurance/:insId')
+  @Patch(':vehicleId/insurance/:insuranceId')
   async updateInsurance(
-    @Param('id') id: string,
-    @Param('insId') insId: string,
+    @Param('vehicleId') vehicleId: string,
+    @Param('insuranceId') insuranceId: string,
     @Body() dto: UpdateInsuranceDto,
   ) {
-    return this.userVehicleService.updateInsurance(id, insId, dto);
+    return this.userVehicleService.updateInsurance(vehicleId, insuranceId, dto);
   }
 
-  @Delete(':id/insurance/:insId')
-  async removeInsurance(@Param('id') id: string, @Param('insId') insId: string) {
-    return this.userVehicleService.removeInsurance(id, insId);
+  @Delete(':vehicleId/insurance/:insuranceId')
+  async removeInsurance(@Param('vehicleId') vehicleId: string, @Param('insuranceId') insuranceId: string) {
+    return this.userVehicleService.removeInsurance(vehicleId, insuranceId);
   }
 
   // --- WORK JOBS ---

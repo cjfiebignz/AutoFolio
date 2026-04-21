@@ -7,6 +7,10 @@ export class UpdatePreferencesDto {
   @Length(3, 3, { message: 'Currency code must be exactly 3 characters.' })
   defaultCurrency?: string;
 
+  @IsString()
+  @IsOptional()
+  measurementSystem?: string;
+
   @IsEnum(AccountPlan)
   @IsOptional()
   plan?: AccountPlan;
