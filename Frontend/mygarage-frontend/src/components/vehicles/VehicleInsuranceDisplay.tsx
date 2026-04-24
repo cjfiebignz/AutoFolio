@@ -20,6 +20,17 @@ export function VehicleInsuranceDisplay({ vehicleId, insurance = [], displayCurr
   const [isPending, startTransition] = useTransition();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
+
+  // Handle action=new query param
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('action') === 'new') {
+      handleAdd();
+      // Remove the param from URL without refreshing to prevent reopening on reload
+      url.searchParams.delete('action');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, []);
   
   const {
     isActioning: isDeleting,

@@ -107,62 +107,65 @@ export function VehicleServiceSummaryCard({ vehicleId, summary }: VehicleService
   return (
     <div className="group relative overflow-hidden rounded-[40px] border border-border-strong bg-gradient-to-br from-foreground/5 to-transparent p-8 shadow-2xl backdrop-blur-md transition-all duration-500">
       
-      {/* Top Row: Primary Stats & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-8 mb-10">
-        <div className="space-y-4 flex-1">
-          <div className="space-y-1">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">Maintenance Intelligence</span>
-            <div className="flex items-center gap-3">
-              <h2 className="text-3xl font-black italic tracking-tighter text-foreground uppercase">Service Status</h2>
-              <div className={`flex items-center gap-2 rounded-full px-3 py-1 ${currentStatusColors.bg} border ${currentStatusColors.border} ring-1 ring-inset ring-foreground/5`}>
-                <CheckCircle2 size={12} className={currentStatusColors.icon} />
-                <span className={`text-[9px] font-black uppercase tracking-widest ${currentStatusColors.text}`}>
-                  {status.replace(/_/g, ' ')}
-                </span>
-              </div>
+      {/* Top Summary Block: Robust Multi-Row Architecture */}
+      <div className="flex flex-col gap-y-10 mb-10">
+        
+        {/* Row 1: Context & Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+          <div className="flex flex-col items-start gap-3">
+            <div className="space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">Maintenance Intelligence</span>
+              <h2 className="text-3xl font-black italic tracking-tighter text-foreground uppercase whitespace-nowrap leading-none">Service Status</h2>
+            </div>
+            <div className={`flex items-center gap-2 rounded-full px-3 py-1 ${currentStatusColors.bg} border ${currentStatusColors.border} ring-1 ring-inset ring-foreground/5 shrink-0`}>
+              <CheckCircle2 size={12} className={currentStatusColors.icon} />
+              <span className={`text-[9px] font-black uppercase tracking-widest ${currentStatusColors.text}`}>
+                {status.replace(/_/g, ' ')}
+              </span>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-x-10 gap-y-4">
-            <div className="space-y-1">
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted opacity-40">Current Odometer</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black italic tracking-tighter text-foreground uppercase leading-none">
-                  {currentOdometer !== null ? formatNumber(currentOdometer) : "—"}
-                </span>
-                <span className="text-[10px] font-black text-muted uppercase tracking-widest">{getUnitLabel()}</span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-600/40 dark:text-blue-400/30">Next Due At</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black italic tracking-tighter text-blue-600 dark:text-blue-400 uppercase leading-none">
-                  {nextServiceDueKms !== null ? formatNumber(nextServiceDueKms) : "—"}
-                </span>
-                <span className="text-[10px] font-black text-blue-600/30 dark:text-blue-400/20 uppercase tracking-widest">{getUnitLabel()}</span>
-              </div>
-            </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button 
+              type="button"
+              onClick={() => setIsOdometerOpen(true)}
+              className="h-11 flex items-center justify-center gap-3 rounded-2xl bg-foreground/5 border border-border-strong px-5 text-[10px] font-black uppercase tracking-widest text-muted hover:bg-foreground/10 hover:text-foreground transition-all shadow-xl active:scale-95"
+              title="Update Odometer"
+            >
+              <Edit2 size={14} />
+              <span>Update</span>
+            </button>
+            <button 
+              type="button"
+              onClick={() => setIsEditorOpen(true)}
+              className="h-11 w-11 flex items-center justify-center rounded-2xl bg-foreground/5 border border-border-strong text-dim hover:bg-foreground/10 hover:text-foreground transition-all shadow-xl active:scale-95"
+              title="Service Settings"
+            >
+              <Settings2 size={18} />
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button 
-            type="button"
-            onClick={() => setIsOdometerOpen(true)}
-            className="h-12 flex items-center justify-center gap-3 rounded-[20px] bg-foreground/5 border border-border-strong px-5 text-[10px] font-black uppercase tracking-widest text-muted hover:bg-foreground/10 hover:text-foreground transition-all shadow-xl active:scale-95"
-            title="Update Odometer"
-          >
-            <Edit2 size={14} />
-            <span>Update</span>
-          </button>
-          <button 
-            type="button"
-            onClick={() => setIsEditorOpen(true)}
-            className="h-12 w-12 flex items-center justify-center rounded-[20px] bg-foreground/5 border border-border-strong text-dim hover:bg-foreground/10 hover:text-foreground transition-all shadow-xl active:scale-95"
-            title="Service Settings"
-          >
-            <Settings2 size={18} />
-          </button>
+        {/* Row 2: Authoritative Metrics (Independent of title alignment) */}
+        <div className="flex flex-wrap gap-x-12 gap-y-6">
+          <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted opacity-40">Current Odometer</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black italic tracking-tighter text-foreground uppercase leading-none">
+                {currentOdometer !== null ? formatNumber(currentOdometer) : "—"}
+              </span>
+              <span className="text-[10px] font-black text-muted uppercase tracking-widest">{getUnitLabel()}</span>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-600/40 dark:text-blue-400/30">Next Due At</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black italic tracking-tighter text-blue-600 dark:text-blue-400 uppercase leading-none">
+                {nextServiceDueKms !== null ? formatNumber(nextServiceDueKms) : "—"}
+              </span>
+              <span className="text-[10px] font-black text-blue-600/30 dark:text-blue-400/20 uppercase tracking-widest">{getUnitLabel()}</span>
+            </div>
+          </div>
         </div>
       </div>
 

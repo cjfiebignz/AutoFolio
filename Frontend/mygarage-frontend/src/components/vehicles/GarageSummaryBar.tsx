@@ -33,6 +33,7 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
 
   // Trace and reduce duplicate fetches
   const lastFetchedUserId = useRef<string | null>(null);
+  const lastFetchedParams = useRef<string>('');
 
   // Track dismissals locally to trigger re-renders without full page refresh
   const [dismissalCount, setDismissalCount] = useState(0);
@@ -41,8 +42,12 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
     const userId = session?.user?.id;
     if (!userId) return;
 
-    // Prevent duplicate back-to-back fetches on same userId unless forced
-    if (!force && lastFetchedUserId.current === userId && streakData) {
+    // Daily vehicle context for param tracking
+    const dailyVehicleIdFromProps = vehicles.find(v => v.isDaily)?.id;
+    const currentParams = `${vehicles.length}-${dailyVehicleIdFromProps || ''}`;
+
+    // Prevent duplicate back-to-back fetches on same userId + params unless forced
+    if (!force && lastFetchedUserId.current === userId && lastFetchedParams.current === currentParams && streakData) {
       return;
     }
 
@@ -51,6 +56,7 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
       const data = await getDailyVehicleStreak(userId);
       setStreakData(data);
       lastFetchedUserId.current = userId;
+      lastFetchedParams.current = currentParams;
     } catch (err) {
       console.error("[GarageSummaryBar] Failed to fetch streak:", err);
     } finally {
@@ -58,20 +64,23 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
     }
   };
 
-  useEffect(() => {
-    setMounted(true);
-    fetchStreak();
-  }, [session?.user?.id]);
-
-  // Re-fetch only if vehicles length changes (new/deleted vehicle) 
-  // or if a new daily vehicle is assigned
   const dailyVehicleIdFromProps = useMemo(() => vehicles.find(v => v.isDaily)?.id, [vehicles]);
-  
+
   useEffect(() => {
-    if (mounted && session?.user?.id) {
+    if (!mounted) {
+      setMounted(true);
+      // Initial fetch handled here
+      if (session?.user?.id) {
+        fetchStreak();
+      }
+      return;
+    }
+
+    // Subsequent updates if dependencies change
+    if (session?.user?.id) {
         fetchStreak(true);
     }
-  }, [vehicles.length, dailyVehicleIdFromProps]);
+  }, [session?.user?.id, vehicles.length, dailyVehicleIdFromProps]);
 
   // Daily vehicle context
   const dailyVehicleId = streakData?.dailyVehicleId || dailyVehicleIdFromProps;

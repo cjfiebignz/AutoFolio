@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 import { normalizeCrop, getCropTransform } from '@/lib/cropUtils';
 import { normalizeImageUrl } from '@/lib/image-utils';
@@ -33,6 +33,7 @@ export function VehicleBanner({
   children 
 }: Omit<VehicleBannerProps, 'vehicleId'>) {
   const contrastMode = useHeroLuminance(bannerImageUrl);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
   
   // Normalize coordinates (legacy 0-100 to 0-1)
   const x = normalizeCrop(bannerCropX);
@@ -49,7 +50,8 @@ export function VehicleBanner({
                 <img
                   src={normalizeImageUrl(bannerImageUrl)}
                   alt="Vehicle Banner"
-                  className="select-none transition-opacity duration-700"
+                  onLoad={() => setIsImageLoaded(true)}
+                  className={`select-none transition-opacity duration-1000 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
                   style={getCropTransform(x, y, bannerZoom)}
                 />
               </div>

@@ -31,6 +31,9 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
   const [isPending, startTransition] = useTransition();
   const contrastMode = useHeroLuminance(rawVehicle.bannerImageUrl || undefined);
   
+  // Image loading state for smooth transition and mobile reliability
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+
   const isAdaptiveDark = contrastMode === 'dark';  // Bright background -> use Dark text
   const isAdaptiveLight = contrastMode === 'light'; // Dark background -> use Light text
   const isNoImage = contrastMode === 'none';
@@ -143,7 +146,8 @@ export function VehicleCard({ vehicle: rawVehicle }: VehicleCardProps) {
             <img 
               src={normalizeImageUrl(rawVehicle.bannerImageUrl)} 
               alt="" 
-              className="select-none transition-opacity duration-700"
+              onLoad={() => setIsImageLoaded(true)}
+              className={`select-none transition-opacity duration-1000 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
               style={getCropTransform(x, y, rawVehicle.bannerZoom || 1)}
             />
           </div>

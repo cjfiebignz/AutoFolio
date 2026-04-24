@@ -58,8 +58,6 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       // 2. Fetch real vehicle collection (Source of Truth for Daily status)
       const vehicleList = await getUserVehicles(session.user.id);
       setVehicles(vehicleList);
-      
-      console.log("[PlanContext] Vehicles refreshed:", vehicleList.length, "Daily vehicle:", vehicleList.find(v => v.isDaily)?.nickname);
 
       // Map backend tier to entitlements (feature flags)
       const baseEntitlements = getEntitlements(prefs.plan as PlanTier);

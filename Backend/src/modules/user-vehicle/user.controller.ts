@@ -22,8 +22,9 @@ export class UserController {
 
     // Explicitly extract and cast to avoid positional argument shifts
     const currency = typeof body.defaultCurrency === 'string' ? body.defaultCurrency : undefined;
+    const system = typeof body.measurementSystem === 'string' ? body.measurementSystem : undefined;
     const plan = (body.plan === 'free' || body.plan === 'pro') ? body.plan : undefined;
 
-    return this.userVehicleService.updateUserPreferences(userId, currency, plan);
+    return this.userVehicleService.updateUserPreferences(userId, currency, plan, system);
   }
 }

@@ -6,6 +6,7 @@ import { VehicleViewModel } from "@/lib/mappers/vehicle";
 import { TabIntroBlurb } from '../ui/TabIntroBlurb';
 import { ServiceSummaryViewModel } from "@/lib/mappers/service";
 import { Database, Info } from 'lucide-react';
+import { SpecsAccordionSection } from "./SpecsAccordionSection";
 
 export function VehicleSpecsDisplay({ 
   vehicleId, 
@@ -133,22 +134,13 @@ export function SpecSection({
   items: SpecDetailItem[] 
 }) {
   return (
-    <div className="rounded-3xl border border-subtle bg-card-overlay p-6">
-      <div className="mb-4 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground/5 text-muted">
-          {icon}
-        </div>
-        <h3 className="text-sm font-bold tracking-tight text-foreground opacity-90 uppercase">{title}</h3>
-      </div>
-      
-      <div className="divide-y divide-subtle">
-        {items.length > 0 ? (
-          items.map((item, i) => <SpecRow key={i} item={item} />)
-        ) : (
-          <EmptySpecState message={`No ${title.toLowerCase()} recorded`} />
-        )}
-      </div>
-    </div>
+    <SpecsAccordionSection icon={icon} title={title}>
+      {items.length > 0 ? (
+        items.map((item, i) => <SpecRow key={i} item={item} />)
+      ) : (
+        <EmptySpecState message={`No ${title.toLowerCase()} recorded`} />
+      )}
+    </SpecsAccordionSection>
   );
 }
 

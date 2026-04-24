@@ -4,7 +4,7 @@ import { useState, useTransition, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import { UserVehicleCustomSpec } from '@/types/autofolio';
-import { createCustomSpec, updateCustomSpec, deleteCustomSpec } from '@/lib/api';
+import { createCustomSpec, updateCustomSpec, deleteCustomSpec, exportVehicleSpecsPdf } from '@/lib/api';
 import { Plus, Trash2, Edit3, Save, X, Settings2, Loader2, ChevronDown, FileText, Printer, FileDown, Check, Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { VehicleViewModel } from '@/lib/mappers/vehicle';
 import { usePreferences } from '@/lib/preferences';
@@ -59,7 +59,7 @@ export function VehicleUserSpecsDisplay({
   currentKms
 }: VehicleUserSpecsDisplayProps) {
   const router = useRouter();
-  const { plan, triggerUpgrade } = usePlan();
+  const { plan, triggerUpgrade, checkLimit } = usePlan();
   const [, startTransition] = useTransition();
   const [isAdding, setIsAdding] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -68,6 +68,7 @@ export function VehicleUserSpecsDisplay({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isRefListOpen, setIsRefListOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Feedback states
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -85,28 +86,11 @@ export function VehicleUserSpecsDisplay({
 
   // Track expanded categories - collapsed by default
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Persistence: Load on mount
+  // Collapse on entry / vehicle switch
   useEffect(() => {
-    const key = `autofolio_specs_expanded_${vehicleId}`;
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      try {
-        setExpandedCategories(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to parse expanded categories', e);
-      }
-    }
-    setIsLoaded(true);
+    setExpandedCategories([]);
   }, [vehicleId]);
-
-  // Persistence: Save on change
-  useEffect(() => {
-    if (!isLoaded) return;
-    const key = `autofolio_specs_expanded_${vehicleId}`;
-    localStorage.setItem(key, JSON.stringify(expandedCategories));
-  }, [expandedCategories, vehicleId, isLoaded]);
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => 
@@ -120,6 +104,30 @@ export function VehicleUserSpecsDisplay({
     setSelectedIds(prev => 
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const blob = await exportVehicleSpecsPdf(vehicleId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `specs-${vehicle.nickname.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error(err);
+      if (err.type === 'export_pdf' || err.message?.includes('Pro')) {
+        checkLimit(100, 1, () => {});
+      } else {
+        alert(err.message || 'Failed to generate PDF. Please try again.');
+      }
+    } finally {
+      setIsExporting(false);
+    }
   };
   
   // Form State for Adding
@@ -683,6 +691,7 @@ export function VehicleUserSpecsDisplay({
         onRemove={toggleSelection}
         vehicle={vehicle}
         currentKms={currentKms}
+        vehicleId={vehicleId}
       />
 
       <ImportSpecsModal 
@@ -700,7 +709,8 @@ function ReferenceListModal({
   selectedSpecs, 
   onRemove,
   vehicle,
-  currentKms
+  currentKms,
+  vehicleId
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
@@ -708,9 +718,12 @@ function ReferenceListModal({
   onRemove: (id: string) => void;
   vehicle: VehicleViewModel;
   currentKms?: number | null;
+  vehicleId: string;
 }) {
   const [mounted, setMounted] = useState(false);
   const { formatDistance } = usePreferences();
+  const { checkLimit } = usePlan();
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -718,6 +731,30 @@ function ReferenceListModal({
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const blob = await exportVehicleSpecsPdf(vehicleId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `specs-${vehicle.nickname.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error(err);
+      if (err.type === 'export_pdf' || err.message?.includes('Pro')) {
+        checkLimit(100, 1, () => {});
+      } else {
+        alert(err.message || 'Failed to generate PDF. Please try again.');
+      }
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (!mounted || !isOpen) return null;
@@ -885,11 +922,12 @@ function ReferenceListModal({
           </button>
           <button
             type="button"
-            onClick={handlePrint}
-            className="flex-1 flex h-14 items-center justify-center gap-3 rounded-2xl bg-foreground text-[10px] font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] shadow-2xl"
+            onClick={handleExport}
+            disabled={isExporting}
+            className="flex-1 flex h-14 items-center justify-center gap-3 rounded-2xl bg-foreground text-[10px] font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] shadow-2xl disabled:opacity-50"
           >
-            <FileDown size={18} />
-            Export PDF (via Print)
+            {isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
+            {isExporting ? 'Generating...' : 'Export as PDF'}
           </button>
         </div>
       </div>

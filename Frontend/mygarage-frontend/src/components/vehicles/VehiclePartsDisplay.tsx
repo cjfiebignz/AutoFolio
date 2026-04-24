@@ -55,28 +55,11 @@ export function VehiclePartsDisplay({
   const [editingPreset, setEditingPreset] = useState<PartPreset | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Persistence: Load on mount
+  // Collapse on entry / vehicle switch
   useEffect(() => {
-    const key = `autofolio_parts_expanded_${vehicleId}`;
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      try {
-        setExpandedCategories(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to parse expanded categories', e);
-      }
-    }
-    setIsLoaded(true);
+    setExpandedCategories([]);
   }, [vehicleId]);
-
-  // Persistence: Save on change
-  useEffect(() => {
-    if (!isLoaded) return;
-    const key = `autofolio_parts_expanded_${vehicleId}`;
-    localStorage.setItem(key, JSON.stringify(expandedCategories));
-  }, [expandedCategories, vehicleId, isLoaded]);
 
   // Feedback states
   const [successMessage, setSuccessMessage] = useState<string | null>(null);

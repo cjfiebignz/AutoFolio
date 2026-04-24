@@ -117,7 +117,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
           console.error('[Preferences] Failed to load cloud settings:', err);
         });
     }
-  }, [session, mounted]);
+  }, [session?.user?.id, mounted]);
 
   const updatePreferences = useCallback(async (updates: Partial<UserPreferences>) => {
     setPreferences(prev => {
@@ -135,7 +135,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         console.error('[Preferences] Failed to sync currency to cloud:', err);
       }
     }
-  }, [session]);
+  }, [session?.user?.id]);
 
   const updateNotifications = useCallback((updates: Partial<UserPreferences['notifications']>) => {
     updatePreferences({ notifications: { ...preferences.notifications, ...updates } });

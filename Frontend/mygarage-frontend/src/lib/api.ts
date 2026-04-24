@@ -173,6 +173,22 @@ export async function exportWorkHistoryPdf(id: string): Promise<Blob> {
   return response.blob();
 }
 
+export async function exportVehicleSpecsPdf(id: string): Promise<Blob> {
+  const url = `${API_BASE_URL}/user-vehicles/${id}/export-specs`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/pdf' },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const error: any = new Error(errorData.message || 'Failed to export specifications');
+    error.type = errorData.type;
+    throw error;
+  }
+  return response.blob();
+}
+
 export async function exportDocumentsZip(id: string, documentIds?: string[]): Promise<Blob> {
   const url = `${API_BASE_URL}/user-vehicles/${id}/export-documents-zip`;
   const options: RequestInit = {
@@ -481,17 +497,17 @@ export interface CreateDocumentData {
   serviceEventId?: string;
 }
 
-export async function uploadDocument(vehicleId: string, file: File, title: string, category: string) {
+export async function uploadDocument(vehicleId: string, file: File, title: string, category: string, date?: string) {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('title', title);
   formData.append('category', category);
+  if (date) formData.append('date', date);
 
   const response = await fetch(`${API_BASE_URL}/user-vehicles/${vehicleId}/documents`, {
     method: 'POST',
     body: formData,
   });
-
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to upload document');

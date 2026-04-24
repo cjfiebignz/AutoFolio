@@ -64,11 +64,26 @@ Responsible for:
 
 ---
 
+## 6. Execution & Response Discipline
+* **Strict Completion:** Exactly one summary block at the very end. No repeated summaries or intermediate progress blocks.
+* **Verification-Only:** For verification tasks, return one concise result and stop.
+* **No-Op Tasks:** If no file changes are needed, state "No changes required" once and stop.
+* **Empirical Proof:** Never claim success based on assumptions. Verify behavior directly (e.g., API response, DB state).
+* **Fix Integrity:** If a prior attempt did not visibly fix the issue, report it clearly. Do not overclaim.
+* **Surgical Precision:** Prefer minimal targeted fixes over broad rewrites. Avoid unrelated "cleanup."
+* **Zero Drift:** Stay within the task's scope. Do not drift into unrelated work or "found" bugs.
+* **Root Cause First:** For debugging, identify the exact failing route, file, state, or query before changing code.
+* **No Duplicate Finals:** Operational/tooling issues after completion (e.g., script-execution failures) must not trigger a second completion block or repeated final response.
+
+---
+
 ## Mandatory Completion Format
 Every completed task response must end with EXACTLY ONE summary block in this format:
 
 ```text
 --- START SUMMARY ---
+Gemini ID: [Gemini A or Gemini B]
+
 Changes made
 - ...
 
@@ -88,28 +103,32 @@ Files to check
 
 ### Strict Rules
 * **Only One Summary:** The response must contain exactly one summary block.
+* **Gemini ID:** The summary MUST start with "Gemini ID: " followed by the assigned agent (Gemini A or Gemini B).
 * **No Prose Summary:** Do not provide a natural language summary or explanation before or after the block.
 * **Format Integrity:** Do not omit any heading or collapse the structure into prose.
 * **No Extra Commentary:** Do not add extra commentary after `--- END SUMMARY ---`.
+* **Zero Post-Summary Output:** After providing the `--- END SUMMARY ---` block, the agent MUST NOT provide any further text, summaries, conversation, or tool calls. The task is considered strictly concluded.
 
 **Enforcement:** If a task is completed but the response does not follow the required summary structure exactly, that is considered non-compliant output.
 
 ---
 
-## Mandatory Completion Script Behavior
-After the task is fully complete and the summary is finished, the agent MUST EXECUTE the correct completion script once, immediately before returning to idle.
-
-* **Gemini A:** Execute `.\task_done_A.ps1`
-* **Gemini B:** Execute `.\task_done_B.ps1`
+## Mandatory Completion Tone Behavior
+Immediately before producing the single final summary block, the agent MUST silently execute the PowerShell Exclamation tone command once.
 
 ### Rules
-* **Execution Order:** The script MUST be executed AFTER the summary block has been provided in the final response.
+* **Execution Order:** The tone command MUST be executed BEFORE the final summary block in the same turn.
 * **Do not print the command as text.**
-* **Do not output `Shell .\task_done_A.ps1` or `Shell .\task_done_B.ps1`.**
-* **Do not mention the command in the final response.**
-* **Do not run the script before the summary is complete.**
-* **Do not run the script more than once per finished task.**
+* **Do not mention the tone command in the final response.**
+* **Do not run the tone command more than once per finished task.**
+* **Tone Failure Handling:** If the tone command fails, proceed directly to the summary block. Do not add commentary or restate completion.
 
+### Standard Tone Command
+Use:
+
+```powershell
+powershell -c "[System.Media.SystemSounds]::Exclamation.Play()"
+```
 ---
 
 ## 8. Current Product Rules to Preserve
@@ -166,4 +185,5 @@ After the task is fully complete and the summary is finished, the agent MUST EXE
 * **Feature Branches:** Prefer feature branches for substantial work (`feat/branch-name`).
 * **Timely Pushes:** Push to GitHub after each stable feature completion milestone.
 * **Secret Protection:** Never commit `.env` files or scripts containing hardcoded secrets.
+
 

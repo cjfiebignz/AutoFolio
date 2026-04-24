@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createWorkJob, updateWorkJob, CreateWorkJobData, getUserVehicleWithSpecs } from '@/lib/api';
@@ -33,12 +33,18 @@ export function WorkForm({ vehicleId, initialData, workJobId }: WorkFormProps) {
   const [partSearch, setPartSearch] = useState('');
   const [specSearch, setSpecSearch] = useState('');
 
+  // Prevent duplicate fetches on mount
+  const lastFetchedVehicleId = useRef<string | null>(null);
+
   useEffect(() => {
     async function loadMetadata() {
+      if (lastFetchedVehicleId.current === vehicleId) return;
+      
       try {
         const { vehicle } = await getUserVehicleWithSpecs(vehicleId);
         setAvailableParts(vehicle.savedParts || []);
         setAvailableSpecs(vehicle.customSpecs || []);
+        lastFetchedVehicleId.current = vehicleId;
       } catch (err) {
         console.error('Failed to load vehicle metadata for linking:', err);
       } finally {

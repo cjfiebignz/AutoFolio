@@ -23,6 +23,7 @@ export function DocumentForm({ vehicleId, isOpen, onClose, initialData, document
   // Form fields
   const [title, setTitle] = useState(initialData?.title || '');
   const [category, setCategory] = useState(initialData?.category || 'receipt');
+  const [date, setDate] = useState(initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
   const [file, setFile] = useState<File | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -36,6 +37,9 @@ export function DocumentForm({ vehicleId, isOpen, onClose, initialData, document
     if (initialData) {
       setTitle(initialData.title || '');
       setCategory(initialData.category || 'receipt');
+      if (initialData.date) {
+        setDate(new Date(initialData.date).toISOString().split('T')[0]);
+      }
     }
   }, [initialData]);
 
@@ -45,6 +49,7 @@ export function DocumentForm({ vehicleId, isOpen, onClose, initialData, document
       if (!isEdit) {
         setTitle('');
         setCategory('receipt');
+        setDate(new Date().toISOString().split('T')[0]);
         setFile(null);
       }
       setError(null);
@@ -63,10 +68,11 @@ export function DocumentForm({ vehicleId, isOpen, onClose, initialData, document
       if (isEdit && documentId) {
         await updateDocument(vehicleId, documentId, {
           title,
-          category
+          category,
+          date
         });
       } else if (file) {
-        await uploadDocument(vehicleId, file, title, category);
+        await uploadDocument(vehicleId, file, title, category, date);
       }
       
       startTransition(() => {
@@ -186,6 +192,16 @@ export function DocumentForm({ vehicleId, isOpen, onClose, initialData, document
               <option value="manual">Technical Manual</option>
               <option value="other">Other Reference</option>
             </select>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted ml-1">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full h-14 rounded-2xl border border-border-subtle bg-card-overlay px-6 text-[10px] font-black uppercase tracking-widest text-foreground focus:border-accent outline-none transition-all shadow-inner cursor-pointer"
+            />
           </div>
         </div>
       </div>

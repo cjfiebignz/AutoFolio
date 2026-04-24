@@ -79,6 +79,7 @@ export function VehicleRegistrationForm() {
     
     const form = e.currentTarget;
     const formData = new FormData(form);
+    const rawData = Object.fromEntries(formData.entries());
     
     if (isSubmitting) return;
 
@@ -127,7 +128,6 @@ export function VehicleRegistrationForm() {
         year: parseInt(String(rawData.year), 10),
         licensePlate: String(rawData.licensePlate),
         vin: rawData.vin ? String(rawData.vin) : undefined,
-        specId: rawData.specId ? String(rawData.specId) : undefined,
         userId: userId,
         isDaily: isDaily
       };
@@ -258,36 +258,6 @@ export function VehicleRegistrationForm() {
           placeholder="17-character VIN" 
           disabled={isSubmitting} 
         />
-        
-        {plan?.canUseSpecHub ? (
-          <FormInput 
-            name="specId" 
-            label="SpecHUB ID (Optional)" 
-            placeholder="e.g. TOY-COR-2022" 
-            disabled={isSubmitting} 
-          />
-        ) : (
-          <div 
-            className="space-y-2 cursor-pointer group/spec"
-            onClick={() => checkLimit(100, 1, () => {})}
-          >
-            <label className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-40 ml-1">
-              SpecHUB ID (Optional)
-            </label>
-            <div className="relative flex items-center">
-              <div className="h-12 w-full rounded-2xl border border-border-subtle bg-foreground/[0.01] px-4 flex items-center justify-between transition-all group-hover/spec:bg-foreground/[0.03] group-hover/spec:border-blue-500/20 group-hover/spec:shadow-[0_0_20px_rgba(59,130,246,0.05)]">
-                <span className="text-sm font-bold text-muted opacity-20 italic">Unlock with Pro</span>
-                <Lock size={14} className="text-muted opacity-20 group-hover/spec:text-blue-500/40 transition-colors" />
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <div className="px-1">
-          <p className="text-[9px] font-medium text-dim italic">
-            Linking to SpecHUB provides automated technical reference data. {plan?.canUseSpecHub ? "You can skip this and add specs manually later." : "Upgrade to Pro to increase this limit and unlock automated technical reference data."}
-          </p>
-        </div>
       </FormSection>
 
       {/* Form Actions */}

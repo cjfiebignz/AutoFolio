@@ -2622,6 +2622,84 @@ export class UserVehicleService {
     return doc;
   }
 
+  async exportVehicleSpecs(id: string) {
+    const vehicle = await this.prisma.userVehicle.findUnique({
+      where: { id },
+      include: {
+        user: { select: { plan: true } },
+        customSpecs: {
+          orderBy: [{ group: 'asc' }, { label: 'asc' }],
+        },
+      },
+    });
+
+    if (!vehicle) {
+      throw new NotFoundException(`Vehicle with ID ${id} not found`);
+    }
+
+    const limits = this.getPlanLimits(vehicle.user.plan);
+    if (!limits.canExportPdf) {
+      throw new BadRequestException({
+        error: 'feature_restricted',
+        type: 'export_pdf',
+        message: 'PDF export is available on Pro',
+        plan: vehicle.user.plan || 'free',
+      });
+    }
+
+    const financials = await this.getVehicleFinancials(id);
+    const doc = new PDFDocument({ 
+      margin: 50,
+      bufferPages: true,
+      info: {
+        Title: `Technical Specifications - ${vehicle.nickname || vehicle.model}`,
+        Author: 'AutoFolio',
+      }
+    });
+
+    doc.fontSize(20).font('Helvetica-Bold').text('AutoFolio', { align: 'left' });
+    doc.fontSize(24).text('Technical Specifications');
+    doc.fontSize(10).font('Helvetica').text(`Generated: ${new Date().toLocaleDateString('en-AU')}`);
+    doc.moveDown(2);
+
+    this.buildVehicleSummarySection(doc, vehicle, financials);
+
+    // Group specs by category
+    const groupedSpecs = vehicle.customSpecs.reduce((acc, spec) => {
+      if (!acc[spec.group]) acc[spec.group] = [];
+      acc[spec.group].push(spec);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    Object.entries(groupedSpecs).forEach(([group, specs]: [string, any[]]) => {
+      doc.moveDown(1);
+      doc.fontSize(16).font('Helvetica-Bold').text(group);
+      doc.moveTo(50, doc.y).lineTo(550, doc.y).lineWidth(0.5).strokeColor('#eeeeee').stroke();
+      doc.moveDown(0.5);
+
+      specs.forEach(spec => {
+        const startY = doc.y;
+        doc.fontSize(10).font('Helvetica-Bold').text(spec.label, 50, startY, { width: 200 });
+        doc.fontSize(10).font('Helvetica').text(`${spec.value}${spec.unit ? ' ' + spec.unit : ''}`, 250, startY, { width: 300, align: 'right' });
+        
+        if (spec.notes) {
+          doc.moveDown(0.2);
+          doc.fontSize(8).font('Helvetica-Oblique').fillColor('#666666').text(spec.notes, 50, doc.y, { width: 500 });
+          doc.fillColor('#000000');
+        }
+        doc.moveDown(0.5);
+      });
+    });
+
+    if (vehicle.customSpecs.length === 0) {
+      doc.fontSize(12).font('Helvetica-Oblique').text('No technical specifications recorded.');
+    }
+
+    this.buildPdfFooter(doc);
+    doc.end();
+    return doc;
+  }
+
   async exportServiceHistory(id: string) {
     const vehicle = await this.prisma.userVehicle.findUnique({
       where: { id },

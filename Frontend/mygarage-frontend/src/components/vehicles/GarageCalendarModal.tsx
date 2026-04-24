@@ -29,7 +29,7 @@ interface GarageCalendarModalProps {
 
 export function GarageCalendarModal({ isOpen, onClose, vehicles }: GarageCalendarModalProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // Aggregate all events across all vehicles
   const allEvents = useMemo(() => {
@@ -199,58 +199,62 @@ export function GarageCalendarModal({ isOpen, onClose, vehicles }: GarageCalenda
           </div>
 
           {/* Agenda Sidebar */}
-          <div className="hidden lg:flex w-full lg:w-80 bg-background/50 flex-col overflow-hidden">
-            <div className="p-6 sm:p-8 border-b border-border-subtle bg-card-overlay">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted mb-1">Agenda for</p>
-              <h4 className="text-base font-black italic tracking-tighter text-foreground uppercase truncate">
-                {selectedDate ? format(selectedDate, 'do MMMM yyyy') : 'Select Date'}
-              </h4>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-4 no-scrollbar">
-              {selectedDateEvents.length === 0 ? (
-                <div className="text-center py-10 opacity-30">
-                  <div className="mx-auto h-1 w-8 rounded-full bg-border-subtle mb-4" />
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-dim italic">No events recorded</p>
-                </div>
-              ) : (
-                selectedDateEvents.map(event => (
-                  <EventRow key={event.id} event={event} />
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Mobile Agenda Drawer (shows underneath on mobile) */}
-          <div className="lg:hidden border-t border-border-subtle p-6 bg-surface overflow-y-auto flex-1">
-            <div className="flex items-center justify-between border-b border-border-subtle pb-4 mb-6">
-              <div>
+          {selectedDate && (
+            <div className="hidden lg:flex w-full lg:w-80 bg-background/50 flex-col overflow-hidden border-l border-border-subtle">
+              <div className="p-6 sm:p-8 border-b border-border-subtle bg-card-overlay">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted mb-1">Agenda for</p>
-                <h4 className="text-sm font-black italic tracking-tighter text-foreground uppercase">
-                  {selectedDate ? format(selectedDate, 'do MMM') : 'Select Date'}
+                <h4 className="text-base font-black italic tracking-tighter text-foreground uppercase truncate">
+                  {format(selectedDate, 'do MMMM yyyy')}
                 </h4>
               </div>
-              <button
-                onClick={() => setSelectedDate(null)}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-card-overlay text-muted hover:bg-card-overlay-hover hover:text-foreground transition-all active:scale-90"
-              >
-                <X size={18} />
-              </button>
+              
+              <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-4 no-scrollbar">
+                {selectedDateEvents.length === 0 ? (
+                  <div className="text-center py-10 opacity-30">
+                    <div className="mx-auto h-1 w-8 rounded-full bg-border-subtle mb-4" />
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-dim italic">No events recorded</p>
+                  </div>
+                ) : (
+                  selectedDateEvents.map(event => (
+                    <EventRow key={event.id} event={event} />
+                  ))
+                )}
+              </div>
             </div>
+          )}
 
-            <div className="space-y-4">
-              {selectedDateEvents.length === 0 ? (
-                <div className="text-center py-6 opacity-30">
-                  <div className="mx-auto h-1 w-8 rounded-full bg-border-subtle mb-4" />
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-dim italic">No events recorded for this day</p>
+          {/* Mobile Agenda Drawer (shows underneath on mobile) */}
+          {selectedDate && (
+            <div className="lg:hidden border-t border-border-subtle p-6 bg-surface overflow-y-auto flex-1">
+              <div className="flex items-center justify-between border-b border-border-subtle pb-4 mb-6">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted mb-1">Agenda for</p>
+                  <h4 className="text-sm font-black italic tracking-tighter text-foreground uppercase">
+                    {format(selectedDate, 'do MMM')}
+                  </h4>
                 </div>
-              ) : (
-                selectedDateEvents.map(event => (
-                  <EventRow key={event.id} event={event} />
-                ))
-              )}
+                <button
+                  onClick={() => setSelectedDate(null)}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-card-overlay text-muted hover:bg-card-overlay-hover hover:text-foreground transition-all active:scale-90"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {selectedDateEvents.length === 0 ? (
+                  <div className="text-center py-6 opacity-30">
+                    <div className="mx-auto h-1 w-8 rounded-full bg-border-subtle mb-4" />
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-dim italic">No events recorded for this day</p>
+                  </div>
+                ) : (
+                  selectedDateEvents.map(event => (
+                    <EventRow key={event.id} event={event} />
+                  ))
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

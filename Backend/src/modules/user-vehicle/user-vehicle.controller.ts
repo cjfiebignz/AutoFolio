@@ -90,6 +90,14 @@ export class UserVehicleController {
     doc.pipe(res);
   }
 
+  @Get(':id/export-specs')
+  async exportSpecs(@Param('id') id: string, @Res() res: Response) {
+    const doc = await this.userVehicleService.exportVehicleSpecs(id);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="vehicle-specs.pdf"`);
+    doc.pipe(res);
+  }
+
   @Get(':id/export-service-history')
   async exportServiceHistory(@Param('id') id: string, @Res() res: Response) {
     const doc = await this.userVehicleService.exportServiceHistory(id);

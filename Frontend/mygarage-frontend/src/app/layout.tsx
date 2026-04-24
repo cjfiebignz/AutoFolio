@@ -16,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} text-foreground min-h-screen antialiased transition-colors duration-300`}>
         <Providers>
           {/* Mobile-first centered container with premium glassmorphism background */}

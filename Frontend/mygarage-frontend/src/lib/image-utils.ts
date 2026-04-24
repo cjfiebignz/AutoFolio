@@ -10,10 +10,17 @@ export function normalizeImageUrl(path: string | null | undefined): string {
     return path;
   }
   
-  const API_BASE_URL = process.env.NEXT_PUBLIC_AUTOFOLIO_API_BASE_URL || 'http://localhost:3001';
+  const envBaseUrl = process.env.NEXT_PUBLIC_AUTOFOLIO_API_BASE_URL;
   
-  // Ensure we don't double slash if path already starts with /
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  
-  return `${API_BASE_URL}${normalizedPath}`;
+  // If we have an environment variable, use it.
+  if (envBaseUrl) {
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return `${envBaseUrl}${normalizedPath}`;
+  }
+
+  // In development, we use relative paths which are proxied by Next.js rewrites.
+  // This ensures hydration safety (server and client see the same string)
+  // and works on mobile because the mobile browser hits the Next.js server on port 3000.
+  // We MUST ensure the path starts with / for the rewrite to catch it correctly.
+  return path.startsWith('/') ? path : `/${path}`;
 }
