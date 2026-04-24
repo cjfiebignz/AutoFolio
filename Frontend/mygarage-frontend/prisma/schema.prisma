@@ -1,3 +1,16 @@
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// WARNING: DEPRECATED / LEGACY SCHEMA AUTHORITY
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// This schema is NOT the authoritative AutoFolio application schema.
+// Backend/prisma/schema.prisma is the authoritative SOURCE OF TRUTH.
+// 
+// This frontend schema survives ONLY to support NextAuth PrismaAdapter usage.
+// 
+// - DO NOT add application models or migrations here.
+// - DO NOT generate application Prisma clients from this schema for data work.
+// - DO NOT run migrations against this file.
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
