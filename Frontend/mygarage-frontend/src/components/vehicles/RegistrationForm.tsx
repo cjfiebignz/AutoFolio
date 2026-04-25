@@ -3,47 +3,81 @@
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
-import { X, Save, Globe, Calendar, CreditCard, FileText, Loader2, Landmark } from 'lucide-react';
+import { X, Save, Globe, Calendar, CreditCard, FileText, Loader2, Landmark, AlertCircle } from 'lucide-react';
 import { createRegistration, updateRegistration } from '@/lib/api';
+import { useActionConfirm } from '@/lib/use-action-confirm';
 
 interface RegistrationFormProps {
   vehicleId: string;
   isOpen: boolean;
   onClose: () => void;
   initialData?: any;
+  vehicleLicensePlate?: string;
 }
 
-export function RegistrationForm({ vehicleId, isOpen, onClose, initialData }: RegistrationFormProps) {
+export function RegistrationForm({ vehicleId, isOpen, onClose, initialData, vehicleLicensePlate }: RegistrationFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Plate Change Confirmation
+  const {
+    confirmState: showPlateConfirm,
+    enterConfirm: enterPlateConfirm,
+    cancelConfirm: cancelPlateConfirm
+  } = useActionConfirm();
+
   // Form State
   const [region, setRegion] = useState(initialData?.region || '');
   const [countryCode, setCountryCode] = useState(initialData?.countryCode || 'AU');
-  const [regNumber, setRegNumber] = useState(initialData?.regNumber || '');
+  const [regNumber, setRegNumber] = useState(initialData?.regNumber || (initialData ? '' : (vehicleLicensePlate || '')));
   const [expiryDate, setExpiryDate] = useState(initialData?.expiryDate ? new Date(initialData.expiryDate).toISOString().split('T')[0] : '');
   const [cost, setCost] = useState(initialData?.cost?.toString() || '');
   const [isCurrent, setIsCurrent] = useState(initialData?.isCurrent ?? true);
   const [notes, setNotes] = useState(initialData?.notes || '');
+  const [durationMonths, setDurationMonths] = useState('');
+
+  // Local helper for duration calculation
+  const handleDurationChange = (monthsStr: string) => {
+    setDurationMonths(monthsStr);
+    const months = parseInt(monthsStr, 10);
+    if (months > 0 && months < 120) { // Limit to 10 years max for safety
+      const date = new Date();
+      date.setMonth(date.getMonth() + months);
+      setExpiryDate(date.toISOString().split('T')[0]);
+    }
+  };
 
   // Reset form when opening/closing or when initialData changes
   useEffect(() => {
     if (isOpen) {
       setRegion(initialData?.region || '');
       setCountryCode(initialData?.countryCode || 'AU');
-      setRegNumber(initialData?.regNumber || '');
+      setRegNumber(initialData?.regNumber || (initialData ? '' : (vehicleLicensePlate || '')));
       setExpiryDate(initialData?.expiryDate ? new Date(initialData.expiryDate).toISOString().split('T')[0] : '');
       setCost(initialData?.cost?.toString() || '');
       setIsCurrent(initialData?.isCurrent ?? true);
       setNotes(initialData?.notes || '');
+      setDurationMonths('');
       setError(null);
+      cancelPlateConfirm();
     }
-  }, [isOpen, initialData]);
+  }, [isOpen, initialData, vehicleLicensePlate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    // Plate change check (Only relevant if this is or will be the CURRENT registration)
+    const isPlateChanging = vehicleLicensePlate && regNumber && regNumber !== vehicleLicensePlate;
+    const isPlateAdded = !vehicleLicensePlate && regNumber;
+    const isPlateRemoved = vehicleLicensePlate && !regNumber;
+
+    if (isCurrent && (isPlateChanging || isPlateAdded || isPlateRemoved) && !showPlateConfirm) {
+      enterPlateConfirm();
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
@@ -58,6 +92,7 @@ export function RegistrationForm({ vehicleId, isOpen, onClose, initialData }: Re
     };
 
     try {
+      // Rely on backend sync for UserVehicle.licensePlate when isCurrent is true
       if (initialData?.id) {
         await updateRegistration(vehicleId, initialData.id, payload);
       } else {
@@ -133,8 +168,51 @@ export function RegistrationForm({ vehicleId, isOpen, onClose, initialData }: Re
                   required
                   className="w-full h-14 rounded-2xl border border-border-subtle bg-card-overlay px-6 text-sm font-black uppercase placeholder:text-dim focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all shadow-inner"
                 />
+                {!initialData && vehicleLicensePlate && regNumber === vehicleLicensePlate && (
+                  <p className="text-[9px] font-bold text-accent uppercase tracking-widest ml-1 italic">Uses the vehicle profile plate.</p>
+                )}
               </div>
             </div>
+
+            {showPlateConfirm && (
+              <div className="rounded-[24px] border border-blue-500/20 bg-blue-500/5 p-6 animate-in zoom-in-95 duration-300 shadow-premium">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+                    <AlertCircle size={20} />
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    <div>
+                      <h4 className="text-sm font-black uppercase tracking-tight text-foreground">
+                        {!regNumber ? 'Remove Global Plate?' : 'Update Global Plate?'}
+                      </h4>
+                      <p className="text-[11px] font-medium text-muted leading-relaxed italic">
+                        {!regNumber 
+                          ? `Are you sure you want to remove the plate number for this vehicle? Future registration forms will no longer be prefilled.`
+                          : vehicleLicensePlate 
+                            ? `Are you sure you want to change the plate number for this vehicle? This will update it across AutoFolio.`
+                            : `Saving this plate will update your vehicle's primary profile across AutoFolio.`}
+                      </p>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleSubmit()}
+                        className="flex-1 h-10 rounded-xl bg-blue-600 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-blue-500 active:scale-95 shadow-lg"
+                      >
+                        {!regNumber ? 'Confirm Removal' : 'Confirm & Save'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelPlateConfirm}
+                        className="flex-1 h-10 rounded-xl bg-card-overlay border border-border-subtle text-[10px] font-black uppercase tracking-widest text-muted transition-all hover:bg-card-overlay-hover active:scale-95"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-3">
               <label className="text-[11px] font-black uppercase tracking-[0.2em] text-muted ml-1">Country Code (ISO)</label>
@@ -163,6 +241,27 @@ export function RegistrationForm({ vehicleId, isOpen, onClose, initialData }: Re
                   required
                   className="w-full h-14 rounded-2xl border border-border-subtle bg-card-overlay px-6 text-sm font-bold text-foreground focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all shadow-inner"
                 />
+                
+                {/* Duration Helper */}
+                <div className="flex items-center gap-3 px-1">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-dim italic">Set by duration:</span>
+                  <div className="flex gap-1">
+                    {[3, 6, 12, 24].map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => handleDurationChange(m.toString())}
+                        className={`px-2 py-1 rounded-md border text-[9px] font-black transition-all ${
+                          durationMonths === m.toString() 
+                            ? 'bg-accent/20 border-accent text-accent' 
+                            : 'bg-card-overlay border-border-subtle text-muted hover:border-muted'
+                        }`}
+                      >
+                        {m}M
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-3">

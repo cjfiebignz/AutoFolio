@@ -1161,6 +1161,14 @@ export class UserVehicleService {
         },
       });
 
+      // Sync vehicle license plate if this registration is current
+      if (reg.isCurrent && reg.regNumber) {
+        await this.prisma.userVehicle.update({
+          where: { id: vehicleId },
+          data: { licensePlate: reg.regNumber },
+        });
+      }
+
       if (reg.isCurrent && reg.registrationStatus === RegistrationStatus.active) {
         await this.upsertAutoReminder(
           vehicleId,
@@ -1222,6 +1230,14 @@ export class UserVehicleService {
         where: { id: regId },
         data,
       });
+
+      // Sync vehicle license plate if this registration is current and plate was provided
+      if (reg.isCurrent && reg.regNumber) {
+        await this.prisma.userVehicle.update({
+          where: { id: vehicleId },
+          data: { licensePlate: reg.regNumber },
+        });
+      }
 
       // Sync reminder
       if (reg.isCurrent && reg.registrationStatus === RegistrationStatus.active) {

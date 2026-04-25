@@ -22,6 +22,8 @@ interface RenewalModalProps {
   type: 'registration' | 'insurance';
   currentRecordId: string;
   providerName?: string;
+  currentExpiryDate?: string;
+  vehicleLicensePlate?: string;
 }
 
 export function RenewalModal({ 
@@ -30,7 +32,9 @@ export function RenewalModal({
   vehicleId, 
   type, 
   currentRecordId,
-  providerName
+  providerName,
+  currentExpiryDate,
+  vehicleLicensePlate
 }: RenewalModalProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -42,6 +46,31 @@ export function RenewalModal({
   const [expiryDate, setExpiryDate] = useState('');
   const [cost, setCost] = useState('');
   const [notes, setNotes] = useState('');
+  const [durationMonths, setDurationMonths] = useState('');
+
+  // Local helper for duration calculation
+  const handleDurationChange = (monthsStr: string) => {
+    setDurationMonths(monthsStr);
+    const months = parseInt(monthsStr, 10);
+    if (months > 0 && months < 120) {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      let baseDate = now;
+      if (currentExpiryDate) {
+        const currentExp = new Date(currentExpiryDate);
+        currentExp.setHours(0, 0, 0, 0);
+        // Only use current expiry as base if it's in the future or today
+        if (currentExp >= now) {
+          baseDate = currentExp;
+        }
+      }
+
+      const newDate = new Date(baseDate);
+      newDate.setMonth(newDate.getMonth() + months);
+      setExpiryDate(newDate.toISOString().split('T')[0]);
+    }
+  };
 
   // Synchronize step and reset form when modal opens or type changes
   useEffect(() => {
@@ -50,6 +79,7 @@ export function RenewalModal({
       setExpiryDate('');
       setCost('');
       setNotes('');
+      setDurationMonths('');
       setError(null);
     }
   }, [isOpen, type]);
@@ -120,7 +150,17 @@ export function RenewalModal({
               <h3 className="text-xl font-black italic tracking-tighter text-foreground uppercase">
                 Renew {type}
               </h3>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-70">Portfolio Maintenance</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-70">Portfolio Maintenance</p>
+                {type === 'registration' && vehicleLicensePlate && (
+                  <>
+                    <span className="h-1 w-1 rounded-full bg-muted opacity-20" />
+                    <span className="rounded bg-card-overlay px-1.5 py-0.5 font-mono text-[9px] font-bold text-accent border border-accent/20 uppercase">
+                      {vehicleLicensePlate}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
           <button
@@ -188,6 +228,27 @@ export function RenewalModal({
                       onChange={(e) => setExpiryDate(e.target.value)}
                       className="w-full rounded-2xl border border-border-subtle bg-card-overlay py-4 pl-12 pr-4 text-sm font-bold text-foreground outline-none ring-accent/20 transition-all focus:border-accent focus:ring-4"
                     />
+                  </div>
+
+                  {/* Duration Helper */}
+                  <div className="flex items-center gap-3 px-1 pt-1">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-dim italic">Set by duration:</span>
+                    <div className="flex gap-1">
+                      {[3, 6, 12, 24].map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => handleDurationChange(m.toString())}
+                          className={`px-2 py-1 rounded-md border text-[9px] font-black transition-all ${
+                            durationMonths === m.toString() 
+                              ? 'bg-accent/20 border-accent text-accent' 
+                              : 'bg-card-overlay border-border-subtle text-muted hover:border-muted'
+                          }`}
+                        >
+                          {m}M
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 

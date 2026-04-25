@@ -13,9 +13,15 @@ interface VehicleRegistrationDisplayProps {
   vehicleId: string;
   registrations?: any[];
   displayCurrency?: string;
+  vehicleLicensePlate?: string;
 }
 
-export function VehicleRegistrationDisplay({ vehicleId, registrations = [], displayCurrency = 'AUD' }: VehicleRegistrationDisplayProps) {
+export function VehicleRegistrationDisplay({ 
+  vehicleId, 
+  registrations = [], 
+  displayCurrency = 'AUD',
+  vehicleLicensePlate
+}: VehicleRegistrationDisplayProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -218,6 +224,7 @@ export function VehicleRegistrationDisplay({ vehicleId, registrations = [], disp
           isOpen={isFormOpen}
           onClose={() => setIsFormOpen(false)}
           initialData={selectedRecord}
+          vehicleLicensePlate={vehicleLicensePlate}
         />
       )}
     </div>

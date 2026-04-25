@@ -466,6 +466,8 @@ export function VehicleOverviewDisplay({
         type={renewalType}
         currentRecordId={(renewalType === 'registration' ? vehicle.currentRegistrationId : vehicle.currentInsuranceId) || ''}
         providerName={renewalType === 'insurance' ? vehicle.currentInsuranceProvider : undefined}
+        currentExpiryDate={renewalType === 'registration' ? vehicle.registrationExpiryDate : vehicle.insuranceExpiryDate}
+        vehicleLicensePlate={vehicle.licensePlate}
       />
     </div>
   );

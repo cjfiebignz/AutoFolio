@@ -1,7 +1,12 @@
-import { IsString, IsOptional, IsNotEmpty, IsInt, Min, Max, IsDate, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsNotEmpty, IsInt, Min, Max, IsDate, IsBoolean, Allow } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateUserVehicleDto {
+  @Allow()
+  @IsBoolean()
+  @IsOptional()
+  confirmPlateChange?: boolean;
+
   @IsBoolean()
   @IsOptional()
   isDaily?: boolean;

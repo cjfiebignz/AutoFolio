@@ -66,6 +66,7 @@ export default async function RegistrationPage({
         <VehicleRegistrationDisplay 
           vehicleId={id} 
           registrations={registrations} 
+          vehicleLicensePlate={vehicle.licensePlate}
         />
 
         <div className="mt-20">
