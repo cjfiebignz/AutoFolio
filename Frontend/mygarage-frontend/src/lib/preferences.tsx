@@ -103,11 +103,19 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     if (userId && mounted) {
       getUserPreferences(userId)
         .then(data => {
-          if (data?.defaultCurrency) {
+          if (data?.defaultCurrency || data?.measurementSystem) {
             setPreferences(prev => {
-              if (prev.defaultCurrency === data.defaultCurrency) return prev;
+              const updates: Partial<UserPreferences> = {};
+              if (data.defaultCurrency && prev.defaultCurrency !== data.defaultCurrency) {
+                updates.defaultCurrency = data.defaultCurrency;
+              }
+              if (data.measurementSystem && prev.measurementSystem !== data.measurementSystem) {
+                updates.measurementSystem = data.measurementSystem as MeasurementSystem;
+              }
+
+              if (Object.keys(updates).length === 0) return prev;
               
-              const newPrefs = { ...prev, defaultCurrency: data.defaultCurrency };
+              const newPrefs = { ...prev, ...updates };
               localStorage.setItem(STORAGE_KEY, JSON.stringify(newPrefs));
               return newPrefs;
             });
@@ -126,13 +134,16 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       return newPrefs;
     });
 
-    // Sync to backend if currency changed and session exists
+    // Sync to backend if relevant fields changed and session exists
     const userId = session?.user?.id;
-    if (updates.defaultCurrency && userId) {
+    if (userId && (updates.defaultCurrency || updates.measurementSystem)) {
       try {
-        await updateUserPreferences(userId, { defaultCurrency: updates.defaultCurrency });
+        await updateUserPreferences(userId, { 
+          defaultCurrency: updates.defaultCurrency,
+          measurementSystem: updates.measurementSystem
+        });
       } catch (err) {
-        console.error('[Preferences] Failed to sync currency to cloud:', err);
+        console.error('[Preferences] Failed to sync settings to cloud:', err);
       }
     }
   }, [session?.user?.id]);

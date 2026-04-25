@@ -206,7 +206,7 @@ export default function PreferencesPage() {
         <div className="flex flex-col items-center text-center px-8">
           <p className="text-[9px] font-black uppercase tracking-[0.3em] text-dim mb-2">Sync Status</p>
           <p className="text-[10px] font-medium leading-relaxed text-dim max-w-xs italic">
-            Preferences are currently stored locally on this device. Cloud sync for cross-device settings is coming in a future update.
+            Regional and Unit settings are synced to your account. Appearance and Notification preferences are currently stored locally on this device.
           </p>
         </div>
       </div>

@@ -1,3 +1,35 @@
+export interface User {
+  id: string;
+  name?: string;
+  email?: string;
+  image?: string;
+  role: string;
+  defaultCurrency: string;
+  measurementSystem: 'metric' | 'imperial';
+  plan: 'free' | 'pro';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserPreferences {
+  defaultCurrency: string;
+  measurementSystem: 'metric' | 'imperial';
+  plan: 'free' | 'pro';
+  vehicleLimit: number;
+  currentVehicleCount: number;
+  canAddVehicle: boolean;
+  limits: {
+    maxVehicles: number;
+    maxPhotosPerVehicle: number;
+    maxDocumentSizeMB: number;
+    canUseSpecHub: boolean;
+    canExportPdf: boolean;
+    canSharePublicReport: boolean;
+    canExportZip: boolean;
+    canImportSpecCsv: boolean;
+  };
+}
+
 export interface ServiceAttachment {
   id: string;
   serviceEventId: string;
