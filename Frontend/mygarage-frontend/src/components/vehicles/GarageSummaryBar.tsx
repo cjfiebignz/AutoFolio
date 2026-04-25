@@ -16,6 +16,7 @@ import { useSession } from 'next-auth/react';
 import { DailyVehicleStreak } from '@/types/autofolio';
 import { GarageCalendarTrigger } from './GarageCalendarTrigger';
 import { usePreferences } from '@/lib/preferences';
+import { useActionConfirm } from '@/lib/use-action-confirm';
 
 interface GarageSummaryBarProps {
   vehicles: UserVehicle[];
@@ -136,8 +137,66 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
   return (
     <>
       <div className="mb-8 space-y-6">
-        {/* ROW 1: Streak | Update Odometer */}
+        {/* ROW 1: Vehicle Count | Calendar */}
         <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-card-overlay border border-border-subtle shadow-xl">
+              <span className="text-xl font-black text-foreground opacity-90">
+                {vehicles.length}
+              </span>
+            </div>
+            <div>
+              <p className="text-[8px] font-black uppercase tracking-widest text-dim leading-tight">
+                Vehicles Active
+              </p>
+              <p className="text-[10px] font-bold text-muted opacity-60 leading-tight">
+                Across your garage
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-dim hidden sm:block">Garage Pipeline</span>
+            <GarageCalendarTrigger vehicles={vehicles} />
+          </div>
+        </div>
+
+        {/* Garage Overview Entry (Always Visible) */}
+        <div 
+          onClick={() => setIsModalOpen(true)}
+          className="group cursor-pointer overflow-hidden rounded-[28px] border border-border-subtle bg-card-overlay p-1 shadow-2xl backdrop-blur-sm transition-all hover:bg-card-overlay-hover hover:border-border-strong active:scale-[0.99] animate-in fade-in slide-in-from-top-2 duration-500"
+        >
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 px-6 py-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-foreground/5 text-muted group-hover:bg-foreground/10 group-hover:text-foreground transition-all border border-border-subtle">
+              <Bell size={24} strokeWidth={1.5} />
+            </div>
+
+            <div className="flex-1 text-center sm:text-left space-y-0.5">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-0.5">
+                <h4 className="text-sm font-black uppercase tracking-widest text-foreground italic leading-none">
+                  Garage Overview
+                </h4>
+                {activeAlerts.length > 0 && (
+                  <div className="mx-auto sm:mx-0 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent">
+                    <div className="h-1 w-1 rounded-full bg-accent" />
+                    <span className="text-[8px] font-black uppercase tracking-tighter">
+                      {activeAlerts.length} item{activeAlerts.length === 1 ? '' : 's'} need attention
+                    </span>
+                  </div>
+                )}
+              </div>
+              <p className="text-[10px] font-bold text-muted uppercase tracking-widest">
+                Review vehicle health, upcoming dates, and next actions.
+              </p>
+            </div>
+
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/5 text-muted group-hover:bg-foreground/10 group-hover:text-foreground transition-all">
+              <ChevronRight size={16} strokeWidth={3} />
+            </div>
+          </div>
+        </div>
+
+        {/* ROW 2: Streak | Update Odometer */}
+        <div className="flex items-center justify-between border-t border-border-subtle pt-6 px-1">
           {/* Streak Surface */}
           <div className={`flex h-10 px-4 items-center gap-2.5 rounded-2xl border transition-all duration-500 ${
             !hasDailyVehicle 
@@ -179,79 +238,12 @@ export function GarageSummaryBar({ vehicles }: GarageSummaryBarProps) {
             </span>
           </button>
         </div>
-
-        {/* ROW 2: Vehicle Count | Calendar */}
-        <div className="flex items-center justify-between border-t border-border-subtle pt-6 px-1">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-card-overlay border border-border-subtle shadow-xl">
-              <span className="text-xl font-black text-foreground opacity-90">
-                {vehicles.length}
-              </span>
-            </div>
-            <div>
-              <p className="text-[8px] font-black uppercase tracking-widest text-dim leading-tight">
-                Vehicles Active
-              </p>
-              <p className="text-[10px] font-bold text-muted opacity-60 leading-tight">
-                Across your garage
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-dim hidden sm:block">Garage Pipeline</span>
-            <GarageCalendarTrigger vehicles={vehicles} />
-          </div>
-        </div>
-
-        {/* Main Insight Bar (Existing Alerts) */}
-        {activeAlerts.length > 0 && (
-          <div className="overflow-hidden rounded-[28px] border border-subtle bg-card-overlay p-1 shadow-2xl backdrop-blur-sm transition-colors duration-300 animate-in fade-in slide-in-from-top-2 duration-500">
-            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 px-6 py-4">
-              <div className="flex -space-x-2">
-                {criticalCount > 0 && (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-600 dark:text-red-500 ring-4 ring-background z-20">
-                    <AlertCircle size={18} strokeWidth={2.5} />
-                  </div>
-                )}
-                {warningCount > 0 && (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 ring-4 ring-background z-10">
-                    <AlertTriangle size={18} strokeWidth={2.5} />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 text-center sm:text-left space-y-0.5">
-                <p className="text-xs font-black uppercase tracking-widest text-foreground opacity-80 italic leading-none">
-                  {criticalCount > 0 
-                    ? `${criticalCount} Critical Action${criticalCount > 1 ? 's' : ''} Pending` 
-                    : `${warningCount} Attention Item${warningCount > 1 ? 's' : ''} Identified`}
-                </p>
-                <p className="text-[10px] font-bold text-muted uppercase tracking-widest">
-                  Summarized across {vehiclesWithAlerts} {vehiclesWithAlerts === 1 ? 'vehicle' : 'vehicles'}
-                </p>
-              </div>
-
-              <button 
-                onClick={() => setIsModalOpen(true)}
-                className="group flex items-center gap-3 rounded-2xl bg-foreground/[0.03] pl-4 pr-3 py-2 border border-subtle transition-all hover:bg-foreground/[0.05] hover:border-border-strong active:scale-95 shadow-lg"
-              >
-                <Bell size={12} className="text-muted group-hover:text-foreground transition-colors" />
-                <span className="text-[10px] font-black text-muted group-hover:text-foreground uppercase tracking-tighter transition-colors">
-                  {activeAlerts.length} Garage Alerts
-                </span>
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-foreground/5 text-muted group-hover:bg-foreground/10 group-hover:text-foreground transition-all">
-                  <ChevronRight size={12} strokeWidth={3} />
-                </div>
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       <GarageAlertsModal 
         isOpen={isModalOpen} 
         onClose={handleModalClose} 
-        alerts={activeAlerts} 
+        vehicles={vehicles}
       />
 
       {isUpdateModalOpen && vehicles.length > 0 && (
@@ -291,6 +283,13 @@ function OdometerUpdateModal({
   const { formatDistance } = usePreferences();
   const selectorRef = useRef<HTMLDivElement>(null);
 
+  // Odometer Warning Confirmation
+  const {
+    confirmState: showBackwardsConfirm,
+    enterConfirm: enterBackwardsConfirm,
+    cancelConfirm: cancelBackwardsConfirm
+  } = useActionConfirm();
+
   const selectedVehicle = useMemo(() => 
     vehicles.find(v => v.id === selectedVehicleId), 
     [vehicles, selectedVehicleId]
@@ -307,15 +306,24 @@ function OdometerUpdateModal({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!odometer || isSubmitting || !selectedVehicleId) return;
+
+    const newValue = parseInt(odometer, 10);
+    const currentValue = selectedVehicle?.currentOdometer;
+
+    // Backwards Check: Warn if lower than current
+    if (currentValue !== undefined && currentValue !== null && newValue < currentValue && !showBackwardsConfirm) {
+      enterBackwardsConfirm();
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
 
     try {
-      await updateVehicleOdometer(selectedVehicleId, parseInt(odometer, 10));
+      await updateVehicleOdometer(selectedVehicleId, newValue);
       onSuccess();
     } catch (err: any) {
       setError(err.message || "Failed to update odometer");
@@ -416,10 +424,47 @@ function OdometerUpdateModal({
                   type="number"
                   placeholder="Enter kms..."
                   value={odometer}
-                  onChange={(e) => setOdometer(e.target.value)}
+                  onChange={(e) => {
+                    setOdometer(e.target.value);
+                    if (showBackwardsConfirm) cancelBackwardsConfirm();
+                  }}
                   className="w-full rounded-2xl border border-border-subtle bg-foreground/[0.03] p-5 text-2xl font-black italic tracking-tighter text-foreground placeholder:text-muted/20 focus:border-blue-500/50 focus:bg-foreground/[0.05] focus:outline-none transition-all"
                 />
               </div>
+
+              {showBackwardsConfirm && (
+                <div className="rounded-[24px] border border-orange-500/20 bg-orange-500/5 p-6 animate-in zoom-in-95 duration-300 shadow-premium">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
+                      <AlertCircle size={20} />
+                    </div>
+                    <div className="flex-1 space-y-3">
+                      <div>
+                        <h4 className="text-sm font-black uppercase tracking-tight text-foreground">Odometer going backwards?</h4>
+                        <p className="text-[11px] font-medium text-muted leading-relaxed italic">
+                          This odometer reading is lower than the current recorded value. This may affect service due calculations and mileage history. Are you sure?
+                        </p>
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleSubmit()}
+                          className="flex-1 h-10 rounded-xl bg-orange-600 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-orange-500 active:scale-95 shadow-lg"
+                        >
+                          Confirm & Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelBackwardsConfirm}
+                          className="flex-1 h-10 rounded-xl bg-card-overlay border border-border-subtle text-[10px] font-black uppercase tracking-widest text-muted transition-all hover:bg-card-overlay-hover active:scale-95"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {selectedVehicle?.isDaily && (
                 <p className="text-[9px] font-medium text-blue-500/60 text-center italic">
