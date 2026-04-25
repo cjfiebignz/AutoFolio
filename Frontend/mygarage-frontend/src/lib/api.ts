@@ -244,16 +244,17 @@ export interface CreateVehicleData {
 
 export interface UpdateVehicleData {
   nickname?: string;
-  licensePlate?: string;
   make?: string;
   model?: string;
   year?: number;
+  licensePlate?: string;
   vin?: string;
   specId?: string;
   currentOdometer?: number | null;
   serviceIntervalKms?: number | null;
   serviceIntervalMonths?: number | null;
   isDaily?: boolean;
+  confirmPlateChange?: boolean;
 }
 
 export async function createVehicle(data: CreateVehicleData): Promise<UserVehicle> {
@@ -899,7 +900,7 @@ export interface UpdateUserPreferencesData {
   plan?: string;
 }
 
-export async function getUserPreferences(userId: string) {
+export async function getUserPreferences(userId: string): Promise<UserPreferences> {
   const url = `${API_BASE_URL}/users/${userId}/preferences`;
   try {
     const response = await fetch(url, {
@@ -921,7 +922,7 @@ export async function getUserPreferences(userId: string) {
   }
 }
 
-export async function updateUserPreferences(userId: string, data: UpdateUserPreferencesData) {
+export async function updateUserPreferences(userId: string, data: UpdateUserPreferencesData): Promise<UserPreferences> {
   // Explicitly construct the clean body object
   const body: any = {};
   if (data.defaultCurrency) body.defaultCurrency = data.defaultCurrency;

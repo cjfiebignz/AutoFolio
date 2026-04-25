@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from "next-auth/react";
@@ -18,6 +18,7 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
   const { data: session, status } = useSession();
   const { refreshPlan, vehicles } = usePlan();
   const safeVehicles = vehicles ?? [];
+  const formRef = useRef<HTMLFormElement>(null);
   
   const [vehicle, setVehicle] = useState<UserVehicle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -106,13 +107,26 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
     cancelSwapConfirm();
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // Plate change confirmation state
+  const {
+    confirmState: showPlateConfirm,
+    enterConfirm: enterPlateConfirm,
+    cancelConfirm: cancelPlateConfirm
+  } = useActionConfirm();
+
+  const handleSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
+    if (e) e.preventDefault();
     if (isSubmitting) return;
 
-    // MANDATORY SWAP GATE: Block submission if user enabled Daily but hasn't confirmed the swap
-    // AND another existing daily actually exists in the collection.
-    // AND the vehicle wasn't already Daily.
+    // USE FORM REF - This ensures we always get the current form data even when called from confirmation buttons
+    const form = formRef.current;
+    if (!form) return;
+
+    const formData = new FormData(form);
+    const newPlate = formData.get('licensePlate') as string;
+    const oldPlate = vehicle?.licensePlate;
+
+    // MANDATORY SWAP GATE
     if (isDaily && existingDaily && !hasConfirmedSwap && !vehicle?.isDaily) {
         if (!confirmSwap) {
           enterSwapConfirm();
@@ -122,18 +136,27 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
         return;
     }
 
+    // PLATE CHANGE GATE
+    const isPlateChanging = oldPlate && newPlate && newPlate !== oldPlate;
+    const isPlateRemoved = oldPlate && !newPlate;
+    
+    if ((isPlateChanging || isPlateRemoved) && !showPlateConfirm) {
+      enterPlateConfirm();
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
-    const formData = new FormData(e.currentTarget);
     const yearRaw = formData.get('year') as string;
     
+    // Explicitly construct update payload with defined values only
     const updateData: UpdateVehicleData = {
-      nickname: formData.get('nickname') as string,
-      make: formData.get('make') as string,
-      model: formData.get('model') as string,
+      nickname: (formData.get('nickname') as string) || undefined,
+      make: (formData.get('make') as string) || undefined,
+      model: (formData.get('model') as string) || undefined,
       year: yearRaw ? parseInt(yearRaw, 10) : undefined,
-      licensePlate: formData.get('licensePlate') as string,
+      licensePlate: newPlate,
       vin: (formData.get('vin') as string) || undefined,
       specId: (formData.get('specId') as string) || undefined,
       isDaily: isDaily
@@ -205,7 +228,7 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
           </p>
         </header>
 
-        <form onSubmit={handleSubmit} className="space-y-10">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-10">
           {error && (
             <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-xs font-bold text-red-400">
               {error}
@@ -256,6 +279,44 @@ export default function EditVehiclePage({ params }: { params: Promise<{ id: stri
               />
             </div>
           </FormSection>
+
+          {showPlateConfirm && (
+            <div className="rounded-[24px] border border-blue-500/20 bg-blue-500/5 p-6 animate-in zoom-in-95 duration-300 shadow-premium">
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+                  <AlertCircle size={20} />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <h4 className="text-sm font-black uppercase tracking-tight text-foreground">
+                      {formRef.current?.licensePlate.value ? 'Update Global Plate?' : 'Remove Global Plate?'}
+                    </h4>
+                    <p className="text-[11px] font-medium text-muted leading-relaxed italic">
+                      {!formRef.current?.licensePlate.value
+                        ? `Are you sure you want to remove the plate number for this vehicle? Future registration forms will no longer be prefilled.`
+                        : `Are you sure you want to change the plate number for this vehicle? This will update it across AutoFolio.`}
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleSubmit()}
+                      className="flex-1 h-10 rounded-xl bg-blue-600 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-blue-500 active:scale-95 shadow-lg"
+                    >
+                      {formRef.current?.licensePlate.value ? 'Confirm Change' : 'Confirm Removal'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelPlateConfirm}
+                      className="flex-1 h-10 rounded-xl bg-card-overlay border border-border-subtle text-[10px] font-black uppercase tracking-widest text-muted transition-all hover:bg-card-overlay-hover active:scale-95"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Daily Vehicle Toggle */}
           <section className="space-y-4">
