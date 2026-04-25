@@ -3,10 +3,11 @@
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
-import { X, Save, Gauge, ArrowRight, Loader2 } from 'lucide-react';
+import { X, Save, Gauge, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { updateVehicle } from '@/lib/api';
 import { formatNumber } from '@/lib/date-utils';
 import { usePreferences, KM_TO_MILES } from '@/lib/preferences';
+import { useActionConfirm } from '@/lib/use-action-confirm';
 
 interface VehicleOdometerEditorProps {
   vehicleId: string;
@@ -32,6 +33,13 @@ export function VehicleOdometerEditor({
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const { preferences, formatDistance, getUnitLabel, getDistanceValue } = usePreferences();
+
+  // Odometer Warning Confirmation
+  const {
+    confirmState: showBackwardsConfirm,
+    enterConfirm: enterBackwardsConfirm,
+    cancelConfirm: cancelBackwardsConfirm
+  } = useActionConfirm();
 
   // Mode state
   const [entryMode, setEntryMode] = useState<'direct' | 'add'>('direct');
@@ -89,12 +97,20 @@ export function VehicleOdometerEditor({
 
   const finalValue = getFinalOdometer();
 
-  const handleSave = async () => {
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setError(null);
     
     let parsed = finalValue;
     if (preferences.distanceUnit === 'miles') {
       parsed = Math.round(parsed / KM_TO_MILES);
+    }
+
+    // Backwards Check: Warn if lower than current
+    const currentKmsValue = currentOdometer || 0;
+    if (currentOdometer !== undefined && currentOdometer !== null && parsed < currentKmsValue && !showBackwardsConfirm) {
+      enterBackwardsConfirm();
+      return;
     }
 
     const data = {
@@ -173,7 +189,10 @@ export function VehicleOdometerEditor({
                   ref={inputRef}
                   type="number"
                   value={directValue}
-                  onChange={(e) => setDirectValue(e.target.value)}
+                  onChange={(e) => {
+                    setDirectValue(e.target.value);
+                    if (showBackwardsConfirm) cancelBackwardsConfirm();
+                  }}
                   placeholder={`e.g. ${preferences.distanceUnit === 'miles' ? '28000' : '45000'}`}
                   className="h-16 w-full rounded-2xl border border-border-subtle bg-foreground/[0.02] px-6 text-2xl font-black italic tracking-tight text-foreground placeholder:text-muted/10 focus:border-border-strong focus:bg-foreground/[0.04] focus:outline-none transition-all"
                 />
@@ -209,7 +228,10 @@ export function VehicleOdometerEditor({
                       ref={addInputRef}
                       type="number"
                       value={travelledAmount}
-                      onChange={(e) => setTravelledAmount(e.target.value)}
+                      onChange={(e) => {
+                        setTravelledAmount(e.target.value);
+                        if (showBackwardsConfirm) cancelBackwardsConfirm();
+                      }}
                       placeholder="e.g. 1459"
                       className="h-14 w-full rounded-2xl border border-blue-500/20 bg-blue-500/[0.03] px-6 text-xl font-black italic tracking-tight text-blue-600 dark:text-blue-400 placeholder:text-blue-500/20 focus:border-blue-500/40 focus:outline-none transition-all"
                     />
@@ -230,6 +252,40 @@ export function VehicleOdometerEditor({
               <span className="text-[10px] font-black uppercase tracking-widest text-muted opacity-40">{getUnitLabel()}</span>
             </div>
           </div>
+
+          {showBackwardsConfirm && (
+            <div className="rounded-[24px] border border-orange-500/20 bg-orange-500/5 p-6 animate-in zoom-in-95 duration-300 shadow-premium">
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
+                  <AlertCircle size={20} />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <h4 className="text-sm font-black uppercase tracking-tight text-foreground">Odometer going backwards?</h4>
+                    <p className="text-[11px] font-medium text-muted leading-relaxed italic">
+                      This odometer reading is lower than the current recorded value. This may affect service due calculations and mileage history. Are you sure?
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleSave()}
+                      className="flex-1 h-10 rounded-xl bg-orange-600 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-orange-500 active:scale-95 shadow-lg"
+                    >
+                      Confirm & Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelBackwardsConfirm}
+                      className="flex-1 h-10 rounded-xl bg-card-overlay border border-border-subtle text-[10px] font-black uppercase tracking-widest text-muted transition-all hover:bg-card-overlay-hover active:scale-95"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center gap-4">
             <button

@@ -28,6 +28,18 @@ export function InsuranceForm({ vehicleId, isOpen, onClose, initialData }: Insur
   const [paymentFrequency, setPaymentFrequency] = useState(initialData?.paymentFrequency || 'annually');
   const [isCurrent, setIsCurrent] = useState(initialData?.isCurrent ?? true);
   const [notes, setNotes] = useState(initialData?.notes || '');
+  const [durationMonths, setDurationMonths] = useState('');
+
+  // Local helper for duration calculation
+  const handleDurationChange = (monthsStr: string) => {
+    setDurationMonths(monthsStr);
+    const months = parseInt(monthsStr, 10);
+    if (months > 0 && months < 120) { // Limit to 10 years max for safety
+      const date = new Date();
+      date.setMonth(date.getMonth() + months);
+      setExpiryDate(date.toISOString().split('T')[0]);
+    }
+  };
 
   // Reset form when opening/closing or when initialData changes
   useEffect(() => {
@@ -183,6 +195,27 @@ export function InsuranceForm({ vehicleId, isOpen, onClose, initialData }: Insur
                   required
                   className="w-full h-14 rounded-2xl border border-border-subtle bg-card-overlay px-6 text-sm font-bold text-foreground focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all shadow-inner"
                 />
+
+                {/* Duration Helper */}
+                <div className="flex items-center gap-3 px-1">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-dim italic">Set by duration:</span>
+                  <div className="flex gap-1">
+                    {[3, 6, 12, 24].map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => handleDurationChange(m.toString())}
+                        className={`px-2 py-1 rounded-md border text-[9px] font-black transition-all ${
+                          durationMonths === m.toString() 
+                            ? 'bg-accent/20 border-accent text-accent' 
+                            : 'bg-card-overlay border-border-subtle text-muted hover:border-muted'
+                        }`}
+                      >
+                        {m}M
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-3">
