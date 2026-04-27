@@ -66,6 +66,7 @@ export function VehicleOdometerEditor({
       setEntryMode('direct');
       setBaseSource('current');
       setError(null);
+      cancelBackwardsConfirm();
 
       // Focus main input on open
       const timer = setTimeout(() => {
@@ -75,6 +76,8 @@ export function VehicleOdometerEditor({
       return () => clearTimeout(timer);
     } else if (!isOpen) {
       wasOpen.current = false;
+      setError(null);
+      cancelBackwardsConfirm();
     }
   }, [isOpen, currentOdometer, getDistanceValue]);
 
@@ -102,13 +105,24 @@ export function VehicleOdometerEditor({
     setError(null);
     
     let parsed = finalValue;
-    if (preferences.distanceUnit === 'miles') {
+    if (preferences.measurementSystem === 'imperial') {
       parsed = Math.round(parsed / KM_TO_MILES);
     }
 
-    // Backwards Check: Warn if lower than current
+    // Backwards Check
     const currentKmsValue = currentOdometer || 0;
+    const isMainServiceBaseline = baselineSource === 'main_service';
+
+    // 1. BLOCK: Below main service baseline (Priority)
+    if (isMainServiceBaseline && baselineKms !== null && baselineKms !== undefined && parsed < baselineKms) {
+      cancelBackwardsConfirm();
+      setError(`Cannot set odometer below the latest main service record. To correct this, edit the service log directly.`);
+      return;
+    }
+
+    // 2. WARN: General backwards correction
     if (currentOdometer !== undefined && currentOdometer !== null && parsed < currentKmsValue && !showBackwardsConfirm) {
+      setError(null);
       enterBackwardsConfirm();
       return;
     }
@@ -154,15 +168,22 @@ export function VehicleOdometerEditor({
 
         <div className="p-8 space-y-6">
           {error && (
-            <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-[11px] font-bold uppercase tracking-widest text-red-600 dark:text-red-400">
-              {error}
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-[11px] font-bold uppercase tracking-widest text-red-600 dark:text-red-400 italic leading-relaxed">
+              <div className="flex items-start gap-3">
+                <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
             </div>
           )}
 
           {/* Mode Selector */}
           <div className="flex p-1 rounded-2xl bg-foreground/[0.03] border border-border-subtle">
             <button
-              onClick={() => setEntryMode('direct')}
+              onClick={() => {
+                setEntryMode('direct');
+                setError(null);
+                cancelBackwardsConfirm();
+              }}
               className={`flex-1 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${entryMode === 'direct' ? 'bg-surface text-foreground shadow-sm' : 'text-muted opacity-40 hover:text-foreground'}`}
             >
               Direct Entry
@@ -170,6 +191,8 @@ export function VehicleOdometerEditor({
             <button
               onClick={() => {
                 setEntryMode('add');
+                setError(null);
+                cancelBackwardsConfirm();
                 setTimeout(() => addInputRef.current?.focus(), 10);
               }}
               className={`flex-1 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${entryMode === 'add' ? 'bg-surface text-foreground shadow-sm' : 'text-muted opacity-40 hover:text-foreground'}`}
@@ -191,9 +214,10 @@ export function VehicleOdometerEditor({
                   value={directValue}
                   onChange={(e) => {
                     setDirectValue(e.target.value);
+                    setError(null);
                     if (showBackwardsConfirm) cancelBackwardsConfirm();
                   }}
-                  placeholder={`e.g. ${preferences.distanceUnit === 'miles' ? '28000' : '45000'}`}
+                  placeholder={`e.g. ${preferences.measurementSystem === 'imperial' ? '28000' : '45000'}`}
                   className="h-16 w-full rounded-2xl border border-border-subtle bg-foreground/[0.02] px-6 text-2xl font-black italic tracking-tight text-foreground placeholder:text-muted/10 focus:border-border-strong focus:bg-foreground/[0.04] focus:outline-none transition-all"
                 />
               </div>
@@ -203,14 +227,22 @@ export function VehicleOdometerEditor({
                   <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted opacity-40 px-1">Select Baseline</p>
                   <div className="grid grid-cols-2 gap-2">
                     <button
-                      onClick={() => setBaseSource('current')}
+                      onClick={() => {
+                        setBaseSource('current');
+                        setError(null);
+                        cancelBackwardsConfirm();
+                      }}
                       className={`h-11 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${baseSource === 'current' ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' : 'bg-card-overlay border-border-subtle text-muted opacity-40 hover:bg-foreground/5'}`}
                     >
                       Current ({formatNumber(currentDisplayVal)})
                     </button>
                     <button
                       disabled={!hasMainBaseline}
-                      onClick={() => setBaseSource('last_main')}
+                      onClick={() => {
+                        setBaseSource('last_main');
+                        setError(null);
+                        cancelBackwardsConfirm();
+                      }}
                       className={`h-11 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${!hasMainBaseline ? 'opacity-20 grayscale' : baseSource === 'last_main' ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' : 'bg-card-overlay border-border-subtle text-muted opacity-40 hover:bg-foreground/5'}`}
                     >
                       Last Main ({formatNumber(lastMainDisplayVal)})
@@ -230,6 +262,7 @@ export function VehicleOdometerEditor({
                       value={travelledAmount}
                       onChange={(e) => {
                         setTravelledAmount(e.target.value);
+                        setError(null);
                         if (showBackwardsConfirm) cancelBackwardsConfirm();
                       }}
                       placeholder="e.g. 1459"
@@ -297,8 +330,8 @@ export function VehicleOdometerEditor({
             </button>
             <button
               type="button"
-              onClick={handleSave}
-              disabled={isPending}
+              onClick={() => handleSave()}
+              disabled={isPending || (!!error && !showBackwardsConfirm)}
               className="flex-[2] flex h-14 items-center justify-center gap-3 rounded-2xl bg-foreground text-[10px] font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
             >
               {isPending ? <Loader2 className="animate-spin" size={16} /> : (

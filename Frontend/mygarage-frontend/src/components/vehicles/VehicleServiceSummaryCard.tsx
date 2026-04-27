@@ -215,6 +215,8 @@ export function VehicleServiceSummaryCard({ vehicleId, summary }: VehicleService
         key={`settings-editor-${vehicleId}`}
         vehicleId={vehicleId}
         currentOdometer={currentOdometer}
+        baselineKms={baselineKms}
+        baselineSource={baselineSource}
         serviceIntervalKms={serviceIntervalKms || undefined}
         serviceIntervalMonths={serviceIntervalMonths || undefined}
         isOpen={isEditorOpen}

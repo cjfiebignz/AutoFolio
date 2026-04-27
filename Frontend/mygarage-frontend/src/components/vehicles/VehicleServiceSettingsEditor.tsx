@@ -11,6 +11,8 @@ import { useActionConfirm } from '@/lib/use-action-confirm';
 interface VehicleServiceSettingsEditorProps {
   vehicleId: string;
   currentOdometer?: number | null;
+  baselineKms?: number | null;
+  baselineSource?: string | null;
   serviceIntervalKms?: number | null;
   serviceIntervalMonths?: number | null;
   isOpen: boolean;
@@ -20,6 +22,8 @@ interface VehicleServiceSettingsEditorProps {
 export function VehicleServiceSettingsEditor({
   vehicleId,
   currentOdometer,
+  baselineKms,
+  baselineSource,
   serviceIntervalKms,
   serviceIntervalMonths,
   isOpen,
@@ -29,7 +33,7 @@ export function VehicleServiceSettingsEditor({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
-  const { preferences, getDistanceValue, getUnitLabel } = usePreferences();
+  const { preferences, getDistanceValue, getUnitLabel, formatDistance } = usePreferences();
 
   // Odometer Warning Confirmation
   const {
@@ -52,6 +56,7 @@ export function VehicleServiceSettingsEditor({
       setIntervalKms(getDistanceValue(serviceIntervalKms)?.toString() ?? "");
       setIntervalMonths(serviceIntervalMonths?.toString() ?? "");
       setError(null);
+      cancelBackwardsConfirm();
     }
   }, [isOpen, currentOdometer, serviceIntervalKms, serviceIntervalMonths, getDistanceValue]);
 
@@ -69,14 +74,25 @@ export function VehicleServiceSettingsEditor({
     let odometerValue = parseOrNull(odometer);
     let intervalKmsValue = parseOrNull(intervalKms);
 
-    if (preferences.distanceUnit === 'miles') {
+    if (preferences.measurementSystem === 'imperial') {
       if (odometerValue !== null) odometerValue = Math.round(odometerValue / KM_TO_MILES);
       if (intervalKmsValue !== null) intervalKmsValue = Math.round(intervalKmsValue / KM_TO_MILES);
     }
 
-    // Backwards Check: Warn if lower than current
+    // Backwards Check
     const currentKmsValue = currentOdometer || 0;
+    const isMainServiceBaseline = baselineSource === 'main_service';
+
+    // 1. BLOCK: Below main service baseline (Priority)
+    if (isMainServiceBaseline && baselineKms !== null && baselineKms !== undefined && odometerValue !== null && odometerValue < baselineKms) {
+      cancelBackwardsConfirm();
+      setError(`Cannot set odometer below the latest main service record. To correct this, edit the service log directly.`);
+      return;
+    }
+
+    // 2. WARN: General backwards correction
     if (currentOdometer !== undefined && currentOdometer !== null && odometerValue !== null && odometerValue < currentKmsValue && !showBackwardsConfirm) {
+      setError(null);
       enterBackwardsConfirm();
       return;
     }
@@ -124,8 +140,11 @@ export function VehicleServiceSettingsEditor({
 
         <div className="p-8 space-y-8">
           {error && (
-            <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-[11px] font-bold uppercase tracking-widest text-red-600 dark:text-red-400">
-              {error}
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-[11px] font-bold uppercase tracking-widest text-red-600 dark:text-red-400 italic leading-relaxed">
+              <div className="flex items-start gap-3">
+                <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
             </div>
           )}
 
@@ -136,24 +155,31 @@ export function VehicleServiceSettingsEditor({
               value={odometer}
               onChange={(val) => {
                 setOdometer(val);
+                setError(null);
                 if (showBackwardsConfirm) cancelBackwardsConfirm();
               }}
-              placeholder={`e.g. ${preferences.distanceUnit === 'miles' ? '28000' : '45000'}`}
+              placeholder={`e.g. ${preferences.measurementSystem === 'imperial' ? '28000' : '45000'}`}
             />
             
             <InputField 
               label={`Service Interval (${getUnitLabel()})`} 
               icon={<RefreshCw size={14} />} 
               value={intervalKms}
-              onChange={setIntervalKms}
-              placeholder={`e.g. ${preferences.distanceUnit === 'miles' ? '6000' : '10000'}`}
+              onChange={(val) => {
+                setIntervalKms(val);
+                setError(null);
+              }}
+              placeholder={`e.g. ${preferences.measurementSystem === 'imperial' ? '6000' : '10000'}`}
             />
 
             <InputField 
               label="Service Interval (Months)" 
               icon={<Calendar size={14} />} 
               value={intervalMonths}
-              onChange={setIntervalMonths}
+              onChange={(val) => {
+                setIntervalMonths(val);
+                setError(null);
+              }}
               placeholder="e.g. 12"
             />
           </div>
@@ -203,7 +229,7 @@ export function VehicleServiceSettingsEditor({
             <button
               type="button"
               onClick={() => handleSave()}
-              disabled={isPending}
+              disabled={isPending || (!!error && !showBackwardsConfirm)}
               className="flex-[2] flex h-14 items-center justify-center gap-3 rounded-2xl bg-foreground text-[10px] font-black uppercase tracking-widest text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
             >
               {isPending ? <Loader2 className="animate-spin" size={16} /> : (
