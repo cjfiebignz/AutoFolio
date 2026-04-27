@@ -51,7 +51,7 @@ export function ServiceForm({ vehicleId, vehicleNickname, initialData, serviceId
       eventDate: new Date(formData.get('date') as string).toISOString(),
       serviceType: serviceType,
       isMainService: isMainService,
-      odometerAtEvent: odometerRaw ? (preferences.distanceUnit === 'miles' ? Math.round(Number(odometerRaw) / KM_TO_MILES) : Number(odometerRaw)) : undefined,
+      odometerAtEvent: odometerRaw ? (preferences.measurementSystem === 'imperial' ? Math.round(Number(odometerRaw) / KM_TO_MILES) : Number(odometerRaw)) : undefined,
       totalCost: costRaw ? Number(costRaw) : undefined,
       notes: notesRaw || undefined,
     };

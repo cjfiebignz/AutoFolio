@@ -35,7 +35,7 @@ export default function EditDocumentPage({ params }: { params: Promise<{ id: str
     );
   }
 
-  if (error || !documentData) {
+  if (error || !document) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface px-6 text-center transition-colors duration-300">
         <p className="text-muted mb-4 text-sm font-bold uppercase tracking-widest">{error || 'Document not found'}</p>

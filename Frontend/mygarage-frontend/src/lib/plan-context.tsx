@@ -72,7 +72,6 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         canExportPdf: prefs.limits?.canExportPdf ?? baseEntitlements.canExportPdf,
         canExportZip: prefs.limits?.canExportZip ?? baseEntitlements.canExportZip,
         canSharePublicReport: prefs.limits?.canSharePublicReport ?? baseEntitlements.canSharePublicReport,
-        canSharePublicReport: prefs.limits?.canSharePublicReport ?? baseEntitlements.canSharePublicReport,
         canImportSpecCsv: prefs.limits?.canImportSpecCsv ?? baseEntitlements.canImportSpecCsv,
       };
 

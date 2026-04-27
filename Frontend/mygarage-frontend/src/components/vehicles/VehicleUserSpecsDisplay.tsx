@@ -9,6 +9,7 @@ import { Plus, Trash2, Edit3, Save, X, Settings2, Loader2, ChevronDown, FileText
 import { VehicleViewModel } from '@/lib/mappers/vehicle';
 import { usePreferences } from '@/lib/preferences';
 import { usePlan } from '@/lib/plan-context';
+import { useVehicleLimitGate } from '@/lib/limit-gate';
 import { ImportSpecsModal } from './ImportSpecsModal';
 
 interface VehicleUserSpecsDisplayProps {
@@ -59,7 +60,8 @@ export function VehicleUserSpecsDisplay({
   currentKms
 }: VehicleUserSpecsDisplayProps) {
   const router = useRouter();
-  const { plan, triggerUpgrade, checkLimit } = usePlan();
+  const { plan, triggerUpgrade } = usePlan();
+  const { checkLimit } = useVehicleLimitGate();
   const [, startTransition] = useTransition();
   const [isAdding, setIsAdding] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -722,7 +724,7 @@ function ReferenceListModal({
 }) {
   const [mounted, setMounted] = useState(false);
   const { formatDistance } = usePreferences();
-  const { checkLimit } = usePlan();
+  const { checkLimit } = useVehicleLimitGate();
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
