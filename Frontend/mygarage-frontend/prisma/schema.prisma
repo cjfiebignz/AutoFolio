@@ -27,8 +27,16 @@ model User {
   id            String    @id @default(uuid())
   name          String?
   email         String?   @unique
+  email         String?   @unique
   emailVerified DateTime?
-  image         String?
+
+  // Auth foundational fields (Mirrored for compatibility only)
+  // Backend/prisma/schema.prisma remains authoritative.
+  passwordHash    String?
+  deletedAt       DateTime?
+  emailVerifiedAt DateTime?
+  pendingEmail    String?
+
   role          String    @default("user") // "user" or "admin"
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

@@ -8,7 +8,9 @@ import {
   ImportCommitResponse,
   SavedPart,
   PartPreset,
-  DailyVehicleStreak
+  DailyVehicleStreak,
+  UserPreferences,
+  AccountMetadata
 } from '@/types/autofolio';
 
 const API_BASE_URL = (() => {
@@ -897,6 +899,7 @@ export async function renewRegistration(vehicleId: string, registrationId: strin
 export interface UpdateUserPreferencesData {
   defaultCurrency?: string;
   measurementSystem?: string;
+  appearance?: string;
   plan?: string;
 }
 
@@ -927,6 +930,7 @@ export async function updateUserPreferences(userId: string, data: UpdateUserPref
   const body: any = {};
   if (data.defaultCurrency) body.defaultCurrency = data.defaultCurrency;
   if (data.measurementSystem) body.measurementSystem = data.measurementSystem;
+  if (data.appearance) body.appearance = data.appearance;
   if (data.plan) body.plan = data.plan;
 
   const response = await fetch(`${API_BASE_URL}/users/${userId}/preferences`, {
@@ -1131,7 +1135,9 @@ export async function createSavedPart(vehicleId: string, data: CreateSavedPartDa
 export async function updateSavedPart(vehicleId: string, partId: string, data: Partial<CreateSavedPartData>) {
   const response = await fetch(`${API_BASE_URL}/user-vehicles/${vehicleId}/parts/${partId}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
   if (!response.ok) {
@@ -1247,4 +1253,171 @@ export async function exportShoppingListPdf(vehicleId: string, data: ShoppingLis
     throw new Error(error.message || 'Failed to export shopping list PDF');
   }
   return response.blob();
+}
+
+// --- Authentication API Helpers ---
+
+export interface RegisterData {
+  email: string;
+  password: string;
+  name?: string;
+}
+
+export interface ChangePasswordData {
+  userId: string;
+  currentPassword?: string;
+  newPassword: string;
+}
+
+export interface AuthResponse {
+  id: string;
+  email: string;
+  name?: string;
+  role: string;
+  plan: string;
+  createdAt: string;
+}
+
+export interface UpdateAccountData {
+  userId: string;
+  name?: string;
+  email?: string;
+}
+
+export async function registerUser(data: RegisterData): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const error: any = new Error(errorData.message || 'Registration failed');
+    error.status = response.status;
+    throw error;
+  }
+  return response.json();
+}
+
+export async function verifyEmail(token: string): Promise<AccountMetadata> {
+  const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Verification failed');
+  }
+  return response.json();
+}
+
+export async function resendVerificationEmail(userId: string, purpose?: string): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/auth/resend-verification-email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, purpose }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to resend verification email');
+  }
+  return response.json();
+}
+
+export async function changePassword(data: ChangePasswordData): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to change password');
+  }
+  return response.json();
+}
+
+export async function setPassword(data: Omit<ChangePasswordData, 'currentPassword'>): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/auth/set-password`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to set password');
+  }
+  return response.json();
+}
+
+export async function deleteAccount(userId: string): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/auth/account`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to delete account');
+  }
+  return response.json();
+}
+
+export async function getAccountMetadata(userId: string): Promise<AccountMetadata> {
+  const response = await fetch(`${API_BASE_URL}/auth/account/${userId}`);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to fetch account metadata');
+  }
+  return response.json();
+}
+
+export async function updateAccount(data: UpdateAccountData): Promise<AccountMetadata> {
+  const response = await fetch(`${API_BASE_URL}/auth/account`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to update account details');
+  }
+  return response.json();
+}
+
+export async function cancelEmailChange(userId: string): Promise<AccountMetadata> {
+  const response = await fetch(`${API_BASE_URL}/auth/cancel-email-change`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to cancel email change');
+  }
+  return response.json();
+}
+
+export async function requestPasswordReset(email: string): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/auth/request-password-reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  // Always return success on the frontend to prevent email enumeration
+  return { success: true, message: 'If an account exists for this email, we’ll send a reset link.' };
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, newPassword }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to reset password');
+  }
+  return response.json();
 }

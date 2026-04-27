@@ -19,23 +19,57 @@ model User {
   id              String    @id @default(uuid())
   name            String?
   email           String?   @unique
-  emailVerified   DateTime?
+  emailVerified   DateTime? // Legacy field from NextAuth
+  emailVerifiedAt DateTime? // New authoritative field
+  pendingEmail    String?
   image           String?
+  passwordHash    String?
+  deletedAt       DateTime?
   role            String    @default("user") // "user" or "admin"
   defaultCurrency String    @default("AUD")
   measurementSystem String  @default("metric") // "metric" or "imperial"
+  appearance      String    @default("dark") // "dark", "light", or "system"
   plan            AccountPlan @default(free)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   accounts        Account[]
   sessions        Session[]
   vehicles        UserVehicle[] @relation("UserVehicles")
-  
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+
   // Daily Vehicle Reference (Canonical Source of Truth)
   dailyVehicleId  String?       @unique
   dailyVehicle    UserVehicle?  @relation("DailyVehicle", fields: [dailyVehicleId], references: [id], onDelete: SetNull)
-}
+  }
 
+  model EmailVerificationToken {
+  id           String   @id @default(uuid())
+  userId       String
+  tokenHash    String   @unique
+  email        String
+  purpose      String   // 'registration' | 'email_change'
+  expiresAt    DateTime
+  usedAt       DateTime?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  }
+
+  model PasswordResetToken {
+  id           String   @id @default(uuid())
+  userId       String
+  tokenHash    String   @unique
+  expiresAt    DateTime
+  usedAt       DateTime?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  }
 model Account {
   id                 String  @id @default(uuid())
   userId             String

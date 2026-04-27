@@ -14,6 +14,7 @@ export interface User {
 export interface UserPreferences {
   defaultCurrency: string;
   measurementSystem: 'metric' | 'imperial';
+  appearance?: 'dark' | 'light' | 'system';
   plan: 'free' | 'pro';
   vehicleLimit: number;
   currentVehicleCount: number;
@@ -420,4 +421,14 @@ export interface DailyVehicleStreak {
   dailyVehicleId: string | null;
   dailyVehicleNickname: string | null;
   currentOdometerKms: number | null;
+}
+
+export interface AccountMetadata {
+  id: string;
+  email: string;
+  name?: string;
+  hasPassword: boolean;
+  emailVerifiedAt: string | null;
+  pendingEmail: string | null;
+  createdAt: string;
 }
