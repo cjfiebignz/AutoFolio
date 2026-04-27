@@ -295,6 +295,14 @@ function OdometerUpdateModal({
     [vehicles, selectedVehicleId]
   );
 
+  // Reset validation state on open or vehicle change
+  useEffect(() => {
+    if (isOpen) {
+      setError(null);
+      cancelBackwardsConfirm();
+    }
+  }, [isOpen, selectedVehicleId]);
+
   // Close selector when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -312,9 +320,19 @@ function OdometerUpdateModal({
 
     const newValue = parseInt(odometer, 10);
     const currentValue = selectedVehicle?.currentOdometer;
+    const baselineKms = selectedVehicle?.serviceSummary?.baselineKms;
+    const isMainServiceBaseline = selectedVehicle?.serviceSummary?.baselineSource === 'main_service';
 
-    // Backwards Check: Warn if lower than current
+    // 1. BLOCK: Below main service baseline (Priority)
+    if (isMainServiceBaseline && baselineKms !== null && baselineKms !== undefined && newValue < baselineKms) {
+      cancelBackwardsConfirm();
+      setError(`Cannot set odometer below the latest main service record. To correct this, edit the service log directly.`);
+      return;
+    }
+
+    // 2. WARN: General backwards correction
     if (currentValue !== undefined && currentValue !== null && newValue < currentValue && !showBackwardsConfirm) {
+      setError(null);
       enterBackwardsConfirm();
       return;
     }
@@ -426,6 +444,7 @@ function OdometerUpdateModal({
                   value={odometer}
                   onChange={(e) => {
                     setOdometer(e.target.value);
+                    setError(null);
                     if (showBackwardsConfirm) cancelBackwardsConfirm();
                   }}
                   className="w-full rounded-2xl border border-border-subtle bg-foreground/[0.03] p-5 text-2xl font-black italic tracking-tighter text-foreground placeholder:text-muted/20 focus:border-blue-500/50 focus:bg-foreground/[0.05] focus:outline-none transition-all"
@@ -472,11 +491,24 @@ function OdometerUpdateModal({
                 </p>
               )}
 
-              {error && <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest text-center">{error}</p>}
+              {error && (
+                <div className="rounded-[24px] border border-red-500/20 bg-red-500/5 p-6 animate-in zoom-in-95 duration-300">
+                   <div className="flex items-start gap-4 text-center sm:text-left">
+                    <div className="mx-auto sm:mx-0 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-500">
+                      <AlertCircle size={20} />
+                    </div>
+                    <div className="flex-1">
+                       <p className="text-[11px] font-bold text-red-500 leading-relaxed uppercase tracking-widest italic">
+                        {error}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <button
                 type="submit"
-                disabled={!odometer || isSubmitting}
+                disabled={!odometer || isSubmitting || (!!error && !showBackwardsConfirm)}
                 className="w-full flex h-16 items-center justify-center rounded-[24px] bg-foreground text-background text-sm font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-30"
               >
                 {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : "Record Update"}

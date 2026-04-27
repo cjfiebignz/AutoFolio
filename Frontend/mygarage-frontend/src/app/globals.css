@@ -62,6 +62,21 @@
   --premium-shadow: 0 10px 30px -5px rgba(2, 6, 23, 0.1), 0 4px 6px -4px rgba(2, 6, 23, 0.1);
 }
 
+/* Theme-aware Form Control Fixes */
+[data-theme='dark'] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+[data-theme='dark'] select option {
+  background-color: var(--surface);
+  color: var(--foreground);
+}
+
+[data-theme='light'] select option {
+  background-color: var(--surface);
+  color: var(--foreground);
+}
+
 html,
 body {
   min-height: 100%;

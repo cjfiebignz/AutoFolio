@@ -220,7 +220,7 @@ export function RenewalModal({
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted ml-1">New Expiry Date</label>
                   <div className="relative">
-                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-muted pointer-events-none" size={18} />
                     <input
                       type="date"
                       required

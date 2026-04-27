@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
-import { X, Save, Globe, Calendar, CreditCard, FileText, Loader2, Landmark, AlertCircle } from 'lucide-react';
+import { X, Save, Globe, Calendar, CreditCard, FileText, Loader2, Landmark, AlertCircle, ChevronDown } from 'lucide-react';
 import { createRegistration, updateRegistration } from '@/lib/api';
 import { useActionConfirm } from '@/lib/use-action-confirm';
 
@@ -231,7 +231,7 @@ export function RegistrationForm({ vehicleId, isOpen, onClose, initialData, vehi
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <label className="text-[11px] font-black uppercase tracking-[0.2em] text-muted ml-1 flex items-center gap-2">
-                  <Calendar size={12} />
+                  <Calendar size={12} className="pointer-events-none" />
                   2. Expiry Date
                 </label>
                 <input

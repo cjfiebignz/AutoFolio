@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
-import { X, Save, Shield, Calendar, CreditCard, FileText, Loader2 } from 'lucide-react';
+import { X, Save, Shield, Calendar, CreditCard, FileText, Loader2, ChevronDown } from 'lucide-react';
 import { createInsurance, updateInsurance } from '@/lib/api';
 
 interface InsuranceFormProps {
@@ -153,31 +153,37 @@ export function InsuranceForm({ vehicleId, isOpen, onClose, initialData }: Insur
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <label className="text-[11px] font-black uppercase tracking-[0.2em] text-muted ml-1">Policy Type</label>
-                <select
-                  value={policyType}
-                  onChange={(e) => setPolicyType(e.target.value)}
-                  className="w-full h-14 rounded-2xl border border-border-subtle bg-card-overlay px-6 text-[10px] font-black uppercase tracking-widest text-foreground focus:border-accent outline-none transition-all shadow-inner appearance-none cursor-pointer"
-                >
-                  <option value="comprehensive">Comprehensive</option>
-                  <option value="third_party">Third Party Only</option>
-                  <option value="third_party_fire_theft">Third Party, Fire & Theft</option>
-                  <option value="liability">Liability Only</option>
-                  <option value="other">Other</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={policyType}
+                    onChange={(e) => setPolicyType(e.target.value)}
+                    className="w-full h-14 rounded-2xl border border-border-subtle bg-card-overlay px-6 text-[10px] font-black uppercase tracking-widest text-foreground focus:border-accent outline-none transition-all shadow-inner appearance-none cursor-pointer"
+                  >
+                    <option value="comprehensive">Comprehensive</option>
+                    <option value="third_party">Third Party Only</option>
+                    <option value="third_party_fire_theft">Third Party, Fire & Theft</option>
+                    <option value="liability">Liability Only</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <ChevronDown size={14} className="absolute right-6 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                </div>
               </div>
 
               <div className="space-y-3">
                 <label className="text-[11px] font-black uppercase tracking-[0.2em] text-muted ml-1">Payment Frequency</label>
-                <select
-                  value={paymentFrequency}
-                  onChange={(e) => setPaymentFrequency(e.target.value)}
-                  className="w-full h-14 rounded-2xl border border-border-subtle bg-card-overlay px-6 text-[10px] font-black uppercase tracking-widest text-foreground focus:border-accent outline-none transition-all shadow-inner appearance-none cursor-pointer"
-                >
-                  <option value="annually">Annually</option>
-                  <option value="semi_annually">Semi-Annually</option>
-                  <option value="quarterly">Quarterly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={paymentFrequency}
+                    onChange={(e) => setPaymentFrequency(e.target.value)}
+                    className="w-full h-14 rounded-2xl border border-border-subtle bg-card-overlay px-6 text-[10px] font-black uppercase tracking-widest text-foreground focus:border-accent outline-none transition-all shadow-inner appearance-none cursor-pointer"
+                  >
+                    <option value="annually">Annually</option>
+                    <option value="semi_annually">Semi-Annually</option>
+                    <option value="quarterly">Quarterly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                  <ChevronDown size={14} className="absolute right-6 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                </div>
               </div>
             </div>
 
