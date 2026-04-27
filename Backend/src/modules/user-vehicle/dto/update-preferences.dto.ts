@@ -11,6 +11,10 @@ export class UpdatePreferencesDto {
   @IsOptional()
   measurementSystem?: string;
 
+  @IsString()
+  @IsOptional()
+  appearance?: string;
+
   @IsEnum(AccountPlan)
   @IsOptional()
   plan?: AccountPlan;

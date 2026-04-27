@@ -26,7 +26,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   },
 };
 
-const STORAGE_KEY = 'autofolio_user_preferences';
+const STORAGE_KEY_PREFIX = 'autofolio_prefs_';
 
 export const KM_TO_MILES = 0.621371;
 
@@ -54,27 +54,27 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [mounted, setMounted] = useState(false);
   const { data: session } = useSession();
+  const userId = session?.user?.id;
 
-  // 1. Initial Load from LocalStorage (Immediate feedback)
+  // 1. Initial Load & Cleanup
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        
-        // Handle legacy data migration if needed
-        if (parsed.distanceUnit) {
-          parsed.measurementSystem = parsed.distanceUnit === 'miles' ? 'imperial' : 'metric';
-          delete parsed.distanceUnit;
-        }
+    setMounted(true);
+    
+    // Clear old global key if exists to clean up cross-account contamination
+    localStorage.removeItem('autofolio_user_preferences');
 
-        setPreferences(prev => ({ ...prev, ...parsed }));
-      } catch (e) {
-        console.error('Failed to parse preferences', e);
+    if (userId) {
+      const stored = localStorage.getItem(`${STORAGE_KEY_PREFIX}${userId}`);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setPreferences(prev => ({ ...prev, ...parsed }));
+        } catch (e) {
+          console.error('Failed to parse preferences', e);
+        }
       }
     }
-    setMounted(true);
-  }, []);
+  }, [userId]);
 
   // 3. Apply Theme to Document
   useEffect(() => {
@@ -87,7 +87,6 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
     root.setAttribute('data-theme', effectiveTheme);
     
-    // Also apply dark/light classes for standard Tailwind variants if needed
     if (effectiveTheme === 'dark') {
       root.classList.add('dark');
       root.classList.remove('light');
@@ -99,11 +98,10 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   // 2. Load from Backend when session is available
   useEffect(() => {
-    const userId = session?.user?.id;
     if (userId && mounted) {
       getUserPreferences(userId)
         .then(data => {
-          if (data?.defaultCurrency || data?.measurementSystem) {
+          if (data) {
             setPreferences(prev => {
               const updates: Partial<UserPreferences> = {};
               if (data.defaultCurrency && prev.defaultCurrency !== data.defaultCurrency) {
@@ -112,11 +110,15 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
               if (data.measurementSystem && prev.measurementSystem !== data.measurementSystem) {
                 updates.measurementSystem = data.measurementSystem as MeasurementSystem;
               }
+              // Sync appearance -> theme
+              if (data.appearance && prev.theme !== data.appearance) {
+                updates.theme = data.appearance as any;
+              }
 
               if (Object.keys(updates).length === 0) return prev;
               
               const newPrefs = { ...prev, ...updates };
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(newPrefs));
+              localStorage.setItem(`${STORAGE_KEY_PREFIX}${userId}`, JSON.stringify(newPrefs));
               return newPrefs;
             });
           }
@@ -124,29 +126,34 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         .catch((err) => {
           console.error('[Preferences] Failed to load cloud settings:', err);
         });
+    } else if (!userId && mounted) {
+      // Reset to defaults if logged out
+      setPreferences(DEFAULT_PREFERENCES);
     }
-  }, [session?.user?.id, mounted]);
+  }, [userId, mounted]);
 
   const updatePreferences = useCallback(async (updates: Partial<UserPreferences>) => {
     setPreferences(prev => {
       const newPrefs = { ...prev, ...updates };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newPrefs));
+      if (userId) {
+        localStorage.setItem(`${STORAGE_KEY_PREFIX}${userId}`, JSON.stringify(newPrefs));
+      }
       return newPrefs;
     });
 
     // Sync to backend if relevant fields changed and session exists
-    const userId = session?.user?.id;
-    if (userId && (updates.defaultCurrency || updates.measurementSystem)) {
+    if (userId && (updates.defaultCurrency || updates.measurementSystem || updates.theme)) {
       try {
         await updateUserPreferences(userId, { 
           defaultCurrency: updates.defaultCurrency,
-          measurementSystem: updates.measurementSystem
+          measurementSystem: updates.measurementSystem,
+          appearance: updates.theme // Sync theme -> appearance
         });
       } catch (err) {
         console.error('[Preferences] Failed to sync settings to cloud:', err);
       }
     }
-  }, [session?.user?.id]);
+  }, [userId]);
 
   const updateNotifications = useCallback((updates: Partial<UserPreferences['notifications']>) => {
     updatePreferences({ notifications: { ...preferences.notifications, ...updates } });

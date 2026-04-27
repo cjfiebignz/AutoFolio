@@ -3,12 +3,10 @@
 import { AccountPageShell } from "@/components/AccountPageShell";
 import { usePreferences, MeasurementSystem } from "@/lib/preferences";
 import { 
-  Settings, 
   Bell, 
   Palette, 
   Globe, 
   Check, 
-  ChevronRight,
   Info,
   Coins,
   Bluetooth,
@@ -122,7 +120,7 @@ export default function PreferencesPage() {
             <div className="mt-2 flex items-center gap-2 rounded-2xl bg-foreground/[0.01] border border-border-subtle p-4">
               <Info size={14} className="text-dim shrink-0" />
               <p className="text-[10px] font-medium text-muted leading-relaxed italic">
-                AutoFolio preserves your theme preference across your local sessions.
+                AutoFolio syncs your theme preference to your account.
               </p>
             </div>
           </div>
@@ -206,7 +204,7 @@ export default function PreferencesPage() {
         <div className="flex flex-col items-center text-center px-8">
           <p className="text-[9px] font-black uppercase tracking-[0.3em] text-dim mb-2">Sync Status</p>
           <p className="text-[10px] font-medium leading-relaxed text-dim max-w-xs italic">
-            Regional and Unit settings are synced to your account. Appearance and Notification preferences are currently stored locally on this device.
+            Regional, Unit, and Appearance settings are synced to your account. Notification preferences are currently stored locally on this device.
           </p>
         </div>
       </div>

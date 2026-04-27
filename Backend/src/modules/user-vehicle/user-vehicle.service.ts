@@ -1,11 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { unlink } from 'fs/promises';
-import { join } from 'path';
 import { randomBytes } from 'crypto';
 import archiver = require('archiver');
 import PDFDocument from 'pdfkit';
 import { Prisma, RegistrationStatus, InsuranceStatus, ReminderSourceType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 import { CreateUserVehicleDto } from './dto/create-user-vehicle.dto';
 import { UpdateUserVehicleDto } from './dto/update-user-vehicle.dto';
 import { CreateServiceEventDto } from './dto/create-service-event.dto';
@@ -42,6 +41,7 @@ export class UserVehicleService {
     private prisma: PrismaService,
     private specHubClient: SpecHubClientService,
     private vehicleAccess: VehicleAccessService,
+    private storage: StorageService,
   ) {}
 
   public getPlanLimits(planInput: string | null | undefined) {
@@ -59,37 +59,47 @@ export class UserVehicleService {
   }
 
   async getUserPreferences(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { 
-        defaultCurrency: true,
-        measurementSystem: true,
-        plan: true,
-      },
-    });
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { 
+          id: true,
+          defaultCurrency: true,
+          measurementSystem: true,
+          appearance: true,
+          plan: true,
+          deletedAt: true,
+        },
+      });
 
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
+      if (!user || user.deletedAt) {
+        throw new NotFoundException(`User with ID ${userId} not found or deactivated`);
+      }
+
+      const currentVehicleCount = await this.prisma.userVehicle.count({
+        where: { userId, status: 'active' },
+      });
+
+      const limits = this.getPlanLimits(user.plan);
+
+      return {
+        defaultCurrency: user.defaultCurrency,
+        measurementSystem: user.measurementSystem,
+        appearance: user.appearance || 'dark',
+        plan: user.plan || 'free',
+        vehicleLimit: limits.maxVehicles,
+        currentVehicleCount,
+        canAddVehicle: currentVehicleCount < limits.maxVehicles,
+        limits,
+      };
+    } catch (err) {
+      // Log the actual error to terminal for debugging
+      console.error(`[UserVehicleService] getUserPreferences failed for userId: ${userId}`, err);
+      throw err;
     }
-
-    const currentVehicleCount = await this.prisma.userVehicle.count({
-      where: { userId, status: 'active' },
-    });
-
-    const limits = this.getPlanLimits(user.plan);
-
-    return {
-      defaultCurrency: user.defaultCurrency,
-      measurementSystem: user.measurementSystem,
-      plan: user.plan || 'free',
-      vehicleLimit: limits.maxVehicles,
-      currentVehicleCount,
-      canAddVehicle: currentVehicleCount < limits.maxVehicles,
-      limits,
-    };
   }
 
-  async updateUserPreferences(userId: string, defaultCurrency?: string, plan?: 'free' | 'pro', measurementSystem?: string) {
+  async updateUserPreferences(userId: string, defaultCurrency?: string, plan?: 'free' | 'pro', measurementSystem?: string, appearance?: string) {
     const data: any = {};
     
     if (defaultCurrency) {
@@ -108,6 +118,13 @@ export class UserVehicleService {
         throw new BadRequestException(`Invalid measurement system: "${measurementSystem}". Expected 'metric' or 'imperial'.`);
       }
       data.measurementSystem = measurementSystem;
+    }
+
+    if (appearance) {
+      if (appearance !== 'dark' && appearance !== 'light' && appearance !== 'system') {
+        throw new BadRequestException(`Invalid appearance preference: "${appearance}". Expected 'dark', 'light', or 'system'.`);
+      }
+      data.appearance = appearance;
     }
 
     if (Object.keys(data).length === 0) {
@@ -390,11 +407,12 @@ export class UserVehicleService {
       });
 
       if (!hasMainService) {
-        // Auto-refresh baseline if not explicitly provided in this update
-        if (updateData.serviceSettingsBaseDate === undefined) {
+        // Auto-set fallback baseline ONLY if currently null/missing on the vehicle
+        // and not explicitly provided in this update.
+        if (!vehicle.serviceSettingsBaseDate && updateData.serviceSettingsBaseDate === undefined) {
           updateData.serviceSettingsBaseDate = new Date();
         }
-        if (updateData.serviceSettingsBaseKms === undefined) {
+        if (vehicle.serviceSettingsBaseKms === null && updateData.serviceSettingsBaseKms === undefined) {
           updateData.serviceSettingsBaseKms = dto.currentOdometer !== undefined ? dto.currentOdometer : vehicle.currentOdometer;
         }
       }
@@ -589,27 +607,16 @@ export class UserVehicleService {
     const lastService = vehicle.services[0] || null;
     const latestMainService = vehicle.services.find(s => s.isMainService) || null;
     
-    // SOURCE OF TRUTH: Newer of (Latest Manual Update) vs (Latest Main Service)
-    let currentKms = vehicle.currentOdometer;
-    const latestManualReading = vehicle.odometers?.find(o => o.source === 'manual') || null;
-    
-    const manualDate = latestManualReading?.readingDate ? latestManualReading.readingDate.getTime() : 0;
-    const mainServiceDate = (latestMainService?.eventDate && latestMainService?.odometerAtEvent !== null) 
-      ? latestMainService.eventDate.getTime() 
-      : 0;
+    // PRIMARY SOURCE OF TRUTH: The vehicle's cached currentOdometer.
+    // It is kept up to date by createServiceEvent, update (manual), and daily streak updates.
+    let currentKms = vehicle.currentOdometer || 0;
 
-    if (latestManualReading && latestMainService && latestMainService.odometerAtEvent !== null) {
-      // If dates are identical, use createdAt as a secondary tie-breaker if available.
-      if (manualDate === mainServiceDate && latestManualReading.createdAt && latestMainService.createdAt) {
-        currentKms = latestManualReading.createdAt.getTime() >= latestMainService.createdAt.getTime()
-          ? latestManualReading.value
-          : latestMainService.odometerAtEvent;
-      } else {
-        currentKms = manualDate >= mainServiceDate ? latestManualReading.value : latestMainService.odometerAtEvent;
-      }
-    } else if (latestManualReading) {
+    // Safety fallback: Ensure currentKms doesn't trail behind history (if cache was somehow bypassed)
+    const latestManualReading = vehicle.odometers?.find(o => o.source === 'manual') || null;
+    if (latestManualReading && latestManualReading.value > currentKms) {
       currentKms = latestManualReading.value;
-    } else if (latestMainService && latestMainService.odometerAtEvent !== null) {
+    }
+    if (latestMainService && latestMainService.odometerAtEvent !== null && latestMainService.odometerAtEvent > currentKms) {
       currentKms = latestMainService.odometerAtEvent;
     }
 
@@ -617,7 +624,7 @@ export class UserVehicleService {
     const serviceIntervalKms = vehicle.serviceIntervalKms || null;
 
     // Baseline calculation logic
-    let baselineSource: 'main_service' | 'settings_baseline' | 'none' = 'none';
+    let baselineSource: 'main_service' | 'settings_baseline' | 'current_odometer' | 'none' = 'none';
     let baselineDate: Date | null = null;
     let baselineKms: number | null = null;
 
@@ -629,6 +636,12 @@ export class UserVehicleService {
       baselineSource = 'settings_baseline';
       baselineDate = vehicle.serviceSettingsBaseDate;
       baselineKms = vehicle.serviceSettingsBaseKms;
+    } else if (currentKms > 0) {
+      // DYNAMIC FALLBACK: If no main service or manual baseline exists, use current odometer as the starting point.
+      // This allows the app to show a "Next service due" immediately after adding the car and setting an interval.
+      baselineSource = 'current_odometer';
+      baselineDate = vehicle.createdAt;
+      baselineKms = currentKms;
     }
 
     let nextServiceDueDate = null;
@@ -839,30 +852,29 @@ export class UserVehicleService {
         },
       });
 
-      // ONLY Main Service entries can update the currentOdometer cache.
-      // Sub-services record the odometer in history but do not advance the vehicle cache.
-      if (serviceEvent.isMainService) {
-        const vehicle = await this.prisma.userVehicle.findUnique({ where: { id: vehicleId } });
-        const currentEffectiveKms = vehicle.currentOdometer || 0;
+      // Update currentOdometer cache if this is the newest or highest reading.
+      // This applies to ANY service (Workshop, DIY, etc.), not just Main services,
+      // to ensure the vehicle's currentKms reflects the latest known state.
+      const vehicle = await this.prisma.userVehicle.findUnique({ where: { id: vehicleId } });
+      const currentEffectiveKms = vehicle.currentOdometer || 0;
 
-        const newerReading = await this.prisma.odometerReading.findFirst({
-          where: {
-            vehicleId,
-            readingDate: { gt: serviceEvent.eventDate },
-          },
+      const newerReading = await this.prisma.odometerReading.findFirst({
+        where: {
+          vehicleId,
+          readingDate: { gt: serviceEvent.eventDate },
+        },
+      });
+
+      const isHigher = dto.odometerAtEvent > currentEffectiveKms;
+      const isNewestByDate = !newerReading;
+
+      // Rule: Never reduce current kms from a service entry, but always advance if higher
+      // or if it's the newest reading by date and doesn't reduce the current value.
+      if (isHigher || (isNewestByDate && dto.odometerAtEvent >= currentEffectiveKms)) {
+        await this.prisma.userVehicle.update({
+          where: { id: vehicleId },
+          data: { currentOdometer: dto.odometerAtEvent },
         });
-
-        const isHigher = dto.odometerAtEvent > currentEffectiveKms;
-        const isNewestByDate = !newerReading;
-
-        // Rule: Never reduce current kms from a service entry, but always advance if higher
-        // or if it's the newest reading by date and doesn't reduce the current value.
-        if (isHigher || (isNewestByDate && dto.odometerAtEvent >= currentEffectiveKms)) {
-          await this.prisma.userVehicle.update({
-            where: { id: vehicleId },
-            data: { currentOdometer: dto.odometerAtEvent },
-          });
-        }
       }
     }
 
@@ -1568,10 +1580,62 @@ export class UserVehicleService {
     }
 
     await this.findOneServiceEvent(vehicleId, serviceId);
-    return this.prisma.serviceEvent.update({
+    const serviceEvent = await this.prisma.serviceEvent.update({
       where: { id: serviceId },
       data,
     });
+
+    // Sync odometer history if provided/changed
+    if (dto.odometerAtEvent !== undefined && dto.odometerAtEvent !== null) {
+      // Upsert odometer reading for this service
+      const existingReading = await this.prisma.odometerReading.findFirst({
+        where: { 
+          vehicleId, 
+          source: 'service',
+          // Assuming readingDate matches exactly for service events
+          readingDate: serviceEvent.eventDate, 
+        },
+      });
+
+      if (existingReading) {
+        await this.prisma.odometerReading.update({
+          where: { id: existingReading.id },
+          data: { value: dto.odometerAtEvent },
+        });
+      } else {
+        await this.prisma.odometerReading.create({
+          data: {
+            vehicleId,
+            value: dto.odometerAtEvent,
+            readingDate: serviceEvent.eventDate,
+            source: 'service',
+          },
+        });
+      }
+
+      // Sync vehicle currentOdometer cache
+      const vehicle = await this.prisma.userVehicle.findUnique({ where: { id: vehicleId } });
+      const currentEffectiveKms = vehicle.currentOdometer || 0;
+
+      const newerReading = await this.prisma.odometerReading.findFirst({
+        where: {
+          vehicleId,
+          readingDate: { gt: serviceEvent.eventDate },
+        },
+      });
+
+      const isHigher = dto.odometerAtEvent > currentEffectiveKms;
+      const isNewestByDate = !newerReading;
+
+      if (isHigher || (isNewestByDate && dto.odometerAtEvent >= currentEffectiveKms)) {
+        await this.prisma.userVehicle.update({
+          where: { id: vehicleId },
+          data: { currentOdometer: dto.odometerAtEvent },
+        });
+      }
+    }
+
+    return serviceEvent;
   }
 
   async removeServiceEvent(vehicleId: string, serviceId: string) {
@@ -1586,13 +1650,8 @@ export class UserVehicleService {
 
     // Physical cleanup for attachments
     for (const attachment of service.attachments) {
-      try {
-        const filename = attachment.url.replace('/uploads/', '');
-        const filePath = join(process.cwd(), 'uploads', filename);
-        await unlink(filePath);
-      } catch (err) {
-        console.error(`Failed to delete physical attachment file during service removal: ${attachment.url}`, err);
-      }
+      const filename = attachment.url.replace('/uploads/', '');
+      await this.storage.deleteFile(filename);
     }
 
     return this.prisma.serviceEvent.delete({
@@ -1617,7 +1676,7 @@ export class UserVehicleService {
     return this.prisma.serviceAttachment.create({
       data: {
         serviceEventId: serviceId,
-        url: `/uploads/${file.filename}`,
+        url: this.storage.getPublicUrl(file.filename),
         fileType: file.mimetype.split('/')[1],
         fileSize: file.size,
         title: file.originalname,
@@ -1638,13 +1697,8 @@ export class UserVehicleService {
     await this.ensureVehicleNotLocked(attachment.serviceEvent.vehicleId);
 
     // Attempt physical cleanup
-    try {
-      const filename = attachment.url.replace('/uploads/', '');
-      const filePath = join(process.cwd(), 'uploads', filename);
-      await unlink(filePath);
-    } catch (err) {
-      console.error(`Failed to delete physical attachment file: ${attachment.url}`, err);
-    }
+    const filename = attachment.url.replace('/uploads/', '');
+    await this.storage.deleteFile(filename);
 
     return this.prisma.serviceAttachment.delete({
       where: { id: attachmentId },
@@ -1731,13 +1785,8 @@ export class UserVehicleService {
 
     // Physical cleanup for attachments
     for (const attachment of workJob.attachments) {
-      try {
-        const filename = attachment.url.replace('/uploads/', '');
-        const filePath = join(process.cwd(), 'uploads', filename);
-        await unlink(filePath);
-      } catch (err) {
-        console.error(`Failed to delete physical attachment file during work job removal: ${attachment.url}`, err);
-      }
+      const filename = attachment.url.replace('/uploads/', '');
+      await this.storage.deleteFile(filename);
     }
 
     return this.prisma.workJob.delete({
@@ -1752,7 +1801,7 @@ export class UserVehicleService {
     return this.prisma.workAttachment.create({
       data: {
         workJobId: workJobId,
-        url: `/uploads/${file.filename}`,
+        url: this.storage.getPublicUrl(file.filename),
         fileType: file.mimetype.split('/')[1],
         fileSize: file.size,
         title: file.originalname,
@@ -1773,13 +1822,8 @@ export class UserVehicleService {
     await this.ensureVehicleNotLocked(attachment.workJob.vehicleId);
 
     // Attempt physical cleanup
-    try {
-      const filename = attachment.url.replace('/uploads/', '');
-      const filePath = join(process.cwd(), 'uploads', filename);
-      await unlink(filePath);
-    } catch (err) {
-      console.error(`Failed to delete physical attachment file: ${attachment.url}`, err);
-    }
+    const filename = attachment.url.replace('/uploads/', '');
+    await this.storage.deleteFile(filename);
 
     return this.prisma.workAttachment.delete({
       where: { id: attachmentId },
@@ -1806,11 +1850,7 @@ export class UserVehicleService {
       const fileSizeMB = file.size / (1024 * 1024);
       if (fileSizeMB > limits.maxDocumentSizeMB) {
         // Since the file is already uploaded to disk by Multer, we should clean it up
-        try {
-          await unlink(file.path);
-        } catch (err) {
-          console.error('Failed to cleanup oversized document file:', err);
-        }
+        await this.storage.deleteFile(file.filename);
 
         throw new BadRequestException({
           error: 'limit_reached',
@@ -1822,7 +1862,7 @@ export class UserVehicleService {
         });
       }
 
-      fileData.fileUrl = `/uploads/${file.filename}`;
+      fileData.fileUrl = this.storage.getPublicUrl(file.filename);
       fileData.fileType = file.mimetype.split('/')[1];
       fileData.fileSize = file.size;
     }
@@ -1914,15 +1954,8 @@ export class UserVehicleService {
 
     // Attempt to delete physical file if it exists
     if (document.fileUrl) {
-      try {
-        // fileUrl is something like "/uploads/filename.ext"
-        const filename = document.fileUrl.replace('/uploads/', '');
-        const filePath = join(process.cwd(), 'uploads', filename);
-        await unlink(filePath);
-      } catch (err) {
-        // Log error but continue with DB deletion
-        console.error(`Failed to delete physical file: ${document.fileUrl}`, err);
-      }
+      const filename = document.fileUrl.replace('/uploads/', '');
+      await this.storage.deleteFile(filename);
     }
 
     return this.prisma.document.delete({
@@ -1931,14 +1964,6 @@ export class UserVehicleService {
   }
 
   async remove(id: string) {
-    // Locking should not prevent deletion of the vehicle itself?
-    // Requirement says: "extra vehicles must NOT be deleted... Downgrading to Free must not delete any vehicles"
-    // It doesn't explicitly say deleting a locked vehicle should be blocked.
-    // Usually, you should be able to delete a locked vehicle if you want to make room.
-    // Wait, if Free allows 1 usable vehicle (the oldest active), and I delete the oldest active, then the next oldest becomes usable.
-    // So allowing deletion of any vehicle seems fine.
-    // Let's NOT enforce lock on removal of the vehicle itself.
-    
     const vehicle = await this.prisma.userVehicle.findUnique({
       where: { id },
       include: {
@@ -1954,35 +1979,20 @@ export class UserVehicleService {
     // Physical cleanup for documents
     for (const doc of vehicle.documents) {
       if (doc.fileUrl) {
-        try {
-          const filename = doc.fileUrl.replace('/uploads/', '');
-          const filePath = join(process.cwd(), 'uploads', filename);
-          await unlink(filePath);
-        } catch (err) {
-          console.error(`Failed to delete physical document file during vehicle removal: ${doc.fileUrl}`, err);
-        }
+        const filename = doc.fileUrl.replace('/uploads/', '');
+        await this.storage.deleteFile(filename);
       }
     }
 
     // Physical cleanup for photos
     for (const photo of vehicle.photos) {
-      try {
-        const filename = photo.url.replace('/uploads/', '');
-        const filePath = join(process.cwd(), 'uploads', filename);
-        await unlink(filePath);
-      } catch (err) {
-        console.error(`Failed to delete physical photo file during vehicle removal: ${photo.url}`, err);
-      }
+      const filename = photo.url.replace('/uploads/', '');
+      await this.storage.deleteFile(filename);
     }
 
     // Physical cleanup for banner
     if (vehicle.bannerImagePath) {
-      try {
-        const filePath = join(process.cwd(), 'uploads', vehicle.bannerImagePath);
-        await unlink(filePath);
-      } catch (err) {
-        console.error(`Failed to delete physical banner file during vehicle removal: ${vehicle.bannerImagePath}`, err);
-      }
+      await this.storage.deleteFile(vehicle.bannerImagePath);
     }
 
     return this.prisma.userVehicle.delete({
@@ -2002,18 +2012,13 @@ export class UserVehicleService {
 
     // Delete old banner file if it exists
     if (vehicle.bannerImagePath) {
-      try {
-        const oldPath = join(process.cwd(), 'uploads', vehicle.bannerImagePath);
-        await unlink(oldPath);
-      } catch (err) {
-        console.error(`Failed to delete old banner file: ${vehicle.bannerImagePath}`, err);
-      }
+      await this.storage.deleteFile(vehicle.bannerImagePath);
     }
 
     return this.prisma.userVehicle.update({
       where: { id },
       data: {
-        bannerImageUrl: `/uploads/${file.filename}`,
+        bannerImageUrl: this.storage.getPublicUrl(file.filename),
         bannerImagePath: file.filename,
         bannerUpdatedAt: new Date(),
         ...this.normalizeBannerMetadata(metadata),
@@ -2048,12 +2053,7 @@ export class UserVehicleService {
     }
 
     if (vehicle.bannerImagePath) {
-      try {
-        const filePath = join(process.cwd(), 'uploads', vehicle.bannerImagePath);
-        await unlink(filePath);
-      } catch (err) {
-        console.error(`Failed to delete banner file: ${vehicle.bannerImagePath}`, err);
-      }
+      await this.storage.deleteFile(vehicle.bannerImagePath);
     }
 
     return this.prisma.userVehicle.update({
@@ -2084,11 +2084,7 @@ export class UserVehicleService {
     const limits = this.getPlanLimits(vehicle.user.plan);
     if (vehicle._count.photos >= limits.maxPhotosPerVehicle) {
       // Cleanup uploaded file before throwing
-      try {
-        await unlink(file.path);
-      } catch (err) {
-        console.error('Failed to cleanup rejected photo file:', err);
-      }
+      await this.storage.deleteFile(file.filename);
 
       throw new BadRequestException({
         error: 'limit_reached',
@@ -2103,7 +2099,7 @@ export class UserVehicleService {
     return this.prisma.vehiclePhoto.create({
       data: {
         vehicleId,
-        url: `/uploads/${file.filename}`,
+        url: this.storage.getPublicUrl(file.filename),
       },
     });
   }
@@ -2119,13 +2115,8 @@ export class UserVehicleService {
     }
 
     // Attempt physical cleanup
-    try {
-      const filename = photo.url.replace('/uploads/', '');
-      const filePath = join(process.cwd(), 'uploads', filename);
-      await unlink(filePath);
-    } catch (err) {
-      console.error(`Failed to delete physical photo file: ${photo.url}`, err);
-    }
+    const filename = photo.url.replace('/uploads/', '');
+    await this.storage.deleteFile(filename);
 
     return this.prisma.vehiclePhoto.delete({
       where: { id: photoId },
@@ -2915,7 +2906,7 @@ export class UserVehicleService {
     
     for (const doc of documentsWithFiles) {
       const filename = doc.fileUrl.replace('/uploads/', '');
-      const filePath = join(process.cwd(), 'uploads', filename);
+      const filePath = this.storage.getFilePath(filename);
       archive.file(filePath, { name: filename });
     }
 
