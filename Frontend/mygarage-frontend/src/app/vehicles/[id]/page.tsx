@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getUserVehicleWithSpecs, getServiceSummary, getLifetimeCostSummary } from "@/lib/api";
+import { getUserVehicleWithSpecs, getServiceSummary, getLifetimeCostSummary, getUserPreferences } from "@/lib/api";
 import { mapToVehicleViewModel } from "@/lib/mappers/vehicle";
 import { mapToSpecsViewModel } from "@/lib/mappers/specs";
 import { mapToServiceHistoryViewModel, mapToServiceSummaryViewModel } from "@/lib/mappers/service";
@@ -54,15 +54,18 @@ export default async function VehicleDetailPage({
   let data;
   let serviceSummary = null;
   let costSummary = null;
+  let prefs = null;
   try {
-    const [vehicleData, summaryData, costData] = await Promise.all([
+    const [vehicleData, summaryData, costData, preferencesData] = await Promise.all([
       getUserVehicleWithSpecs(id),
       getServiceSummary(id).catch(() => null),
-      getLifetimeCostSummary(id).catch(() => null)
+      getLifetimeCostSummary(id).catch(() => null),
+      getUserPreferences(session.user.id).catch(() => null)
     ]);
     data = vehicleData;
     serviceSummary = summaryData;
     costSummary = costData;
+    prefs = preferencesData;
   } catch (err: any) {
     console.error("Error loading VehicleDetailPage data:", err);
     return (
@@ -174,6 +177,7 @@ export default async function VehicleDetailPage({
                 rawReminders={serializedVehicle.reminders || []}
                 serviceSummary={mappedServiceSummary}
                 costSummary={costSummary ? JSON.parse(JSON.stringify(costSummary)) : null}
+                effectiveNow={prefs?.effectiveNow}
               />
             )}
             {currentTab === 'service' && (

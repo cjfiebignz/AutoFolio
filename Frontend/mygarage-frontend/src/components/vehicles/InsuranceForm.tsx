@@ -79,6 +79,7 @@ export function InsuranceForm({ vehicleId, isOpen, onClose, initialData }: Insur
         await createInsurance(vehicleId, payload);
       }
 
+      window.dispatchEvent(new Event('garage-refresh'));
       startTransition(() => {
         router.refresh();
         onClose();

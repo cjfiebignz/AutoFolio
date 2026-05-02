@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import archiver = require('archiver');
 import PDFDocument from 'pdfkit';
@@ -25,7 +25,9 @@ import { CreateCustomSpecDto } from './dto/create-custom-spec.dto';
 import { UpdateCustomSpecDto } from './dto/update-custom-spec.dto';
 import { SpecHubClientService, SpecHubGetSpecResponse } from './spec-hub-client.service';
 import { UpdateBannerMetadataDto } from './dto/update-banner-metadata.dto';
+import { DailyUpdateDto } from './dto/daily-update.dto';
 import { VehicleAccessService } from './vehicle-access.service';
+import { DevService } from '../dev/dev.service';
 
 const COUNTRY_RULES: Record<string, { regionRequired: boolean }> = {
   AU: { regionRequired: true },
@@ -37,12 +39,47 @@ const COUNTRY_RULES: Record<string, { regionRequired: boolean }> = {
 
 @Injectable()
 export class UserVehicleService {
+  private readonly logger = new Logger(UserVehicleService.name);
+
   constructor(
     private prisma: PrismaService,
     private specHubClient: SpecHubClientService,
     private vehicleAccess: VehicleAccessService,
     private storage: StorageService,
+    private devService: DevService,
   ) {}
+
+  private getUserLocalDate(timezone: string = 'UTC'): string {
+    // Note: Falling back to UTC if timezone is invalid or missing.
+    // Long term: use user's preferred timezone from preferences.
+    try {
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(this.devService.getNow());
+    } catch (e) {
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'UTC',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(this.devService.getNow());
+    }
+  }
+
+  private async getOrCreateDailyStreak(userId: string) {
+    const streak = await this.prisma.userDailyStreak.findUnique({
+      where: { userId },
+    });
+
+    if (streak) return streak;
+
+    return this.prisma.userDailyStreak.create({
+      data: { userId },
+    });
+  }
 
   public getPlanLimits(planInput: string | null | undefined) {
     const plan = planInput || 'free';
@@ -67,6 +104,7 @@ export class UserVehicleService {
           defaultCurrency: true,
           measurementSystem: true,
           appearance: true,
+          timezone: true,
           plan: true,
           deletedAt: true,
         },
@@ -86,11 +124,13 @@ export class UserVehicleService {
         defaultCurrency: user.defaultCurrency,
         measurementSystem: user.measurementSystem,
         appearance: user.appearance || 'dark',
+        timezone: user.timezone || 'UTC',
         plan: user.plan || 'free',
         vehicleLimit: limits.maxVehicles,
         currentVehicleCount,
         canAddVehicle: currentVehicleCount < limits.maxVehicles,
         limits,
+        effectiveNow: this.devService.getNow().toISOString(),
       };
     } catch (err) {
       // Log the actual error to terminal for debugging
@@ -99,7 +139,7 @@ export class UserVehicleService {
     }
   }
 
-  async updateUserPreferences(userId: string, defaultCurrency?: string, plan?: 'free' | 'pro', measurementSystem?: string, appearance?: string) {
+  async updateUserPreferences(userId: string, defaultCurrency?: string, plan?: 'free' | 'pro', measurementSystem?: string, appearance?: string, timezone?: string) {
     const data: any = {};
     
     if (defaultCurrency) {
@@ -127,6 +167,16 @@ export class UserVehicleService {
       data.appearance = appearance;
     }
 
+    if (timezone) {
+      try {
+        // Validate timezone
+        Intl.DateTimeFormat(undefined, { timeZone: timezone });
+        data.timezone = timezone;
+      } catch (e) {
+        throw new BadRequestException(`Invalid timezone: "${timezone}". Please provide a valid IANA timezone name.`);
+      }
+    }
+
     if (Object.keys(data).length === 0) {
       throw new BadRequestException('No preference updates provided.');
     }
@@ -139,152 +189,185 @@ export class UserVehicleService {
     return this.getUserPreferences(userId);
   }
 
-  async getDailyUsageSummary(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { dailyVehicleId: true },
-    });
+  private getDaysDifference(date1: string, date2: string): number {
+    // Note: date1 and date2 are YYYY-MM-DD strings. 
+    // We parse them as local midnights to get clean day differences.
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    const diffTime = d2.getTime() - d1.getTime();
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  }
 
-    if (!user || !user.dailyVehicleId) {
-      return {
-        dailyVehicleId: null,
-        hasDailyVehicle: false,
-        hasUsageData: false,
-        currentStreak: 0,
-        lastLoggedAt: null,
-        activeDaysLast7: 0,
-      };
-    }
+  private async evaluateStreak(userId: string, today: string) {
+    const streak = await this.getOrCreateDailyStreak(userId);
 
-    // Get odometer readings for the daily vehicle
-    const readings = await this.prisma.odometerReading.findMany({
-      where: { vehicleId: user.dailyVehicleId },
-      orderBy: { readingDate: 'desc' },
-      take: 50,
-      select: { readingDate: true },
-    });
-
-    if (readings.length === 0) {
-      return {
-        dailyVehicleId: user.dailyVehicleId,
-        hasDailyVehicle: true,
-        hasUsageData: false,
-        currentStreak: 0,
-        lastLoggedAt: null,
-        activeDaysLast7: 0,
-      };
-    }
-
-    const lastLoggedAt = readings[0].readingDate;
-
-    // Helper to get date string in YYYY-MM-DD format (UTC)
-    const toDateKey = (date: Date) => date.toISOString().split('T')[0];
-
-    // Unique days logged
-    const loggedDays = new Set(readings.map(r => toDateKey(r.readingDate)));
-    const sortedLoggedDays = Array.from(loggedDays).sort((a, b) => b.localeCompare(a));
-
-    const today = new Date();
-    const todayKey = toDateKey(today);
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayKey = toDateKey(yesterday);
-
-    let currentStreak = 0;
-    const latestLoggedDay = sortedLoggedDays[0];
-
-    // Streak logic:Alive if logged today OR yesterday
-    if (latestLoggedDay === todayKey || latestLoggedDay === yesterdayKey) {
-      currentStreak = 1;
-      let checkDate = new Date(latestLoggedDay);
+    // If never evaluated or last evaluated before today
+    if (!streak.lastEvaluatedDate || streak.lastEvaluatedDate < today) {
+      const lastCompleted = streak.lastCompletedDate;
       
-      for (let i = 1; i < sortedLoggedDays.length; i++) {
-        checkDate.setDate(checkDate.getDate() - 1);
-        const expectedKey = toDateKey(checkDate);
-        
-        if (sortedLoggedDays[i] === expectedKey) {
-          currentStreak++;
-        } else {
-          break;
+      this.logger.debug(`Evaluating streak for user ${userId}. Today: ${today}, LastCompleted: ${lastCompleted || 'Never'}`);
+
+      if (lastCompleted) {
+        const missedDays = this.getDaysDifference(lastCompleted, today) - 1;
+
+        if (missedDays > 0) {
+          let savers = streak.streakSavers;
+          let currentStreak = streak.currentStreak;
+          let progressDays = streak.saverProgressDays;
+
+          this.logger.warn(`User ${userId} missed ${missedDays} day(s). Savers available: ${savers}`);
+
+          if (savers >= missedDays) {
+            // Consumed savers for all missed days
+            savers -= missedDays;
+            this.logger.log(`Consumed ${missedDays} saver(s). Streak preserved at ${currentStreak}. Remaining savers: ${savers}`);
+          } else {
+            // Not enough savers
+            this.logger.warn(`Not enough savers. Resetting streak for user ${userId}.`);
+            savers = 0;
+            currentStreak = 0;
+            progressDays = 0;
+          }
+
+          return this.prisma.userDailyStreak.update({
+            where: { userId },
+            data: {
+              currentStreak,
+              streakSavers: savers,
+              saverProgressDays: progressDays,
+              lastEvaluatedDate: today,
+            },
+          });
         }
       }
+
+      // No missed days or already handled, just update evaluation date
+      return this.prisma.userDailyStreak.update({
+        where: { userId },
+        data: { lastEvaluatedDate: today },
+      });
     }
 
-    // Active days in last 7 days
-    let activeDaysLast7 = 0;
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const sevenDaysAgoKey = toDateKey(sevenDaysAgo);
+    return streak;
+  }
 
-    for (const dayKey of sortedLoggedDays) {
-      if (dayKey >= sevenDaysAgoKey) {
-        activeDaysLast7++;
-      } else {
-        break;
+  async recordDailyOdometerUpdate(dto: DailyUpdateDto) {
+    const { userId, vehicleId, odometerKms, noChange, mode } = dto;
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { dailyVehicleId: true, timezone: true, deletedAt: true },
+    });
+
+    if (!user || user.deletedAt) {
+      throw new NotFoundException('User not found or account deactivated.');
+    }
+
+    // 1. Verify vehicle exists and belongs to user
+    const vehicle = await this.prisma.userVehicle.findUnique({ where: { id: vehicleId } });
+    if (!vehicle || vehicle.userId !== userId) {
+      throw new NotFoundException('Vehicle not found.');
+    }
+
+    const today = this.getUserLocalDate(user.timezone);
+    const isNoChange = mode === 'no_change' || noChange === true;
+    
+    this.logger.log(`Recording daily update for user ${userId}. Mode: ${mode || (noChange ? 'no_change' : 'odometer')}, Effective today: ${today} (${user.timezone || 'UTC'})`);
+    
+    // 2. Evaluate missed days first
+    let streakRecord = await this.evaluateStreak(userId, today);
+
+    // 3. Update vehicle odometer / Record history
+    if (isNoChange) {
+      // Record a check-in with the current odometer value
+      await this.prisma.odometerReading.create({
+        data: {
+          vehicleId,
+          value: vehicle.currentOdometer || 0,
+          readingDate: this.devService.getNow(),
+          source: 'no_change_check_in',
+        },
+      });
+    } else if (odometerKms !== undefined && odometerKms !== null) {
+      // Update vehicle odometer (This also records history as 'manual')
+      await this.update(vehicleId, { currentOdometer: odometerKms });
+    }
+
+    // 4. Update streak logic
+    const alreadyUpdatedToday = streakRecord.lastCompletedDate === today;
+
+    if (!alreadyUpdatedToday) {
+      const isYesterday = streakRecord.lastCompletedDate && this.getDaysDifference(streakRecord.lastCompletedDate, today) === 1;
+      
+      let newStreak = streakRecord.currentStreak;
+      if (isYesterday || streakRecord.currentStreak === 0) {
+        newStreak += 1;
+      }
+
+      let newProgress = streakRecord.saverProgressDays + 1;
+      let newSavers = streakRecord.streakSavers;
+
+      if (newProgress >= 5) {
+        if (newSavers < 3) {
+          newSavers += 1;
+        }
+        newProgress = 0; 
+      }
+
+      streakRecord = await this.prisma.userDailyStreak.update({
+        where: { userId },
+        data: {
+          currentStreak: newStreak,
+          streakSavers: newSavers,
+          saverProgressDays: newProgress,
+          lastCompletedDate: today,
+        },
+      });
+    }
+
+    return this.getDailyStreak(userId);
+  }
+
+  async getDailyStreak(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { dailyVehicleId: true, timezone: true, deletedAt: true },
+    });
+
+    if (!user || user.deletedAt) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const today = this.getUserLocalDate(user.timezone);
+    const streak = await this.evaluateStreak(userId, today);
+
+    let currentOdometerKms = null;
+    let dailyVehicleNickname = null;
+
+    if (user.dailyVehicleId) {
+      const vehicle = await this.prisma.userVehicle.findUnique({
+        where: { id: user.dailyVehicleId },
+      });
+
+      if (vehicle) {
+        dailyVehicleNickname = vehicle.nickname || null;
+        // The vehicle model already has currentOdometer cached
+        currentOdometerKms = vehicle.currentOdometer;
       }
     }
 
     return {
       dailyVehicleId: user.dailyVehicleId,
-      hasDailyVehicle: true,
-      hasUsageData: true,
-      currentStreak,
-      lastLoggedAt,
-      activeDaysLast7,
-    };
-  }
-
-  async getDailyStreak(userId: string) {
-    const summary = await this.getDailyUsageSummary(userId);
-    
-    // Check if updated today
-    const today = new Date().toISOString().split('T')[0];
-    const lastLogged = summary.lastLoggedAt ? summary.lastLoggedAt.toISOString().split('T')[0] : null;
-
-    let currentOdometerKms = null;
-    let dailyVehicleNickname = null;
-
-    if (summary.dailyVehicleId) {
-      const vehicle = await this.prisma.userVehicle.findUnique({
-        where: { id: summary.dailyVehicleId },
-        include: {
-          odometers: {
-            where: { source: 'manual' },
-            take: 1,
-            orderBy: { readingDate: 'desc' },
-            select: {
-              value: true,
-              readingDate: true,
-              createdAt: true,
-            }
-          },
-          services: {
-            orderBy: { eventDate: 'desc' },
-            select: { 
-              id: true, 
-              eventDate: true, 
-              isMainService: true,
-              odometerAtEvent: true,
-              createdAt: true,
-            },
-          },
-        }
-      });
-
-      if (vehicle) {
-        dailyVehicleNickname = vehicle.nickname || null;
-        const svc = this.calculateServiceSummary(vehicle);
-        currentOdometerKms = svc.currentKms;
-      }
-    }
-
-    return {
-      dailyVehicleId: summary.dailyVehicleId,
       dailyVehicleNickname,
-      currentStreak: summary.currentStreak,
-      updatedToday: lastLogged === today,
-      lastLoggedAt: summary.lastLoggedAt,
-      currentOdometerKms,
+      currentStreak: streak.currentStreak,
+      streakSavers: streak.streakSavers,
+      maxStreakSavers: 3,
+      saverProgressDays: streak.saverProgressDays,
+      saverProgressTarget: 5,
+      updatedToday: streak.lastCompletedDate === today,
+      lastCompletedDate: streak.lastCompletedDate,
+      timezone: user.timezone,
+      effectiveNow: this.devService.getNow().toISOString(),
     };
   }
 
@@ -410,7 +493,7 @@ export class UserVehicleService {
         // Auto-set fallback baseline ONLY if currently null/missing on the vehicle
         // and not explicitly provided in this update.
         if (!vehicle.serviceSettingsBaseDate && updateData.serviceSettingsBaseDate === undefined) {
-          updateData.serviceSettingsBaseDate = new Date();
+          updateData.serviceSettingsBaseDate = this.devService.getNow();
         }
         if (vehicle.serviceSettingsBaseKms === null && updateData.serviceSettingsBaseKms === undefined) {
           updateData.serviceSettingsBaseKms = dto.currentOdometer !== undefined ? dto.currentOdometer : vehicle.currentOdometer;
@@ -437,7 +520,7 @@ export class UserVehicleService {
         data: {
           vehicleId: id,
           value: dto.currentOdometer,
-          readingDate: new Date(),
+          readingDate: this.devService.getNow(),
           source: 'manual',
         },
       });
@@ -527,21 +610,25 @@ export class UserVehicleService {
           select: { id: true },
         },
         registrations: {
+          orderBy: { expiryDate: 'desc' },
           select: { 
             id: true, 
             regNumber: true, 
             expiryDate: true, 
             registrationStartDate: true,
-            isCurrent: true 
+            isCurrent: true,
+            registrationStatus: true,
           },
         },
         insurance: {
+          orderBy: { expiryDate: 'desc' },
           select: { 
             id: true, 
             provider: true, 
             expiryDate: true, 
             policyStartDate: true,
-            isCurrent: true 
+            isCurrent: true,
+            insuranceStatus: true,
           },
         },
         documents: {
@@ -564,12 +651,16 @@ export class UserVehicleService {
     // Return plain objects with serviceSummary and lock state attached
     return vehicles.map(v => {
       const serviceSummary = this.calculateServiceSummary(v);
+      const registrationSummary = this.calculateRegistrationSummary(v);
+      const insuranceSummary = this.calculateInsuranceSummary(v);
       return {
         ...v,
         isDaily: v.id === user?.dailyVehicleId,
         isLocked: lockedIds.includes(v.id),
         lockReason: lockedIds.includes(v.id) ? reason : null,
         serviceSummary,
+        registrationSummary,
+        insuranceSummary,
       };
     });
   }
@@ -628,7 +719,8 @@ export class UserVehicleService {
     let baselineDate: Date | null = null;
     let baselineKms: number | null = null;
 
-    if (latestMainService && latestMainService.odometerAtEvent !== null) {
+    if (latestMainService) {
+      // Prioritize the latest Main Service as the authoritative baseline
       baselineSource = 'main_service';
       baselineDate = latestMainService.eventDate;
       baselineKms = latestMainService.odometerAtEvent;
@@ -662,7 +754,7 @@ export class UserVehicleService {
 
     if (hasEnoughData) {
       status = 'up_to_date';
-      const now = new Date();
+      const now = this.devService.getNow();
       
       if (nextServiceDueDate) {
         const diffTime = nextServiceDueDate.getTime() - now.getTime();
@@ -708,6 +800,70 @@ export class UserVehicleService {
     };
   }
 
+  private calculateRegistrationSummary(vehicle: any) {
+    const currentReg = vehicle.registrations.find(r => r.isCurrent) || vehicle.registrations[0] || null;
+    if (!currentReg) {
+      return { status: 'none', daysRemaining: null, expiryDate: null };
+    }
+
+    const now = this.devService.getNow();
+    const expiryDate = new Date(currentReg.expiryDate);
+    const diffTime = expiryDate.getTime() - now.getTime();
+    const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    let status = 'active';
+    if (daysRemaining <= 0) {
+      status = 'overdue';
+    } else if (daysRemaining <= 30) {
+      status = 'due_soon';
+    }
+
+    // If manual status is cancelled, that takes precedence
+    if (currentReg.registrationStatus === RegistrationStatus.cancelled) {
+      status = 'cancelled';
+    }
+
+    return {
+      id: currentReg.id,
+      regNumber: currentReg.regNumber,
+      status,
+      daysRemaining,
+      expiryDate: currentReg.expiryDate,
+    };
+  }
+
+  private calculateInsuranceSummary(vehicle: any) {
+    const currentIns = vehicle.insurance.find(i => i.isCurrent) || vehicle.insurance[0] || null;
+    if (!currentIns) {
+      return { status: 'none', daysRemaining: null, expiryDate: null };
+    }
+
+    const now = this.devService.getNow();
+    const expiryDate = new Date(currentIns.expiryDate);
+    const diffTime = expiryDate.getTime() - now.getTime();
+    const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    let status = 'active';
+    if (daysRemaining <= 0) {
+      status = 'overdue';
+    } else if (daysRemaining <= 30) {
+      status = 'due_soon';
+    }
+
+    // If manual status is cancelled, that takes precedence
+    if (currentIns.insuranceStatus === InsuranceStatus.cancelled) {
+      status = 'cancelled';
+    }
+
+    return {
+      id: currentIns.id,
+      provider: currentIns.provider,
+      status,
+      daysRemaining,
+      expiryDate: currentIns.expiryDate,
+    };
+  }
+
   private async ensureVehicleNotLocked(vehicleId: string) {
     await this.vehicleAccess.ensureVehicleNotLocked(vehicleId);
   }
@@ -723,8 +879,12 @@ export class UserVehicleService {
           take: 1,
           orderBy: { readingDate: 'desc' },
         },
-        registrations: true,
-        insurance: true,
+        registrations: {
+          orderBy: { expiryDate: 'desc' },
+        },
+        insurance: {
+          orderBy: { expiryDate: 'desc' },
+        },
         services: {
           orderBy: { eventDate: 'desc' },
           include: {
@@ -805,6 +965,8 @@ export class UserVehicleService {
       ...vehicleData,
       isDaily: vehicle.id === user.dailyVehicleId,
       serviceSummary: this.calculateServiceSummary(vehicle),
+      registrationSummary: this.calculateRegistrationSummary(vehicle),
+      insuranceSummary: this.calculateInsuranceSummary(vehicle),
     };
   }
 
@@ -2020,7 +2182,7 @@ export class UserVehicleService {
       data: {
         bannerImageUrl: this.storage.getPublicUrl(file.filename),
         bannerImagePath: file.filename,
-        bannerUpdatedAt: new Date(),
+        bannerUpdatedAt: this.devService.getNow(),
         ...this.normalizeBannerMetadata(metadata),
       },
     });
@@ -2232,7 +2394,7 @@ export class UserVehicleService {
     
     doc.fontSize(20).font('Helvetica-Bold').text('AutoFolio', { align: 'left' });
     doc.fontSize(24).text('Vehicle History Report');
-    doc.fontSize(10).font('Helvetica').text(`Generated: ${new Date().toLocaleDateString('en-AU')}`);
+    doc.fontSize(10).font('Helvetica').text(`Generated: ${this.devService.getNow().toLocaleDateString('en-AU')}`);
     doc.moveDown(2);
 
     this.buildVehicleSummarySection(doc, vehicle, financials);
@@ -2340,7 +2502,7 @@ export class UserVehicleService {
       data: {
         publicShareToken: token,
         publicShareEnabled: true,
-        publicShareCreatedAt: new Date(),
+        publicShareCreatedAt: this.devService.getNow(),
       },
       select: {
         id: true,
@@ -2518,7 +2680,7 @@ export class UserVehicleService {
     // Header
     doc.fontSize(20).font('Helvetica-Bold').text('AutoFolio', { align: 'left' });
     doc.fontSize(24).text('Job Card');
-    doc.fontSize(10).font('Helvetica').text(`Generated: ${new Date().toLocaleDateString('en-AU')}`);
+    doc.fontSize(10).font('Helvetica').text(`Generated: ${this.devService.getNow().toLocaleDateString('en-AU')}`);
     doc.moveDown(1);
 
     // Vehicle Summary
@@ -2666,7 +2828,7 @@ export class UserVehicleService {
 
     doc.fontSize(20).font('Helvetica-Bold').text('AutoFolio', { align: 'left' });
     doc.fontSize(24).text('Technical Specifications');
-    doc.fontSize(10).font('Helvetica').text(`Generated: ${new Date().toLocaleDateString('en-AU')}`);
+    doc.fontSize(10).font('Helvetica').text(`Generated: ${this.devService.getNow().toLocaleDateString('en-AU')}`);
     doc.moveDown(2);
 
     this.buildVehicleSummarySection(doc, vehicle, financials);
@@ -2739,7 +2901,7 @@ export class UserVehicleService {
     
     doc.fontSize(20).font('Helvetica-Bold').text('AutoFolio', { align: 'left' });
     doc.fontSize(24).text('Service History Report');
-    doc.fontSize(10).font('Helvetica').text(`Generated: ${new Date().toLocaleDateString('en-AU')}`);
+    doc.fontSize(10).font('Helvetica').text(`Generated: ${this.devService.getNow().toLocaleDateString('en-AU')}`);
     doc.moveDown(2);
 
     this.buildVehicleSummarySection(doc, vehicle, financials);
@@ -2818,7 +2980,7 @@ export class UserVehicleService {
     
     doc.fontSize(20).font('Helvetica-Bold').text('AutoFolio', { align: 'left' });
     doc.fontSize(24).text('Work History Report');
-    doc.fontSize(10).font('Helvetica').text(`Generated: ${new Date().toLocaleDateString('en-AU')}`);
+    doc.fontSize(10).font('Helvetica').text(`Generated: ${this.devService.getNow().toLocaleDateString('en-AU')}`);
     doc.moveDown(2);
 
     this.buildVehicleSummarySection(doc, vehicle, financials);

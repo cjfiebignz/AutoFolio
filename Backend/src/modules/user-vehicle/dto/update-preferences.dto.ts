@@ -15,6 +15,10 @@ export class UpdatePreferencesDto {
   @IsOptional()
   appearance?: string;
 
+  @IsString()
+  @IsOptional()
+  timezone?: string;
+
   @IsEnum(AccountPlan)
   @IsOptional()
   plan?: AccountPlan;

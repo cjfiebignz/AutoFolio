@@ -1,7 +1,9 @@
 'use client';
 
+import { useMemo } from 'react';
 import { AccountPageShell } from "@/components/AccountPageShell";
-import { usePreferences, MeasurementSystem } from "@/lib/preferences";
+import { usePreferences } from "@/lib/preferences";
+import { ReminderPreferenceMatrix } from "@/components/account/ReminderPreferenceMatrix";
 import { 
   Bell, 
   Palette, 
@@ -10,11 +12,81 @@ import {
   Info,
   Coins,
   Bluetooth,
-  Cpu
+  Cpu,
+  Clock,
+  ChevronDown
 } from "lucide-react";
 
 export default function PreferencesPage() {
-  const { preferences, updatePreferences, updateNotifications, mounted } = usePreferences();
+  const { preferences, updatePreferences, mounted } = usePreferences();
+
+  const timezoneOptions = useMemo(() => {
+    let zones: string[] = [];
+    const curatedFallback = [
+      'Pacific/Auckland',
+      'Australia/Sydney',
+      'Australia/Melbourne',
+      'Australia/Brisbane',
+      'Australia/Perth',
+      'UTC',
+      'America/Los_Angeles',
+      'America/New_York',
+      'Europe/London',
+    ];
+
+    try {
+      if (typeof Intl !== 'undefined' && typeof (Intl as any).supportedValuesOf === 'function') {
+        zones = (Intl as any).supportedValuesOf('timeZone');
+      } else {
+        zones = curatedFallback;
+      }
+    } catch {
+      zones = curatedFallback;
+    }
+
+    // Include saved timezone if missing from list
+    if (preferences.timezone && !zones.includes(preferences.timezone)) {
+      zones.push(preferences.timezone);
+    }
+
+    // Map to objects with offsets
+    const now = new Date();
+    const mapped = zones.map(zone => {
+      try {
+        const parts = new Intl.DateTimeFormat('en-AU', {
+          timeZone: zone,
+          timeZoneName: 'longOffset'
+        }).formatToParts(now);
+        
+        const offsetPart = parts.find(p => p.type === 'timeZoneName');
+        const offset = offsetPart ? offsetPart.value : 'UTC+00:00';
+        
+        // Calculate numeric offset for sorting
+        const offsetMatch = offset.match(/([+-])(\d{1,2}):(\d{2})/);
+        let numericOffset = 0;
+        if (offsetMatch) {
+          const sign = offsetMatch[1] === '+' ? 1 : -1;
+          const hours = parseInt(offsetMatch[2], 10);
+          const mins = parseInt(offsetMatch[3], 10);
+          numericOffset = sign * (hours * 60 + mins);
+        }
+
+        return {
+          id: zone,
+          label: `(${offset.replace('GMT', 'UTC')}) ${zone.replace(/_/g, ' ')}`,
+          offset: numericOffset
+        };
+      } catch {
+        return { id: zone, label: zone, offset: 0 };
+      }
+    });
+
+    // Sort by offset DESC (East to West), then by name ASC
+    return mapped.sort((a, b) => {
+      if (b.offset !== a.offset) return b.offset - a.offset;
+      return a.id.localeCompare(b.id);
+    });
+  }, [preferences.timezone]);
 
   if (!mounted) {
     return (
@@ -88,6 +160,32 @@ export default function PreferencesPage() {
                 ))}
               </div>
             </div>
+
+            <div className="border-t border-border-subtle" />
+
+            {/* Timezone */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Clock size={14} className="text-blue-500/40" />
+                <div>
+                  <p className="text-sm font-bold text-foreground opacity-80">Primary Timezone</p>
+                  <p className="text-xs font-medium text-muted mt-0.5">Used for daily streaks and midnight-to-midnight reminders.</p>
+                </div>
+              </div>
+              
+              <div className="relative group">
+                <select
+                  value={preferences.timezone}
+                  onChange={(e) => updatePreferences({ timezone: e.target.value })}
+                  className="w-full h-14 rounded-2xl border border-border-subtle bg-foreground/[0.01] px-6 text-sm font-bold text-foreground focus:border-blue-500/20 outline-none transition-all appearance-none cursor-pointer hover:bg-card-overlay-hover shadow-inner"
+                >
+                  {timezoneOptions.map(tz => (
+                    <option key={tz.id} value={tz.id}>{tz.label}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-6 top-1/2 -translate-y-1/2 text-muted pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </div>
           </div>
         </section>
 
@@ -133,20 +231,8 @@ export default function PreferencesPage() {
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">Notifications</h3>
           </div>
           
-          <div className="rounded-[32px] border border-border-subtle bg-card-overlay p-8 space-y-6">
-            <ToggleItem 
-              label="Service Reminders" 
-              description="Get alerted when maintenance intervals are approaching."
-              active={preferences.notifications.reminders}
-              onChange={(val) => updateNotifications({ reminders: val })}
-            />
-            <div className="border-t border-border-subtle" />
-            <ToggleItem 
-              label="System Alerts" 
-              description="Important updates regarding your vehicle collection."
-              active={preferences.notifications.serviceAlerts}
-              onChange={(val) => updateNotifications({ serviceAlerts: val })}
-            />
+          <div className="rounded-[32px] border border-border-subtle bg-card-overlay p-8">
+            <ReminderPreferenceMatrix />
           </div>
         </section>
 
@@ -204,7 +290,7 @@ export default function PreferencesPage() {
         <div className="flex flex-col items-center text-center px-8">
           <p className="text-[9px] font-black uppercase tracking-[0.3em] text-dim mb-2">Sync Status</p>
           <p className="text-[10px] font-medium leading-relaxed text-dim max-w-xs italic">
-            Regional, Unit, and Appearance settings are synced to your account. Notification preferences are currently stored locally on this device.
+            Regional, Unit, Appearance, and Notification settings are synced to your account.
           </p>
         </div>
       </div>
@@ -226,30 +312,6 @@ function OptionButton({ label, active, onClick }: { label: string; active: boole
       <span className="text-xs font-bold">{label}</span>
       {active && <Check size={14} className="text-blue-500" />}
     </button>
-  );
-}
-
-function ToggleItem({ label, description, active, onChange }: { label: string; description: string; active: boolean; onChange: (val: boolean) => void }) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="space-y-0.5">
-        <p className="text-sm font-bold text-foreground opacity-80">{label}</p>
-        <p className="text-xs font-medium text-muted">{description}</p>
-      </div>
-      <button
-        type="button"
-        onClick={() => onChange(!active)}
-        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-          active ? 'bg-blue-600' : 'bg-foreground/10'
-        }`}
-      >
-        <span
-          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-            active ? 'translate-x-5' : 'translate-x-0'
-          }`}
-        />
-      </button>
-    </div>
   );
 }
 

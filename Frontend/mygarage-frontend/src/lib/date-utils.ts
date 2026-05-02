@@ -172,8 +172,8 @@ export function formatLifecycleStatus(
     };
   }
 
-  // 2. Expired (either by date or stored status)
-  if (expiryStatus === 'expired' || storedStatus === 'expired') {
+  // 2. Expired (Prioritize backend storedStatus)
+  if (storedStatus === 'expired' || expiryStatus === 'expired') {
     return {
       label: 'Expired',
       subLabel: relativeText ? `Expired ${relativeText}` : 'Action required',
@@ -181,8 +181,8 @@ export function formatLifecycleStatus(
     };
   }
 
-  // 3. Due Soon (date-based threshold)
-  if (expiryStatus === 'due_soon') {
+  // 3. Due Soon (Only if not already expired)
+  if (expiryStatus === 'due_soon' && storedStatus !== 'expired') {
     return {
       label: 'Due Soon',
       subLabel: relativeText ? `Due ${relativeText}` : 'Renews soon',
@@ -190,16 +190,7 @@ export function formatLifecycleStatus(
     };
   }
 
-  // 4. Active / Current
-  if (storedStatus === 'active' || (expiryStatus === 'active' && storedStatus !== 'cancelled' && storedStatus !== 'pending')) {
-    return {
-      label: activeLabel,
-      subLabel: relativeText ? `Renews ${relativeText}` : 'On file',
-      tone: 'success'
-    };
-  }
-
-  // 5. Specific Stored States
+  // 4. Specific Stored States (Cancelled/Pending)
   if (storedStatus === 'pending') {
     return {
       label: 'Pending',
@@ -213,6 +204,16 @@ export function formatLifecycleStatus(
       label: 'Cancelled',
       subLabel: 'No longer active',
       tone: 'neutral'
+    };
+  }
+
+  // 5. Active / Current
+  // Valid if either backend says active OR frontend says active (and backend doesn't contradict)
+  if (storedStatus === 'active' || (expiryStatus === 'active' && storedStatus !== 'expired')) {
+    return {
+      label: activeLabel,
+      subLabel: relativeText ? `Renews ${relativeText}` : 'On file',
+      tone: 'success'
     };
   }
 

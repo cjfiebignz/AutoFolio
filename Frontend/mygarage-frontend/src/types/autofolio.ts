@@ -11,24 +11,28 @@ export interface User {
   updatedAt: string;
 }
 
+export interface PlanLimits {
+  maxVehicles: number;
+  maxPhotosPerVehicle: number;
+  maxDocumentSizeMB: number;
+  canUseSpecHub: boolean;
+  canExportPdf: boolean;
+  canSharePublicReport: boolean;
+  canExportZip: boolean;
+  canImportSpecCsv: boolean;
+}
+
 export interface UserPreferences {
   defaultCurrency: string;
   measurementSystem: 'metric' | 'imperial';
+  timezone: string;
   appearance?: 'dark' | 'light' | 'system';
   plan: 'free' | 'pro';
   vehicleLimit: number;
   currentVehicleCount: number;
   canAddVehicle: boolean;
-  limits: {
-    maxVehicles: number;
-    maxPhotosPerVehicle: number;
-    maxDocumentSizeMB: number;
-    canUseSpecHub: boolean;
-    canExportPdf: boolean;
-    canSharePublicReport: boolean;
-    canExportZip: boolean;
-    canImportSpecCsv: boolean;
-  };
+  limits: PlanLimits;
+  effectiveNow?: string;
 }
 
 export interface ServiceAttachment {
@@ -416,11 +420,16 @@ export interface PartPresetItem {
 
 export interface DailyVehicleStreak {
   currentStreak: number;
-  lastUpdatedAt: string | null;
+  streakSavers: number;
+  maxStreakSavers: number;
+  saverProgressDays: number;
+  saverProgressTarget: number;
   updatedToday: boolean;
+  lastCompletedDate: string | null;
   dailyVehicleId: string | null;
   dailyVehicleNickname: string | null;
   currentOdometerKms: number | null;
+  effectiveNow?: string;
 }
 
 export interface AccountMetadata {
@@ -431,4 +440,63 @@ export interface AccountMetadata {
   emailVerifiedAt: string | null;
   pendingEmail: string | null;
   createdAt: string;
+}
+
+// --- Reminder Preference Types ---
+
+export type ReminderType = 'SERVICE_DUE' | 'REGISTRATION_EXPIRY' | 'INSURANCE_EXPIRY' | 'INSPECTION_EXPIRY';
+
+export type ReminderTiming = 'AT_EVENT' | 'ONE_WEEK_OR_100_DISTANCE_BEFORE' | 'TWO_WEEKS_OR_200_DISTANCE_BEFORE' | 'ONE_MONTH_OR_1000_DISTANCE_BEFORE';
+
+export interface ReminderPreference {
+  type: ReminderType;
+  timing: ReminderTiming;
+  enabled: boolean;
+}
+
+export interface ReminderTypeMetadata {
+  key: ReminderType;
+  label: string;
+  supportsDate: boolean;
+  supportsDistance: boolean;
+}
+
+export interface ReminderTimingMetadata {
+  key: ReminderTiming;
+  label: string;
+  daysOffset: number;
+  distanceOffset: number;
+}
+
+export interface ReminderPreferencesResponse {
+  preferences: ReminderPreference[];
+  metadata: {
+    types: ReminderTypeMetadata[];
+    timings: ReminderTimingMetadata[];
+    measurementSystem: string;
+  };
+}
+
+// --- Reminder Engine Types ---
+
+export interface DueReminder {
+  id: string;
+  type: ReminderType;
+  timing: ReminderTiming;
+  vehicleId: string;
+  vehicleDisplayName: string;
+  dueDate?: string;
+  dueOdometer?: number;
+  currentOdometer?: number;
+  distanceRemaining?: number;
+  daysRemaining?: number;
+  severity: 'due_now' | 'due_soon' | 'overdue';
+  title: string;
+  message: string;
+}
+
+export interface DueRemindersResponse {
+  effectiveNow: string;
+  reminders: DueReminder[];
+  counts: Record<string, number>;
 }

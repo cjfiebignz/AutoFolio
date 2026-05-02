@@ -2,28 +2,58 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
-import { getUserPreferences, updateUserPreferences } from './api';
+import { getUserPreferences, updateUserPreferences, UpdateUserPreferencesData } from './api';
 
 export type MeasurementSystem = 'metric' | 'imperial';
 
 export interface UserPreferences {
   measurementSystem: MeasurementSystem;
   defaultCurrency: string;
+  timezone: string;
   theme: 'dark' | 'light' | 'system';
   notifications: {
     reminders: boolean;
     serviceAlerts: boolean;
+  };
+  effectiveNow?: string;
+  // These are for the PlanContext mostly, will be merged
+  vehicleLimit: number;
+  currentVehicleCount: number;
+  canAddVehicle: boolean;
+  limits: {
+    maxVehicles: number;
+    maxPhotosPerVehicle: number;
+    maxDocumentSizeMB: number;
+    canUseSpecHub: boolean;
+    canExportPdf: boolean;
+    canSharePublicReport: boolean;
+    canExportZip: boolean;
+    canImportSpecCsv: boolean;
   };
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   measurementSystem: 'metric',
   defaultCurrency: 'AUD',
+  timezone: typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC',
   theme: 'dark',
   notifications: {
     reminders: true,
     serviceAlerts: true,
   },
+  vehicleLimit: 1,
+  currentVehicleCount: 0,
+  canAddVehicle: true,
+  limits: {
+    maxVehicles: 1,
+    maxPhotosPerVehicle: 10,
+    maxDocumentSizeMB: 5,
+    canUseSpecHub: false,
+    canExportPdf: false,
+    canSharePublicReport: false,
+    canExportZip: false,
+    canImportSpecCsv: false,
+  }
 };
 
 const STORAGE_KEY_PREFIX = 'autofolio_prefs_';
@@ -110,9 +140,29 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
               if (data.measurementSystem && prev.measurementSystem !== data.measurementSystem) {
                 updates.measurementSystem = data.measurementSystem as MeasurementSystem;
               }
+              if (data.timezone && prev.timezone !== data.timezone) {
+                updates.timezone = data.timezone;
+              }
+              if (data.effectiveNow && prev.effectiveNow !== data.effectiveNow) {
+                updates.effectiveNow = data.effectiveNow;
+              }
               // Sync appearance -> theme
               if (data.appearance && prev.theme !== data.appearance) {
                 updates.theme = data.appearance as any;
+              }
+              
+              // Plan-related fields
+              if (data.vehicleLimit !== undefined && prev.vehicleLimit !== data.vehicleLimit) {
+                updates.vehicleLimit = data.vehicleLimit;
+              }
+              if (data.currentVehicleCount !== undefined && prev.currentVehicleCount !== data.currentVehicleCount) {
+                updates.currentVehicleCount = data.currentVehicleCount;
+              }
+              if (data.canAddVehicle !== undefined && prev.canAddVehicle !== data.canAddVehicle) {
+                updates.canAddVehicle = data.canAddVehicle;
+              }
+              if (data.limits && JSON.stringify(prev.limits) !== JSON.stringify(data.limits)) {
+                updates.limits = data.limits;
               }
 
               if (Object.keys(updates).length === 0) return prev;
@@ -133,6 +183,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   }, [userId, mounted]);
 
   const updatePreferences = useCallback(async (updates: Partial<UserPreferences>) => {
+    // 1. Update local state immediately for snappy UI
     setPreferences(prev => {
       const newPrefs = { ...prev, ...updates };
       if (userId) {
@@ -141,14 +192,17 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       return newPrefs;
     });
 
-    // Sync to backend if relevant fields changed and session exists
-    if (userId && (updates.defaultCurrency || updates.measurementSystem || updates.theme)) {
+    // 2. Build cleaned cloud update payload
+    const cloudUpdates: UpdateUserPreferencesData = {};
+    if (updates.defaultCurrency) cloudUpdates.defaultCurrency = updates.defaultCurrency;
+    if (updates.measurementSystem) cloudUpdates.measurementSystem = updates.measurementSystem;
+    if (updates.theme) cloudUpdates.appearance = updates.theme;
+    if (updates.timezone) cloudUpdates.timezone = updates.timezone;
+
+    // 3. Sync to backend ONLY if payload has actual updates
+    if (userId && Object.keys(cloudUpdates).length > 0) {
       try {
-        await updateUserPreferences(userId, { 
-          defaultCurrency: updates.defaultCurrency,
-          measurementSystem: updates.measurementSystem,
-          appearance: updates.theme // Sync theme -> appearance
-        });
+        await updateUserPreferences(userId, cloudUpdates);
       } catch (err) {
         console.error('[Preferences] Failed to sync settings to cloud:', err);
       }
@@ -184,17 +238,19 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   }, [mounted, preferences.measurementSystem]);
 
   return (
-    <PreferencesContext.Provider value={{
-      preferences,
-      updatePreferences,
-      updateNotifications,
-      formatDistance,
-      getDistanceValue,
-      getUnitLabel,
-      mounted
-    }}>
-      {children}
-    </PreferencesContext.Provider>
+    <div data-effective-now={preferences.effectiveNow}>
+      <PreferencesContext.Provider value={{
+        preferences,
+        updatePreferences,
+        updateNotifications,
+        formatDistance,
+        getDistanceValue,
+        getUnitLabel,
+        mounted
+      }}>
+        {children}
+      </PreferencesContext.Provider>
+    </div>
   );
 }
 

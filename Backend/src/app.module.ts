@@ -8,6 +8,10 @@ import { PartsModule } from './modules/parts/parts.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { EmailModule } from './modules/email/email.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { DevModule } from './modules/dev/dev.module';
+import { ReminderPreferenceModule } from './modules/reminder-preference/reminder-preference.module';
+import { ReminderEngineModule } from './modules/reminder-engine/reminder-engine.module';
+import { ReminderDeliveryModule } from './modules/reminder-delivery/reminder-delivery.module';
 
 @Module({
   imports: [
@@ -24,7 +28,11 @@ import { StorageModule } from './modules/storage/storage.module';
     PartsModule,
     AuthModule,
     EmailModule,
-    StorageModule
+    StorageModule,
+    DevModule,
+    ReminderPreferenceModule,
+    ReminderEngineModule,
+    ReminderDeliveryModule
   ],
 })
 export class AppModule {}

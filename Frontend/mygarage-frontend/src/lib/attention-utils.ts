@@ -42,7 +42,8 @@ export function evaluateVehicleAttention(options: AttentionEngineOptions): Atten
 
   // 2. Registration
   if (vehicle.hasRegistration) {
-    const regStatus = getExpiryStatus(vehicle.registrationExpiryDate);
+    const regStatus = vehicle.registrationStatus; // Priority: backend-owned status
+    const dateStatus = getExpiryStatus(vehicle.registrationExpiryDate);
     
     // De-duplicate: check if ANY active reminder covers registration/rego
     const hasRegReminder = activeReminders.some(r => 
@@ -50,7 +51,7 @@ export function evaluateVehicleAttention(options: AttentionEngineOptions): Atten
     );
 
     if (!hasRegReminder) {
-      if (regStatus === 'expired') {
+      if (regStatus === 'expired' || dateStatus === 'expired') {
         attention.push({
           key: 'reg-expired',
           category: 'registration',
@@ -59,7 +60,7 @@ export function evaluateVehicleAttention(options: AttentionEngineOptions): Atten
           subLabel: getRelativeTimeText(vehicle.registrationExpiryDate) ? `Expired ${getRelativeTimeText(vehicle.registrationExpiryDate).toLowerCase()}` : 'Legal compliance required',
           href: `/vehicles/${vehicle.id}/registration`
         });
-      } else if (regStatus === 'due_soon') {
+      } else if (regStatus === 'due_soon' || dateStatus === 'due_soon') {
         attention.push({
           key: 'reg-due-soon',
           category: 'registration',
@@ -83,7 +84,8 @@ export function evaluateVehicleAttention(options: AttentionEngineOptions): Atten
 
   // 3. Insurance
   if (vehicle.hasInsurance) {
-    const insStatus = getExpiryStatus(vehicle.insuranceExpiryDate);
+    const insStatus = vehicle.insuranceStatus; // Priority: backend-owned status
+    const dateStatus = getExpiryStatus(vehicle.insuranceExpiryDate);
 
     // De-duplicate: check if ANY active reminder covers insurance
     const hasInsReminder = activeReminders.some(r => 
@@ -91,7 +93,7 @@ export function evaluateVehicleAttention(options: AttentionEngineOptions): Atten
     );
 
     if (!hasInsReminder) {
-      if (insStatus === 'expired') {
+      if (insStatus === 'expired' || dateStatus === 'expired') {
         attention.push({
           key: 'ins-expired',
           category: 'insurance',
@@ -100,7 +102,7 @@ export function evaluateVehicleAttention(options: AttentionEngineOptions): Atten
           subLabel: getRelativeTimeText(vehicle.insuranceExpiryDate) ? `Expired ${getRelativeTimeText(vehicle.insuranceExpiryDate).toLowerCase()}` : 'Vehicle unprotected',
           href: `/vehicles/${vehicle.id}/insurance`
         });
-      } else if (insStatus === 'due_soon') {
+      } else if (insStatus === 'due_soon' || dateStatus === 'due_soon') {
         attention.push({
           key: 'ins-due-soon',
           category: 'insurance',

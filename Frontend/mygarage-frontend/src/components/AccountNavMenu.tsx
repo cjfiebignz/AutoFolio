@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { 
   MoreVertical, 
@@ -13,7 +13,8 @@ import {
   CreditCard, 
   Settings, 
   Shield,
-  Plus
+  Plus,
+  Cpu
 } from 'lucide-react';
 import { AddVehicleLink } from './vehicles/AddVehicleLink';
 
@@ -27,9 +28,29 @@ interface AccountNavMenuProps {
 }
 
 export function AccountNavMenu({ user, vehicleId }: AccountNavMenuProps) {
+  const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
+  const [devModeEnabled, setDevModeEnabled] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+
+  const userId = session?.user?.id;
+
+  // Check for dev mode and listen for changes
+  useEffect(() => {
+    const checkDevMode = () => {
+      if (!userId) {
+        setDevModeEnabled(false);
+        return;
+      }
+      const enabled = localStorage.getItem(`autofolio_dev_${userId}`) === 'true';
+      setDevModeEnabled(enabled);
+    };
+
+    checkDevMode();
+    window.addEventListener('autofolio_dev_unlocked', checkDevMode);
+    return () => window.removeEventListener('autofolio_dev_unlocked', checkDevMode);
+  }, [userId]);
 
   // Close menu on outside click
   useEffect(() => {
@@ -68,7 +89,18 @@ export function AccountNavMenu({ user, vehicleId }: AccountNavMenuProps) {
   const isCollectionPage = pathname === '/vehicles';
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative flex items-center gap-2" ref={menuRef}>
+      {/* Dev Tools Quick Access (Pill) */}
+      {devModeEnabled && pathname !== '/dev-tools' && (
+        <Link 
+          href="/dev-tools"
+          className="flex h-11 items-center gap-2 rounded-2xl border border-blue-500/20 bg-blue-500/5 px-4 text-[9px] font-black uppercase tracking-widest text-blue-500 transition-all hover:bg-blue-500/10 active:scale-95 animate-in fade-in zoom-in-95 duration-300"
+        >
+          <Cpu size={14} strokeWidth={2.5} />
+          <span className="hidden xs:inline">Dev Tools</span>
+        </Link>
+      )}
+
       <div className="flex items-center gap-3">
         {/* User Identity Presence */}
         <div className="flex flex-col items-end text-right hidden sm:flex">
@@ -111,7 +143,7 @@ export function AccountNavMenu({ user, vehicleId }: AccountNavMenuProps) {
 
       {/* Dropdown Panel */}
       <div 
-        className={`absolute right-0 mt-4 w-64 overflow-y-auto max-h-[calc(100vh-120px)] rounded-[32px] border border-subtle bg-[var(--dropdown-bg)] shadow-2xl backdrop-blur-xl transition-all duration-300 z-[100] origin-top-right no-scrollbar ${
+        className={`absolute right-0 mt-4 top-full w-64 overflow-y-auto max-h-[calc(100vh-120px)] rounded-[32px] border border-subtle bg-[var(--dropdown-bg)] shadow-2xl backdrop-blur-xl transition-all duration-300 z-[100] origin-top-right no-scrollbar ${
           isOpen 
             ? 'opacity-100 scale-100 translate-y-0' 
             : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
@@ -194,6 +226,15 @@ export function AccountNavMenu({ user, vehicleId }: AccountNavMenuProps) {
             label="Legal & Privacy" 
             onClick={() => setIsOpen(false)}
           />
+
+          {devModeEnabled && (
+            <MenuLink 
+              href="/dev-tools" 
+              icon={<Cpu size={16} />} 
+              label="Dev Tools" 
+              onClick={() => setIsOpen(false)}
+            />
+          )}
           
           <button
             type="button"

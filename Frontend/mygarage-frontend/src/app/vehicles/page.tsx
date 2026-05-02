@@ -92,7 +92,7 @@ export default async function VehiclesPage() {
 
         {/* Vehicles List */}
         <div className="space-y-8">
-          <GarageSummaryBar vehicles={vehicles} />
+          <GarageSummaryBar vehicles={vehicles} effectiveNow={(planState as any).effectiveNow} />
           {vehicles.length === 0 ? (
             <div className="group relative flex flex-col items-center justify-center rounded-[40px] border border-dashed border-border-subtle bg-foreground/[0.01] py-32 text-center transition-all hover:bg-foreground/[0.02]">
               <div className="mb-8 relative">

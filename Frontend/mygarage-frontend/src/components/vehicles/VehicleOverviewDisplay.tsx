@@ -50,6 +50,7 @@ interface OverviewProps {
   rawReminders: Reminder[];
   serviceSummary?: ServiceSummaryViewModel | null;
   costSummary?: LifetimeCostSummary | null;
+  effectiveNow?: string;
 }
 
 export function VehicleOverviewDisplay({ 
@@ -59,7 +60,8 @@ export function VehicleOverviewDisplay({
   documents = [],
   rawReminders = [],
   serviceSummary = null,
-  costSummary = null
+  costSummary = null,
+  effectiveNow
 }: OverviewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -458,6 +460,7 @@ export function VehicleOverviewDisplay({
         documents={documents}
         reminders={reminders}
         serviceSummary={serviceSummary}
+        effectiveNow={effectiveNow}
       />
       <RenewalModal 
         isOpen={isRenewalModalOpen}

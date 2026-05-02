@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   X, ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
   Wrench, Bell, Edit3, ArrowRight, Clock
 } from 'lucide-react';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday as isDateToday, startOfWeek, endOfWeek } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek } from 'date-fns';
 import { UserVehicle, ServiceEvent, WorkJob, Reminder, Document } from '@/types/autofolio';
 import { mapToVehicleViewModel } from '@/lib/mappers/vehicle';
 import Link from 'next/link';
@@ -25,11 +25,19 @@ interface GarageCalendarModalProps {
   isOpen: boolean;
   onClose: () => void;
   vehicles: UserVehicle[];
+  effectiveNow?: string;
 }
 
-export function GarageCalendarModal({ isOpen, onClose, vehicles }: GarageCalendarModalProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+export function GarageCalendarModal({ isOpen, onClose, vehicles, effectiveNow }: GarageCalendarModalProps) {
+  const [currentMonth, setCurrentMonth] = useState(effectiveNow ? new Date(effectiveNow) : new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // Sync month if effectiveNow changes while open
+  useEffect(() => {
+    if (isOpen && effectiveNow) {
+      setCurrentMonth(new Date(effectiveNow));
+    }
+  }, [isOpen, effectiveNow]);
 
   // Aggregate all events across all vehicles
   const allEvents = useMemo(() => {
@@ -154,9 +162,13 @@ export function GarageCalendarModal({ isOpen, onClose, vehicles }: GarageCalenda
               {calendarDays.map((day, i) => {
                 const isCurrentMonth = isSameMonth(day, monthStart);
                 const isSelected = selectedDate && isSameDay(day, selectedDate);
-                const isToday = isDateToday(day);
-                const hasEvents = allEvents.some(event => isSameDay(event.date, day));
+                
+                // Effective Today logic
+                const todayDate = effectiveNow ? new Date(effectiveNow) : new Date();
+                const isToday = isSameDay(day, todayDate);
+
                 const dayEvents = allEvents.filter(event => isSameDay(event.date, day));
+                const hasEvents = dayEvents.length > 0;
 
                 return (
                   <button

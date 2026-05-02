@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   X, ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
   Wrench, Bell, Edit3, ArrowRight, Clock
 } from 'lucide-react';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday as isDateToday, startOfWeek, endOfWeek } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek } from 'date-fns';
 import { VehicleViewModel } from '@/lib/mappers/vehicle';
 import { ServiceEntryViewModel, ServiceSummaryViewModel } from '@/lib/mappers/service';
 import { WorkJobViewModel } from '@/lib/mappers/work';
@@ -31,6 +31,7 @@ interface VehicleCalendarModalProps {
   documents: DocumentViewModel[];
   reminders: ReminderViewModel[];
   serviceSummary?: ServiceSummaryViewModel | null;
+  effectiveNow?: string;
 }
 
 export function VehicleCalendarModal({ 
@@ -40,10 +41,18 @@ export function VehicleCalendarModal({
   services,
   workItems,
   reminders,
-  serviceSummary
+  serviceSummary,
+  effectiveNow
 }: VehicleCalendarModalProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(effectiveNow ? new Date(effectiveNow) : new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // Sync month if effectiveNow changes while open
+  useEffect(() => {
+    if (isOpen && effectiveNow) {
+      setCurrentMonth(new Date(effectiveNow));
+    }
+  }, [isOpen, effectiveNow]);
 
   // Aggregate all events for this specific vehicle
   const allEvents = useMemo(() => {
@@ -172,7 +181,11 @@ export function VehicleCalendarModal({
               {calendarDays.map((day, i) => {
                 const isCurrentMonth = isSameMonth(day, monthStart);
                 const isSelected = selectedDate && isSameDay(day, selectedDate);
-                const isToday = isDateToday(day);
+                
+                // Effective Today logic
+                const todayDate = effectiveNow ? new Date(effectiveNow) : new Date();
+                const isToday = isSameDay(day, todayDate);
+
                 const dayEvents = allEvents.filter(event => isSameDay(event.date, day));
                 const hasEvents = dayEvents.length > 0;
 

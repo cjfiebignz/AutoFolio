@@ -7,9 +7,10 @@ import { GarageCalendarModal } from './GarageCalendarModal';
 
 interface GarageCalendarTriggerProps {
   vehicles: UserVehicle[];
+  effectiveNow?: string;
 }
 
-export function GarageCalendarTrigger({ vehicles }: GarageCalendarTriggerProps) {
+export function GarageCalendarTrigger({ vehicles, effectiveNow }: GarageCalendarTriggerProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   if (vehicles.length === 0) return null;
@@ -28,6 +29,7 @@ export function GarageCalendarTrigger({ vehicles }: GarageCalendarTriggerProps) 
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         vehicles={vehicles}
+        effectiveNow={effectiveNow}
       />
     </>
   );

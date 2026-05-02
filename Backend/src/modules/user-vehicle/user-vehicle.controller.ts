@@ -21,6 +21,7 @@ import { RenewInsuranceDto } from './dto/renew-insurance.dto';
 import { CreateCustomSpecDto } from './dto/create-custom-spec.dto';
 import { UpdateCustomSpecDto } from './dto/update-custom-spec.dto';
 import { UpdateBannerMetadataDto } from './dto/update-banner-metadata.dto';
+import { DailyUpdateDto } from './dto/daily-update.dto';
 
 @Controller('user-vehicles')
 export class UserVehicleController {
@@ -36,14 +37,14 @@ export class UserVehicleController {
     return this.userVehicleService.findAllByUser(userId);
   }
 
-  @Get('daily/usage-summary')
-  async getDailyUsageSummary(@Query('userId') userId: string) {
-    return this.userVehicleService.getDailyUsageSummary(userId);
-  }
-
   @Get('daily/streak')
   async getDailyStreak(@Query('userId') userId: string) {
     return this.userVehicleService.getDailyStreak(userId);
+  }
+
+  @Post('daily/update')
+  async recordDailyUpdate(@Body() dto: DailyUpdateDto) {
+    return this.userVehicleService.recordDailyOdometerUpdate(dto);
   }
 
   @Get(':id/specs')

@@ -129,6 +129,7 @@ export function RenewalModal({
             notes
           });
         }
+        window.dispatchEvent(new Event('garage-refresh'));
         setStep('success');
         router.refresh();
       } catch (err: any) {

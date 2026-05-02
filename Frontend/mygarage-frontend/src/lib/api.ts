@@ -10,7 +10,9 @@ import {
   PartPreset,
   DailyVehicleStreak,
   UserPreferences,
-  AccountMetadata
+  AccountMetadata,
+  ReminderPreferencesResponse,
+  DueRemindersResponse
 } from '@/types/autofolio';
 
 const API_BASE_URL = (() => {
@@ -900,6 +902,7 @@ export interface UpdateUserPreferencesData {
   defaultCurrency?: string;
   measurementSystem?: string;
   appearance?: string;
+  timezone?: string;
   plan?: string;
 }
 
@@ -925,13 +928,42 @@ export async function getUserPreferences(userId: string): Promise<UserPreference
   }
 }
 
+export async function recordDailyOdometerUpdate(userId: string, vehicleId: string, odometerKms: number | null, noChange?: boolean): Promise<any> {
+  const url = `${API_BASE_URL}/user-vehicles/daily/update`;
+  
+  // Construct body according to backend DTO (DailyUpdateDto)
+  const body: any = { userId, vehicleId };
+  if (odometerKms !== null) body.odometerKms = odometerKms;
+  if (noChange !== undefined) body.noChange = noChange;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to record daily update (Status: ${response.status})`);
+  }
+
+  return response.json();
+}
+
 export async function updateUserPreferences(userId: string, data: UpdateUserPreferencesData): Promise<UserPreferences> {
   // Explicitly construct the clean body object
   const body: any = {};
   if (data.defaultCurrency) body.defaultCurrency = data.defaultCurrency;
   if (data.measurementSystem) body.measurementSystem = data.measurementSystem;
   if (data.appearance) body.appearance = data.appearance;
+  if (data.timezone) body.timezone = data.timezone;
   if (data.plan) body.plan = data.plan;
+
+  // Defensive guard: Do not send empty updates
+  if (Object.keys(body).length === 0) {
+    // Return current preferences if no updates (this helper is usually called after a local state update)
+    return getUserPreferences(userId);
+  }
 
   const response = await fetch(`${API_BASE_URL}/users/${userId}/preferences`, {
     method: 'PATCH',
@@ -1418,6 +1450,154 @@ export async function resetPassword(token: string, newPassword: string): Promise
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.message || 'Failed to reset password');
+  }
+  return response.json();
+}
+
+// --- Reminder Preference API Helpers ---
+
+export async function getReminderPreferences(userId: string): Promise<ReminderPreferencesResponse> {
+  const url = `${API_BASE_URL}/users/${userId}/reminder-preferences`;
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to fetch reminder preferences');
+  }
+  return response.json();
+}
+
+export async function updateReminderPreference(userId: string, data: { type: string; timing: string; enabled: boolean }): Promise<any> {
+  const url = `${API_BASE_URL}/users/${userId}/reminder-preferences`;
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to update reminder preference');
+  }
+  return response.json();
+}
+
+export async function getDueReminders(userId: string): Promise<DueRemindersResponse> {
+  const url = `${API_BASE_URL}/users/${userId}/reminders/due`;
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to fetch due reminders');
+  }
+  return response.json();
+}
+
+export interface SendEmailsResponse {
+  totalEvaluated: number;
+  sent: number;
+  skipped: number;
+  failed: number;
+  noEmail: number;
+  noConfig: number;
+  details: any[];
+}
+
+export async function sendDueReminderEmails(userId: string): Promise<SendEmailsResponse> {
+  const url = `${API_BASE_URL}/users/${userId}/reminders/send-due-emails`;
+  const response = await fetch(url, { 
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to send due reminder emails');
+  }
+  return response.json();
+}
+
+export async function resetReminderDeliveries(userId: string, filters?: { channel?: string; vehicleId?: string; reminderType?: string }): Promise<{ count: number }> {
+  const params = new URLSearchParams();
+  if (filters?.channel) params.append('channel', filters.channel);
+  if (filters?.vehicleId) params.append('vehicleId', filters.vehicleId);
+  if (filters?.reminderType) params.append('reminderType', filters.reminderType);
+  
+  const queryString = params.toString();
+  const url = `${API_BASE_URL}/users/${userId}/reminders/deliveries${queryString ? `?${queryString}` : ''}`;
+  
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to reset reminder deliveries');
+  }
+  return response.json();
+}
+
+// --- Dev Mode API Helpers ---
+
+export interface DevTimeResponse {
+  realNow: string;
+  effectiveNow: string;
+  overrideActive: boolean;
+  overrideNow: string | null;
+}
+
+export async function unlockDevMode(password: string): Promise<{ success: boolean }> {
+  const response = await fetch(`${API_BASE_URL}/dev/unlock`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to unlock Dev Mode');
+  }
+  return response.json();
+}
+
+export async function getDevTime(): Promise<DevTimeResponse> {
+  const response = await fetch(`${API_BASE_URL}/dev/time`);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to fetch dev time');
+  }
+  return response.json();
+}
+
+export async function setDevTime(overrideNow: string): Promise<DevTimeResponse> {
+  const response = await fetch(`${API_BASE_URL}/dev/time`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ overrideNow }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to set dev time');
+  }
+  return response.json();
+}
+
+export async function advanceDevTime(hours: number): Promise<DevTimeResponse> {
+  const response = await fetch(`${API_BASE_URL}/dev/time/advance`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ hours }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to advance dev time');
+  }
+  return response.json();
+}
+
+export async function clearDevTime(): Promise<DevTimeResponse> {
+  const response = await fetch(`${API_BASE_URL}/dev/time`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to clear dev time');
   }
   return response.json();
 }

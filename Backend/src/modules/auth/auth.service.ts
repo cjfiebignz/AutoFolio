@@ -3,6 +3,7 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
+import { DevService } from '../dev/dev.service';
 import { RegisterDto } from './dto/register.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { SetPasswordDto } from './dto/set-password.dto';
@@ -19,6 +20,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
+    private devService: DevService,
   ) {}
 
   private hashToken(token: string): string {
@@ -28,7 +30,7 @@ export class AuthService {
   private async createVerificationToken(userId: string, email: string, purpose: 'registration' | 'email_change') {
     const rawToken = crypto.randomBytes(32).toString('hex');
     const tokenHash = this.hashToken(rawToken);
-    const expiresAt = new Date();
+    const expiresAt = this.devService.getNow();
     expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiry
 
     // Delete any existing unused tokens for this user and purpose
@@ -68,7 +70,7 @@ export class AuthService {
 
     const rawToken = crypto.randomBytes(32).toString('hex');
     const tokenHash = this.hashToken(rawToken);
-    const expiresAt = new Date();
+    const expiresAt = this.devService.getNow();
     expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiry
 
     // Invalidate previous reset tokens
@@ -91,12 +93,13 @@ export class AuthService {
 
   async resetPassword(dto: ResetPasswordDto) {
     const tokenHash = this.hashToken(dto.token);
+    const now = this.devService.getNow();
 
     const resetToken = await this.prisma.passwordResetToken.findFirst({
       where: {
         tokenHash,
         usedAt: null,
-        expiresAt: { gt: new Date() },
+        expiresAt: { gt: now },
       },
       include: { user: true },
     });
@@ -122,13 +125,13 @@ export class AuthService {
         where: { id: user.id },
         data: { 
           passwordHash,
-          emailVerifiedAt: user.emailVerifiedAt || new Date(), // Resetting password proves email access
-          emailVerified: user.emailVerified || new Date(),
+          emailVerifiedAt: user.emailVerifiedAt || now, // Resetting password proves email access
+          emailVerified: user.emailVerified || now,
         },
       }),
       this.prisma.passwordResetToken.update({
         where: { id: resetToken.id },
-        data: { usedAt: new Date() },
+        data: { usedAt: now },
       }),
       // Invalidate other pending reset tokens for this user
       this.prisma.passwordResetToken.deleteMany({
@@ -141,6 +144,7 @@ export class AuthService {
 
   async verifyEmail(token: string) {
     const tokenHash = this.hashToken(token);
+    const now = this.devService.getNow();
     
     this.logger.debug(`Verifying email token. Hash prefix: ${tokenHash.substring(0, 8)}`);
 
@@ -161,7 +165,7 @@ export class AuthService {
       throw new BadRequestException('This verification link has already been used.');
     }
 
-    if (verificationToken.expiresAt < new Date()) {
+    if (verificationToken.expiresAt < now) {
       this.logger.warn(`Verification token expired at ${verificationToken.expiresAt} for userId ${verificationToken.userId}`);
       throw new BadRequestException('This verification link has expired.');
     }
@@ -173,8 +177,8 @@ export class AuthService {
       await this.prisma.user.update({
         where: { id: user.id },
         data: { 
-          emailVerifiedAt: new Date(),
-          emailVerified: new Date(), // Set legacy field too
+          emailVerifiedAt: now,
+          emailVerified: now, // Set legacy field too
         },
       });
     } else if (purpose === 'email_change') {
@@ -196,8 +200,8 @@ export class AuthService {
         where: { id: user.id },
         data: {
           email,
-          emailVerifiedAt: new Date(),
-          emailVerified: new Date(), // Set legacy field too
+          emailVerifiedAt: now,
+          emailVerified: now, // Set legacy field too
           pendingEmail: null,
         },
       });
@@ -205,7 +209,7 @@ export class AuthService {
 
     await this.prisma.emailVerificationToken.update({
       where: { id: verificationToken.id },
-      data: { usedAt: new Date() },
+      data: { usedAt: now },
     });
 
     return { 
@@ -473,7 +477,7 @@ export class AuthService {
     await this.prisma.user.update({
       where: { id: userId },
       data: { 
-        deletedAt: new Date(),
+        deletedAt: this.devService.getNow(),
         email: anonymizedEmail,
         name: 'Deleted User',
         passwordHash: null,

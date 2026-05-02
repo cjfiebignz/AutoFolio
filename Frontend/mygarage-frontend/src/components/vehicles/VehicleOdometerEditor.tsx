@@ -133,6 +133,7 @@ export function VehicleOdometerEditor({
 
     try {
       await updateVehicle(vehicleId, data as any);
+      window.dispatchEvent(new Event('odometer-updated'));
       startTransition(() => {
         router.refresh();
         onClose();

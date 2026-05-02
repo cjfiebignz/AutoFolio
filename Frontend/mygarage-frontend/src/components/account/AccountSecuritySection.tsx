@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition } from 'react';
 import { signOut } from 'next-auth/react';
+import Link from 'next/link';
 import { 
   ShieldCheck, 
   Mail, 
@@ -16,7 +17,9 @@ import {
   Trash2,
   AlertCircle,
   Clock,
-  X
+  X,
+  Cpu,
+  LogOut
 } from 'lucide-react';
 import { 
   getAccountMetadata, 
@@ -25,9 +28,12 @@ import {
   deleteAccount,
   updateAccount,
   resendVerificationEmail,
-  cancelEmailChange
+  cancelEmailChange,
+  unlockDevMode,
+  clearDevTime
 } from '@/lib/api';
 import { AccountMetadata } from '@/types/autofolio';
+import { useActionConfirm } from '@/lib/use-action-confirm';
 
 export function AccountSecuritySection({ userId }: { userId: string }) {
   const [isPending, startTransition] = useTransition();
@@ -62,6 +68,18 @@ export function AccountSecuritySection({ userId }: { userId: string }) {
   const [pendingSuccess, setPendingSuccess] = useState<string | null>(null);
   const [pendingError, setPendingError] = useState<string | null>(null);
 
+  // Dev Mode states
+  const [devPassword, setDevPassword] = useState('');
+  const [devModeEnabled, setDevModeEnabled] = useState(false);
+  const [isUnlockingDev, setIsUnlockingDev] = useState(false);
+  const {
+    confirmState: devFeedback,
+    enterConfirm: showDevFeedback,
+    cancelConfirm: hideDevFeedback,
+    errorMessage: devError,
+    setErrorMessage: setDevError
+  } = useActionConfirm();
+
   const fetchMetadata = async () => {
     try {
       const data = await getAccountMetadata(userId);
@@ -84,8 +102,58 @@ export function AccountSecuritySection({ userId }: { userId: string }) {
       if (!isEditingPendingEmail) {
         setEditEmail(metadata.pendingEmail || metadata.email || '');
       }
+
+      // Check for dev mode
+      const devKey = `autofolio_dev_${userId}`;
+      if (localStorage.getItem(devKey) === 'true') {
+        setDevModeEnabled(true);
+      }
     }
-  }, [metadata, isEditingPendingEmail]);
+  }, [metadata, isEditingPendingEmail, userId]);
+
+  const handleUnlockDev = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!devPassword || isUnlockingDev) return;
+    
+    setIsUnlockingDev(true);
+    setDevError(null);
+    hideDevFeedback();
+
+    try {
+      const result = await unlockDevMode(devPassword);
+      // HTTP 200 is success. result usually { success: true }
+      if (result) {
+        setDevModeEnabled(true);
+        localStorage.setItem(`autofolio_dev_${userId}`, 'true');
+        setDevPassword('');
+        showDevFeedback();
+        // Dispatch event for nav/menu to pick up
+        window.dispatchEvent(new Event('autofolio_dev_unlocked'));
+      }
+    } catch (err: any) {
+      setDevError(err.message || 'Unlock failed. Check your access token.');
+    } finally {
+      setIsUnlockingDev(false);
+    }
+  };
+
+  const handleExitDev = async () => {
+    if (isUnlockingDev) return;
+    setIsUnlockingDev(true);
+    setDevError(null);
+    hideDevFeedback();
+    try {
+      await clearDevTime();
+      localStorage.removeItem(`autofolio_dev_${userId}`);
+      setDevModeEnabled(false);
+      window.dispatchEvent(new Event('autofolio_dev_unlocked'));
+      setSuccess('Developer access disabled.');
+    } catch (err: any) {
+      setDevError(err.message || 'Failed to exit Dev Mode');
+    } finally {
+      setIsUnlockingDev(false);
+    }
+  };
 
   const handleUpdateName = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -688,6 +756,66 @@ export function AccountSecuritySection({ userId }: { userId: string }) {
             </button>
           </div>
         </div>
+      </section>
+
+      {/* 4. Developer Mode (Subdued) */}
+      <section className="pt-12 border-t border-border-subtle/30 opacity-40 hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-3 px-1 mb-6">
+          <Cpu size={14} className="text-muted" />
+          <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-muted">Developer Mode</h3>
+        </div>
+
+        {devModeEnabled ? (
+          <div className="rounded-2xl border border-blue-500/10 bg-blue-500/[0.02] p-6 text-center space-y-4 shadow-premium">
+            <div className="flex items-center justify-center gap-2 text-blue-500">
+              <ShieldCheck size={16} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Developer Access Active</span>
+            </div>
+            <p className="text-[9px] font-medium text-dim italic">Dev Tools are now visible in the app menu.</p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <Link 
+                href="/dev-tools" 
+                className="flex-1 sm:flex-none inline-flex h-11 px-8 items-center justify-center rounded-xl bg-blue-600 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-blue-500 active:scale-95 shadow-lg"
+              >
+                <Cpu size={14} className="mr-2" />
+                Open Dev Tools
+              </Link>
+              <button
+                onClick={handleExitDev}
+                disabled={isUnlockingDev}
+                className="flex-1 sm:flex-none inline-flex h-11 px-8 items-center justify-center rounded-xl bg-foreground/5 border border-border-subtle text-[10px] font-black uppercase tracking-widest text-muted hover:bg-foreground/10 hover:text-foreground transition-all active:scale-95 disabled:opacity-50"
+              >
+                <LogOut size={14} className="mr-2" />
+                {isUnlockingDev ? <Loader2 size={14} className="animate-spin" /> : 'Exit Dev Mode'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-border-subtle bg-card-overlay/30 p-6 shadow-premium">
+            <form onSubmit={handleUnlockDev} className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="password"
+                value={devPassword}
+                onChange={(e) => setDevPassword(e.target.value)}
+                placeholder="Access Token"
+                className="flex-1 h-12 rounded-xl border border-border-subtle bg-foreground/[0.01] px-4 text-xs font-bold text-foreground outline-none focus:border-foreground/10 transition-all shadow-inner"
+              />
+              <button
+                type="submit"
+                disabled={isUnlockingDev || !devPassword}
+                className="h-12 px-8 rounded-xl bg-foreground/5 text-[10px] font-black uppercase tracking-widest text-muted hover:bg-foreground/10 hover:text-foreground transition-all active:scale-95 disabled:opacity-50"
+              >
+                {isUnlockingDev ? <Loader2 size={14} className="animate-spin mx-auto" /> : 'Unlock Dev Tools'}
+              </button>
+            </form>
+            {devError && (
+              <p className="text-[8px] font-bold text-red-500 uppercase tracking-widest mt-3 ml-1 animate-in slide-in-from-left-1">{devError}</p>
+            )}
+            {devFeedback && (
+              <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mt-3 ml-1 animate-in slide-in-from-left-1 italic">Access Granted.</p>
+            )}
+          </div>
+        )}
       </section>
     </div>
   );

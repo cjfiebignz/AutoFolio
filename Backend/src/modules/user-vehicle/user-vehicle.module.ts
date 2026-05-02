@@ -12,12 +12,14 @@ import { VehicleSpecsController } from './vehicle-specs.controller';
 import { VehicleSpecsService } from './vehicle-specs.service';
 import { SpecHubClientService } from './spec-hub-client.service';
 import { VehicleAccessModule } from './vehicle-access.module';
+import { DevModule } from '../dev/dev.module';
 
 @Module({
   imports: [
     HttpModule,
     ConfigModule,
     VehicleAccessModule,
+    DevModule,
     MulterModule.register({
       storage: diskStorage({
         destination: join(process.cwd(), 'uploads'),

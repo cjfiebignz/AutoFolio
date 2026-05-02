@@ -29,8 +29,21 @@ export class EmailService {
     }
   }
 
+  isConfigured(): boolean {
+    return !!this.resend;
+  }
+
+  /**
+   * Generates a safe frontend URL with proper path handling.
+   */
+  private getFrontendUrl(path: string): string {
+    const baseUrl = this.appUrl.replace(/\/$/, '');
+    const cleanPath = path.replace(/^\//, '');
+    return `${baseUrl}/${cleanPath}`;
+  }
+
   async sendVerificationEmail(email: string, token: string, purpose: 'registration' | 'email_change') {
-    const verificationUrl = `${this.appUrl}/verify-email?token=${token}`;
+    const verificationUrl = this.getFrontendUrl(`/verify-email?token=${token}`);
     const subject = purpose === 'registration' ? 'Verify your AutoFolio account' : 'Verify your new email address';
     
     const html = `
@@ -47,8 +60,7 @@ export class EmailService {
             <td style="padding: 40px 40px 30px;">
               <table border="0" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="background-color: #3b82f6; border-radius: 4px; padding: 6px 8px; font-weight: 900; color: #ffffff; font-size: 14px; letter-spacing: -0.05em;">AF</td>
-                  <td style="padding-left: 10px; font-size: 20px; font-weight: 800; letter-spacing: -0.05em; color: #ffffff;">AutoFolio</td>
+                  <td style="font-size: 22px; font-weight: 800; letter-spacing: -0.05em; color: #ffffff;">AutoFolio</td>
                 </tr>
               </table>
             </td>
@@ -104,34 +116,21 @@ If you did not request this, you can safely ignore this email.
 
     if (this.resend) {
       try {
-        const { data, error } = await this.resend.emails.send({
+        await this.resend.emails.send({
           from: this.fromEmail,
           to: email,
           subject,
           html,
           text,
         });
-
-        if (error) {
-          this.logger.error(`Resend API error sending email to ${email}:`, error);
-        } else {
-          this.logger.log(`Verification email sent to ${email} for ${purpose}. ID: ${data?.id}`);
-        }
       } catch (error) {
         this.logger.error(`Failed to send verification email to ${email}`, error);
       }
-    } else {
-      this.logger.warn('Email provider not configured. Verification email was not sent.');
-      this.logger.log('--- DEV EMAIL ---');
-      this.logger.log(`To: ${email}`);
-      this.logger.log(`Subject: ${subject}`);
-      this.logger.log(`URL: ${verificationUrl}`);
-      this.logger.log('------------------');
     }
   }
 
   async sendPasswordResetEmail(email: string, token: string) {
-    const resetUrl = `${this.appUrl}/reset-password?token=${token}`;
+    const resetUrl = this.getFrontendUrl(`/reset-password?token=${token}`);
     const subject = 'Reset your AutoFolio password';
     
     const html = `
@@ -148,8 +147,7 @@ If you did not request this, you can safely ignore this email.
             <td style="padding: 40px 40px 30px;">
               <table border="0" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="background-color: #3b82f6; border-radius: 4px; padding: 6px 8px; font-weight: 900; color: #ffffff; font-size: 14px; letter-spacing: -0.05em;">AF</td>
-                  <td style="padding-left: 10px; font-size: 20px; font-weight: 800; letter-spacing: -0.05em; color: #ffffff;">AutoFolio</td>
+                  <td style="font-size: 22px; font-weight: 800; letter-spacing: -0.05em; color: #ffffff;">AutoFolio</td>
                 </tr>
               </table>
             </td>
@@ -203,29 +201,241 @@ If you did not request this, you can safely ignore this email.
 
     if (this.resend) {
       try {
-        const { data, error } = await this.resend.emails.send({
+        await this.resend.emails.send({
           from: this.fromEmail,
           to: email,
           subject,
           html,
           text,
         });
-
-        if (error) {
-          this.logger.error(`Resend API error sending password reset email to ${email}:`, error);
-        } else {
-          this.logger.log(`Password reset email sent to ${email}. ID: ${data?.id}`);
-        }
       } catch (error) {
         this.logger.error(`Failed to send password reset email to ${email}`, error);
       }
-    } else {
-      this.logger.warn('Email provider not configured. Password reset email was not sent.');
-      this.logger.log('--- DEV EMAIL ---');
-      this.logger.log(`To: ${email}`);
-      this.logger.log(`Subject: ${subject}`);
-      this.logger.log(`URL: ${resetUrl}`);
-      this.logger.log('------------------');
     }
   }
+
+  async sendReminderEmail(email: string, reminder: any): Promise<{ vehicleUrl: string }> {
+    const vehicleUrl = this.getFrontendUrl(`/vehicles/${reminder.vehicleId}`);
+    const subject = `AutoFolio: ${reminder.vehicleDisplayName} ${reminder.type.replace('_', ' ').toLowerCase()} is ${reminder.severity.replace('_', ' ')}`;
+    
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0a0a0a; color: #ffffff;">
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 40px auto; background-color: #111111; border: 1px solid #222222; border-radius: 12px; overflow: hidden;">
+          <tr>
+            <td style="padding: 40px 40px 30px;">
+              <table border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="font-size: 22px; font-weight: 800; letter-spacing: -0.05em; color: #ffffff;">AutoFolio</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <h1 style="margin: 0 0 20px; font-size: 24px; font-weight: 800; font-style: italic; text-transform: uppercase; letter-spacing: -0.02em; color: #ffffff;">
+                ${reminder.title.toUpperCase()}
+              </h1>
+              <p style="margin: 0 0 24px; font-size: 18px; font-weight: 600; color: #ffffff;">
+                Status: <span style="color: ${reminder.severity === 'overdue' ? '#ef4444' : '#f59e0b'};">${reminder.severity.replace('_', ' ').toUpperCase()}</span>
+              </p>
+              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #a1a1aa;">
+                ${reminder.message}
+              </p>
+              
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 30px; background-color: #1a1a1a; border-radius: 8px;">
+                ${reminder.dueDate ? `
+                <tr>
+                  <td style="padding: 15px; color: #71717a; font-size: 14px;">Due Date</td>
+                  <td style="padding: 15px; color: #ffffff; font-size: 14px; text-align: right; font-weight: 600;">${new Date(reminder.dueDate).toLocaleDateString()}</td>
+                </tr>
+                ` : ''}
+                ${reminder.dueOdometer ? `
+                <tr>
+                  <td style="padding: 15px; color: #71717a; font-size: 14px;">Due Odometer</td>
+                  <td style="padding: 15px; color: #ffffff; font-size: 14px; text-align: right; font-weight: 600;">${reminder.dueOdometer.toLocaleString()}</td>
+                </tr>
+                ` : ''}
+                ${reminder.currentOdometer ? `
+                <tr>
+                  <td style="padding: 15px; color: #71717a; font-size: 14px;">Current Odometer</td>
+                  <td style="padding: 15px; color: #ffffff; font-size: 14px; text-align: right; font-weight: 600;">${reminder.currentOdometer.toLocaleString()}</td>
+                </tr>
+                ` : ''}
+              </table>
+
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="left">
+                    <a href="${vehicleUrl}" style="display: inline-block; padding: 14px 32px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #000000; background-color: #ffffff; text-decoration: none; border-radius: 6px;">VIEW VEHICLE</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px 40px; background-color: #0d0d0d; border-top: 1px solid #222222;">
+              <p style="margin: 0; font-size: 11px; line-height: 1.5; color: #3f3f46;">
+                You are receiving this because you enabled ${reminder.type.replace('_', ' ').toLowerCase()} reminders for this vehicle.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const text = `
+AUTOFOLIO REMINDER: ${reminder.title}
+Status: ${reminder.severity.replace('_', ' ').toUpperCase()}
+
+${reminder.message}
+${reminder.dueDate ? `Due Date: ${new Date(reminder.dueDate).toLocaleDateString()}` : ''}
+${reminder.dueOdometer ? `Due Odometer: ${reminder.dueOdometer.toLocaleString()}` : ''}
+
+View your vehicle: ${vehicleUrl}
+    `.trim();
+
+    if (this.resend) {
+      try {
+        await this.resend.emails.send({
+          from: this.fromEmail,
+          to: email,
+          subject,
+          html,
+          text,
+        });
+      } catch (error) {
+        this.logger.error(`Failed to send reminder email to ${email}`, error);
+        throw error;
+      }
+    } else {
+      throw new Error('Email provider not configured');
+    }
+
+    return { vehicleUrl };
+  }
+
+  async sendReminderDigestEmail(email: string, reminders: any[]): Promise<{ garageUrl: string }> {
+    const garageUrl = this.getFrontendUrl('/vehicles');
+    const count = reminders.length;
+    const subject = `AutoFolio: ${count} vehicle reminder${count > 1 ? 's' : ''} need attention`;
+
+    const reminderItemsHtml = reminders.map(r => `
+      <div style="margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #222222;">
+        <p style="margin: 0 0 8px; font-size: 12px; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.05em;">${r.vehicleDisplayName}</p>
+        <h2 style="margin: 0 0 12px; font-size: 18px; font-weight: 800; color: #ffffff;">${r.title}</h2>
+        <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.5; color: #a1a1aa;">${r.message}</p>
+        
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #1a1a1a; border-radius: 6px;">
+          ${r.dueDate ? `
+          <tr>
+            <td style="padding: 10px 15px; color: #71717a; font-size: 13px;">Due Date</td>
+            <td style="padding: 10px 15px; color: #ffffff; font-size: 13px; text-align: right; font-weight: 600;">${new Date(r.dueDate).toLocaleDateString()}</td>
+          </tr>
+          ` : ''}
+          ${r.dueOdometer ? `
+          <tr>
+            <td style="padding: 10px 15px; color: #71717a; font-size: 13px;">Due Odometer</td>
+            <td style="padding: 10px 15px; color: #ffffff; font-size: 13px; text-align: right; font-weight: 600;">${r.dueOdometer.toLocaleString()}</td>
+          </tr>
+          ` : ''}
+          ${r.currentOdometer ? `
+          <tr>
+            <td style="padding: 10px 15px; color: #71717a; font-size: 13px;">Current Odometer</td>
+            <td style="padding: 10px 15px; color: #ffffff; font-size: 13px; text-align: right; font-weight: 600;">${r.currentOdometer.toLocaleString()}</td>
+          </tr>
+          ` : ''}
+        </table>
+      </div>
+    `).join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0a0a0a; color: #ffffff;">
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 40px auto; background-color: #111111; border: 1px solid #222222; border-radius: 12px; overflow: hidden;">
+          <tr>
+            <td style="padding: 40px 40px 30px;">
+              <table border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="font-size: 22px; font-weight: 800; letter-spacing: -0.05em; color: #ffffff;">AutoFolio</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <h1 style="margin: 0 0 24px; font-size: 24px; font-weight: 800; font-style: italic; text-transform: uppercase; letter-spacing: -0.02em; color: #ffffff;">
+                VEHICLE REMINDERS
+              </h1>
+              
+              ${reminderItemsHtml}
+
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 20px;">
+                <tr>
+                  <td align="left">
+                    <a href="${garageUrl}" style="display: inline-block; padding: 14px 32px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #000000; background-color: #ffffff; text-decoration: none; border-radius: 6px;">GO TO GARAGE</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px 40px; background-color: #0d0d0d; border-top: 1px solid #222222;">
+              <p style="margin: 0; font-size: 11px; line-height: 1.5; color: #3f3f46;">
+                You are receiving this digest because multiple reminders are due for your vehicles.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const text = `
+AUTOFOLIO REMINDER DIGEST
+${reminders.map(r => `
+--- ${r.vehicleDisplayName.toUpperCase()} ---
+${r.title}
+Status: ${r.severity.toUpperCase()}
+${r.message}
+${r.dueDate ? `Due Date: ${new Date(r.dueDate).toLocaleDateString()}` : ''}
+${r.dueOdometer ? `Due Odometer: ${r.dueOdometer.toLocaleString()}` : ''}
+`).join('\n')}
+
+View your garage: ${garageUrl}
+    `.trim();
+
+    if (this.resend) {
+      try {
+        await this.resend.emails.send({
+          from: this.fromEmail,
+          to: email,
+          subject,
+          html,
+          text,
+        });
+      } catch (error) {
+        this.logger.error(`Failed to send reminder digest email to ${email}`, error);
+        throw error;
+      }
+    } else {
+      throw new Error('Email provider not configured');
+    }
+
+    return { garageUrl };
+  }
+
 }

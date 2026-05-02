@@ -29,6 +29,7 @@ model User {
   defaultCurrency String    @default("AUD")
   measurementSystem String  @default("metric") // "metric" or "imperial"
   appearance      String    @default("dark") // "dark", "light", or "system"
+  timezone        String    @default("UTC")
   plan            AccountPlan @default(free)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -37,11 +38,28 @@ model User {
   vehicles        UserVehicle[] @relation("UserVehicles")
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens PasswordResetToken[]
+  dailyStreak     UserDailyStreak?
+  reminderPreferences UserReminderPreference[]
+  reminderDeliveries  UserReminderDelivery[]
 
   // Daily Vehicle Reference (Canonical Source of Truth)
   dailyVehicleId  String?       @unique
   dailyVehicle    UserVehicle?  @relation("DailyVehicle", fields: [dailyVehicleId], references: [id], onDelete: SetNull)
   }
+
+model UserDailyStreak {
+  userId             String   @id
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  currentStreak      Int      @default(0)
+  streakSavers       Int      @default(0) // "Spanners"
+  saverProgressDays  Int      @default(0) // 0-4, at 5 earns 1 saver
+  
+  lastCompletedDate  String?  // YYYY-MM-DD in user's timezone
+  lastEvaluatedDate  String?  // YYYY-MM-DD in user's timezone
+
+  updatedAt          DateTime @updatedAt
+}
 
   model EmailVerificationToken {
   id           String   @id @default(uuid())
@@ -153,6 +171,7 @@ model UserVehicle {
   importBatches   ImportBatch[]
   savedParts      SavedPart[]
   partPresets     PartPreset[]
+  reminderDeliveries  UserReminderDelivery[]
 
   createdAt       DateTime           @default(now())
 
@@ -544,4 +563,74 @@ model PartPresetItem {
 
   @@index([presetId])
   @@index([savedPartId])
+}
+
+// 19. Reminder Preferences
+enum ReminderType {
+  SERVICE_DUE
+  REGISTRATION_EXPIRY
+  INSURANCE_EXPIRY
+  INSPECTION_EXPIRY
+}
+
+enum ReminderTiming {
+  AT_EVENT
+  ONE_WEEK_OR_100_DISTANCE_BEFORE
+  TWO_WEEKS_OR_200_DISTANCE_BEFORE
+  ONE_MONTH_OR_1000_DISTANCE_BEFORE
+}
+
+model UserReminderPreference {
+  id        String         @id @default(uuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type      ReminderType
+  timing    ReminderTiming
+  enabled   Boolean        @default(true)
+
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([userId, type, timing])
+  @@index([userId])
+}
+
+// 20. Reminder Delivery Tracking
+enum DeliveryChannel {
+  EMAIL
+  IN_APP
+  PUSH
+}
+
+enum DeliveryStatus {
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model UserReminderDelivery {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  reminderKey      String          // e.g. "vehicleId-type-timing-dueDate/dueKm"
+  reminderType     String
+  vehicleId        String
+  vehicle          UserVehicle     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  channel          DeliveryChannel
+  status           DeliveryStatus  @default(SENT)
+  sentAt           DateTime        @default(now())
+  
+  // Snapshot of the trigger state to prevent duplicates for the SAME event
+  dueDate          DateTime?
+  dueOdometer      Int?
+  
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([vehicleId])
+  @@index([reminderKey, channel])
 }

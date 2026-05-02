@@ -24,8 +24,9 @@ export class UserController {
     const currency = typeof body.defaultCurrency === 'string' ? body.defaultCurrency : undefined;
     const system = typeof body.measurementSystem === 'string' ? body.measurementSystem : undefined;
     const appearance = typeof body.appearance === 'string' ? body.appearance : undefined;
+    const timezone = typeof body.timezone === 'string' ? body.timezone : undefined;
     const plan = (body.plan === 'free' || body.plan === 'pro') ? body.plan : undefined;
 
-    return this.userVehicleService.updateUserPreferences(userId, currency, plan, system, appearance);
+    return this.userVehicleService.updateUserPreferences(userId, currency, plan, system, appearance, timezone);
   }
 }

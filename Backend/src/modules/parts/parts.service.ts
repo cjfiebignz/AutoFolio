@@ -6,6 +6,7 @@ import { CreatePresetDto } from './dto/create-preset.dto';
 import { UpdatePresetDto } from './dto/update-preset.dto';
 import { GenerateShoppingListDto } from './dto/shopping-list.dto';
 import { VehicleAccessService } from '../user-vehicle/vehicle-access.service';
+import { DevService } from '../dev/dev.service';
 import PDFDocument from 'pdfkit';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class PartsService {
   constructor(
     private prisma: PrismaService,
     private vehicleAccess: VehicleAccessService,
+    private devService: DevService,
   ) {}
 
   // --- SAVED PARTS ---
@@ -241,7 +243,7 @@ export class PartsService {
 
     return {
       vehicleId,
-      generatedAt: new Date(),
+      generatedAt: this.devService.getNow(),
       items,
       totalEstimatedCost: totalEstimatedCost || null,
       hasIncompletePricing,
@@ -273,7 +275,7 @@ export class PartsService {
     // Header
     doc.fontSize(20).font('Helvetica-Bold').text('AutoFolio', { align: 'left' });
     doc.fontSize(24).text('Shopping List');
-    doc.fontSize(10).font('Helvetica').text(`Generated: ${new Date().toLocaleDateString('en-AU')}`);
+    doc.fontSize(10).font('Helvetica').text(`Generated: ${this.devService.getNow().toLocaleDateString('en-AU')}`);
     doc.moveDown(1);
 
     // Vehicle Info

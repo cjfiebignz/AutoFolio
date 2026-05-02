@@ -139,9 +139,9 @@ export function BannerDailyBadge() {
   };
 
   return (
-    <div className={`flex items-center gap-1.5 rounded-full border px-2 py-0.5 transition-colors duration-500 ${styles[contrast]}`}>
+    <div className={`flex items-center gap-2 rounded-full border px-3 py-1 transition-colors duration-500 ${styles[contrast]}`}>
       <div className={`h-1 w-1 rounded-full ${contrast === 'light' ? 'bg-blue-300' : 'bg-blue-600'}`} />
-      <span className="text-[8px] font-black uppercase tracking-widest">Daily</span>
+      <span className="text-[10px] font-black uppercase tracking-widest">Daily</span>
     </div>
   );
 }

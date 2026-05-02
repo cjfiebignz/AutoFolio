@@ -99,6 +99,7 @@ export function RegistrationForm({ vehicleId, isOpen, onClose, initialData, vehi
         await createRegistration(vehicleId, payload);
       }
 
+      window.dispatchEvent(new Event('garage-refresh'));
       startTransition(() => {
         router.refresh();
         onClose();
