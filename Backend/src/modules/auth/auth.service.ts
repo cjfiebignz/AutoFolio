@@ -86,7 +86,10 @@ export class AuthService {
       },
     });
 
-    await this.emailService.sendPasswordResetEmail(email, rawToken);
+    const emailResult = await this.emailService.sendPasswordResetEmail(email, rawToken);
+    if (!emailResult.success) {
+      this.logger.error(`Critical email delivery failure during password reset for ${email}: ${emailResult.error}`);
+    }
 
     return { success: true, message: genericMessage };
   }
@@ -237,7 +240,11 @@ export class AuthService {
     }
 
     const rawToken = await this.createVerificationToken(user.id, email, purpose);
-    await this.emailService.sendVerificationEmail(email, rawToken, purpose);
+    const emailResult = await this.emailService.sendVerificationEmail(email, rawToken, purpose);
+    
+    if (!emailResult.success) {
+      throw new BadRequestException(`Failed to send verification email: ${emailResult.error}`);
+    }
 
     return { success: true, message: 'Verification email sent.' };
   }
@@ -373,8 +380,11 @@ export class AuthService {
       // Generate verification token
       const rawToken = await this.createVerificationToken(user.id, email, 'registration');
       
-      // Send email (swallows errors in dev if env missing)
-      await this.emailService.sendVerificationEmail(email, rawToken, 'registration');
+      // Send email
+      const emailResult = await this.emailService.sendVerificationEmail(email, rawToken, 'registration');
+      if (!emailResult.success) {
+        this.logger.error(`Critical email delivery failure during registration for ${email}: ${emailResult.error}`);
+      }
 
       return user;
     } catch (err) {

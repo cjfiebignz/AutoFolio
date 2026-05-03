@@ -26,11 +26,13 @@ export class ReminderPreferenceService {
     { type: ReminderType.INSURANCE_EXPIRY, timing: ReminderTiming.TWO_WEEKS_OR_200_DISTANCE_BEFORE, enabled: false },
     { type: ReminderType.INSURANCE_EXPIRY, timing: ReminderTiming.ONE_MONTH_OR_1000_DISTANCE_BEFORE, enabled: false },
 
-    // INSPECTION_EXPIRY
+    /* 
+    // INSPECTION_EXPIRY (Gated until module implementation)
     { type: ReminderType.INSPECTION_EXPIRY, timing: ReminderTiming.AT_EVENT, enabled: true },
     { type: ReminderType.INSPECTION_EXPIRY, timing: ReminderTiming.ONE_WEEK_OR_100_DISTANCE_BEFORE, enabled: true },
     { type: ReminderType.INSPECTION_EXPIRY, timing: ReminderTiming.TWO_WEEKS_OR_200_DISTANCE_BEFORE, enabled: false },
     { type: ReminderType.INSPECTION_EXPIRY, timing: ReminderTiming.ONE_MONTH_OR_1000_DISTANCE_BEFORE, enabled: false },
+    */
   ];
 
   async getPreferences(userId: string) {
@@ -132,12 +134,14 @@ export class ReminderPreferenceService {
           supportsDate: true,
           supportsDistance: false,
         },
+        /*
         {
           key: ReminderType.INSPECTION_EXPIRY,
           label: 'Inspection / WOF Expiry',
           supportsDate: true,
           supportsDistance: false,
         },
+        */
       ],
       timings: [
         {

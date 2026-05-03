@@ -144,6 +144,9 @@ export function ReminderPreferenceMatrix() {
                   <td className="py-4 pr-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-xs font-bold text-foreground opacity-80">{type.label}</span>
+                      {type.key === 'INSPECTION_EXPIRY' && (
+                        <span className="text-[8px] font-medium text-blue-500/60 italic leading-none">Regional (e.g. WOF, Rego Check)</span>
+                      )}
                       {!type.supportsDistance && (
                         <div className="flex items-center gap-1">
                           <Calendar size={8} className="text-muted opacity-40" />

@@ -43,7 +43,7 @@ export function AccountNavMenu({ user, vehicleId }: AccountNavMenuProps) {
         setDevModeEnabled(false);
         return;
       }
-      const enabled = localStorage.getItem(`autofolio_dev_${userId}`) === 'true';
+      const enabled = !!localStorage.getItem(`autofolio_dev_${userId}`);
       setDevModeEnabled(enabled);
     };
 

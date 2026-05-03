@@ -89,10 +89,10 @@ export default function DevToolsPage() {
     const userId = session?.user?.id;
     if (userId) {
       const devKey = `autofolio_dev_${userId}`;
-      const enabled = localStorage.getItem(devKey) === 'true';
-      setDevModeEnabled(enabled);
+      const token = localStorage.getItem(devKey);
+      setDevModeEnabled(!!token);
       
-      if (enabled) {
+      if (token) {
         fetchDevTime();
       } else {
         setIsLoading(false);
@@ -163,14 +163,20 @@ export default function DevToolsPage() {
     const userId = session?.user?.id;
     if (!userId) return;
 
+    const devToken = localStorage.getItem(`autofolio_dev_${userId}`);
+    if (!devToken) {
+      setEmailError('Developer access token missing. Unlock Dev Mode again in Account Security.');
+      return;
+    }
+
     setIsSendingEmails(true);
     setEmailError(null);
     setEmailResult(null);
     try {
-      const res = await sendDueReminderEmails(userId);
+      const res = await sendDueReminderEmails(userId, devToken);
       setEmailResult(res);
     } catch (err: any) {
-      setEmailError(err.message || 'Failed to send reminder emails');
+      setEmailError(err.message || 'Failed to send reminder emails. Suggest unlocking Dev Mode again.');
     } finally {
       setIsSendingEmails(false);
     }
@@ -180,15 +186,21 @@ export default function DevToolsPage() {
     const userId = session?.user?.id;
     if (!userId) return;
 
+    const devToken = localStorage.getItem(`autofolio_dev_${userId}`);
+    if (!devToken) {
+      setEmailError('Developer access token missing. Unlock Dev Mode again in Account Security.');
+      return;
+    }
+
     setIsResettingDeliveries(true);
     setEmailError(null);
     setResetSuccess(null);
     setEmailResult(null); // Clear previous results
     try {
-      const res = await resetReminderDeliveries(userId);
+      const res = await resetReminderDeliveries(userId, {}, devToken);
       setResetSuccess(`Successfully reset ${res.count} delivery records.`);
     } catch (err: any) {
-      setEmailError(err.message || 'Failed to reset delivery records');
+      setEmailError(err.message || 'Failed to reset delivery records. Suggest unlocking Dev Mode again.');
     } finally {
       setIsResettingDeliveries(false);
     }

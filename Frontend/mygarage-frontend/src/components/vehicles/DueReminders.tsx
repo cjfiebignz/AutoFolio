@@ -32,6 +32,9 @@ export function DueReminders({ onUpdate, compact = false }: DueRemindersProps) {
       const res = await getDueReminders(userId);
       
       // Defensive Dedupe: vehicleId + type
+      // NOTE: This is a frontend safety check to ensure users don't see duplicate cards 
+      // if the backend returns multiple instances of the same logical reminder 
+      // (e.g. during migration or due to overlapping delivery tracking).
       const seen = new Set();
       const uniqueReminders = res.reminders.filter(r => {
         const key = `${r.vehicleId}-${r.type}`;

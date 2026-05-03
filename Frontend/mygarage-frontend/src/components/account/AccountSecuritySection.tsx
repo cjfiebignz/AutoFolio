@@ -105,7 +105,7 @@ export function AccountSecuritySection({ userId }: { userId: string }) {
 
       // Check for dev mode
       const devKey = `autofolio_dev_${userId}`;
-      if (localStorage.getItem(devKey) === 'true') {
+      if (localStorage.getItem(devKey)) {
         setDevModeEnabled(true);
       }
     }
@@ -124,7 +124,8 @@ export function AccountSecuritySection({ userId }: { userId: string }) {
       // HTTP 200 is success. result usually { success: true }
       if (result) {
         setDevModeEnabled(true);
-        localStorage.setItem(`autofolio_dev_${userId}`, 'true');
+        // Store the password as the token for dev-only API calls
+        localStorage.setItem(`autofolio_dev_${userId}`, devPassword);
         setDevPassword('');
         showDevFeedback();
         // Dispatch event for nav/menu to pick up

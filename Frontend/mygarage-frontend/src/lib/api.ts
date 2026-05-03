@@ -1500,11 +1500,14 @@ export interface SendEmailsResponse {
   details: any[];
 }
 
-export async function sendDueReminderEmails(userId: string): Promise<SendEmailsResponse> {
+export async function sendDueReminderEmails(userId: string, devToken?: string): Promise<SendEmailsResponse> {
   const url = `${API_BASE_URL}/users/${userId}/reminders/send-due-emails`;
   const response = await fetch(url, { 
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 
+      'Content-Type': 'application/json',
+      ...(devToken ? { 'x-dev-token': devToken } : {})
+    }
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -1513,7 +1516,7 @@ export async function sendDueReminderEmails(userId: string): Promise<SendEmailsR
   return response.json();
 }
 
-export async function resetReminderDeliveries(userId: string, filters?: { channel?: string; vehicleId?: string; reminderType?: string }): Promise<{ count: number }> {
+export async function resetReminderDeliveries(userId: string, filters?: { channel?: string; vehicleId?: string; reminderType?: string }, devToken?: string): Promise<{ count: number }> {
   const params = new URLSearchParams();
   if (filters?.channel) params.append('channel', filters.channel);
   if (filters?.vehicleId) params.append('vehicleId', filters.vehicleId);
@@ -1524,7 +1527,10 @@ export async function resetReminderDeliveries(userId: string, filters?: { channe
   
   const response = await fetch(url, {
     method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 
+      'Content-Type': 'application/json',
+      ...(devToken ? { 'x-dev-token': devToken } : {})
+    }
   });
   
   if (!response.ok) {

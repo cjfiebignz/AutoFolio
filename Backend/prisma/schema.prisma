@@ -622,8 +622,13 @@ model UserReminderDelivery {
   channel          DeliveryChannel
   status           DeliveryStatus  @default(SENT)
   sentAt           DateTime        @default(now())
-  
+
+  // Database-level deduplication for confirmed sends. 
+  // Set to (reminderKey + channel) if status is SENT, else NULL.
+  confirmedKey     String?         @unique
+
   // Snapshot of the trigger state to prevent duplicates for the SAME event
+
   dueDate          DateTime?
   dueOdometer      Int?
   

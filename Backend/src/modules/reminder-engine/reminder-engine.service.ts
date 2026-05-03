@@ -1,7 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DevService } from '../dev/dev.service';
-import { ReminderType, ReminderTiming, UserVehicle, RegistrationRecord, InsuranceRecord, AccountPlan } from '@prisma/client';
+import { 
+  ReminderType, 
+  ReminderTiming, 
+  UserVehicle, 
+  RegistrationRecord, 
+  InsuranceRecord, 
+  UserReminderPreference,
+  ServiceEvent,
+  OdometerReading
+} from '@prisma/client';
 
 export interface DueReminder {
   id: string; // Deterministic key: vehicleId-type
@@ -17,6 +26,13 @@ export interface DueReminder {
   severity: 'due_now' | 'due_soon' | 'overdue';
   title: string;
   message: string;
+}
+
+interface EvaluatedVehicle extends UserVehicle {
+  registrations: RegistrationRecord[];
+  insurance: InsuranceRecord[];
+  services: ServiceEvent[];
+  odometers: OdometerReading[];
 }
 
 @Injectable()
@@ -63,7 +79,7 @@ export class ReminderEngineService {
     const preferences = user.reminderPreferences;
     const reminders: DueReminder[] = [];
 
-    for (const vehicle of user.vehicles) {
+    for (const vehicle of user.vehicles as EvaluatedVehicle[]) {
       // 2. Process each reminder type - return only one best reminder per type
       const serviceReminder = this.evaluateServiceReminders(vehicle, preferences, now, user.measurementSystem);
       if (serviceReminder) reminders.push(serviceReminder);
@@ -89,19 +105,18 @@ export class ReminderEngineService {
   }
 
   private evaluateServiceReminders(
-    vehicle: any,
-    preferences: any[],
+    vehicle: EvaluatedVehicle,
+    preferences: UserReminderPreference[],
     now: Date,
     measurementSystem: string
   ): DueReminder | null {
     const type = ReminderType.SERVICE_DUE;
     const typePrefs = preferences
       .filter(p => p.type === type && p.enabled)
-      .sort((a, b) => this.timingUrgency[a.timing as ReminderTiming] - this.timingUrgency[b.timing as ReminderTiming]);
+      .sort((a, b) => this.timingUrgency[a.timing] - this.timingUrgency[b.timing]);
 
     if (typePrefs.length === 0) return null;
 
-    // Logic similar to getServiceSummary
     const latestMainService = vehicle.services.find(s => s.isMainService) || null;
     let currentKms = vehicle.currentOdometer || 0;
     
@@ -112,7 +127,6 @@ export class ReminderEngineService {
     let baselineKms: number | null = null;
 
     if (latestMainService) {
-      // Prioritize the latest Main Service as the authoritative baseline
       baselineDate = latestMainService.eventDate;
       baselineKms = latestMainService.odometerAtEvent;
     } else if (vehicle.serviceSettingsBaseDate) {
@@ -123,8 +137,8 @@ export class ReminderEngineService {
       baselineKms = currentKms;
     }
 
-    let dueDate = null;
-    let dueKms = null;
+    let dueDate: Date | null = null;
+    let dueKms: number | null = null;
 
     if (baselineDate && serviceIntervalMonths) {
       dueDate = new Date(baselineDate);
@@ -137,7 +151,7 @@ export class ReminderEngineService {
     if (!dueDate && dueKms === null) return null;
 
     for (const pref of typePrefs) {
-      const timing = pref.timing as ReminderTiming;
+      const timing = pref.timing;
       const threshold = this.getTimingThreshold(timing);
       
       let triggered = false;
@@ -159,8 +173,7 @@ export class ReminderEngineService {
         }
       }
 
-      // Distance check - ONLY trigger if not already triggered by date (to avoid double trigger per timing)
-      // Actually, if distance is MORE urgent, we should update the severity.
+      // Distance check
       if (dueKms !== null) {
         distanceRemaining = dueKms - currentKms;
         if (distanceRemaining <= 0) {
@@ -168,7 +181,6 @@ export class ReminderEngineService {
           severity = 'overdue';
         } else if (distanceRemaining <= threshold.distance) {
           triggered = true;
-          // If already triggered by date, only upgrade to due_now if distance is very close
           const distanceSeverity = distanceRemaining <= 10 ? 'due_now' : 'due_soon';
           if (severity !== 'overdue') {
             if (distanceSeverity === 'due_now') severity = 'due_now';
@@ -201,11 +213,15 @@ export class ReminderEngineService {
     return null;
   }
 
-  private evaluateRegistrationReminders(vehicle: any, preferences: any[], now: Date): DueReminder | null {
+  private evaluateRegistrationReminders(
+    vehicle: EvaluatedVehicle, 
+    preferences: UserReminderPreference[], 
+    now: Date
+  ): DueReminder | null {
     const type = ReminderType.REGISTRATION_EXPIRY;
     const typePrefs = preferences
       .filter(p => p.type === type && p.enabled)
-      .sort((a, b) => this.timingUrgency[a.timing as ReminderTiming] - this.timingUrgency[b.timing as ReminderTiming]);
+      .sort((a, b) => this.timingUrgency[a.timing] - this.timingUrgency[b.timing]);
 
     if (typePrefs.length === 0) return null;
 
@@ -215,7 +231,7 @@ export class ReminderEngineService {
     const expiryDate = registration.expiryDate;
 
     for (const pref of typePrefs) {
-      const timing = pref.timing as ReminderTiming;
+      const timing = pref.timing;
       const threshold = this.getTimingThreshold(timing);
       
       const diffTime = expiryDate.getTime() - now.getTime();
@@ -252,11 +268,15 @@ export class ReminderEngineService {
     return null;
   }
 
-  private evaluateInsuranceReminders(vehicle: any, preferences: any[], now: Date): DueReminder | null {
+  private evaluateInsuranceReminders(
+    vehicle: EvaluatedVehicle, 
+    preferences: UserReminderPreference[], 
+    now: Date
+  ): DueReminder | null {
     const type = ReminderType.INSURANCE_EXPIRY;
     const typePrefs = preferences
       .filter(p => p.type === type && p.enabled)
-      .sort((a, b) => this.timingUrgency[a.timing as ReminderTiming] - this.timingUrgency[b.timing as ReminderTiming]);
+      .sort((a, b) => this.timingUrgency[a.timing] - this.timingUrgency[b.timing]);
 
     if (typePrefs.length === 0) return null;
 
@@ -266,7 +286,7 @@ export class ReminderEngineService {
     const expiryDate = insurance.expiryDate;
 
     for (const pref of typePrefs) {
-      const timing = pref.timing as ReminderTiming;
+      const timing = pref.timing;
       const threshold = this.getTimingThreshold(timing);
       
       const diffTime = expiryDate.getTime() - now.getTime();

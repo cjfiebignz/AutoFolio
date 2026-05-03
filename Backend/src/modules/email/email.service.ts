@@ -2,6 +2,25 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 
+export interface EmailReminderItem {
+  vehicleId: string;
+  vehicleDisplayName: string;
+  type: string;
+  timing: string;
+  title: string;
+  message: string;
+  severity: string;
+  dueDate?: Date;
+  dueOdometer?: number;
+  currentOdometer?: number;
+}
+
+export interface EmailResult {
+  success: boolean;
+  error?: string;
+  id?: string;
+}
+
 @Injectable()
 export class EmailService {
   private resend: Resend | null = null;
@@ -42,7 +61,7 @@ export class EmailService {
     return `${baseUrl}/${cleanPath}`;
   }
 
-  async sendVerificationEmail(email: string, token: string, purpose: 'registration' | 'email_change') {
+  async sendVerificationEmail(email: string, token: string, purpose: 'registration' | 'email_change'): Promise<EmailResult> {
     const verificationUrl = this.getFrontendUrl(`/verify-email?token=${token}`);
     const subject = purpose === 'registration' ? 'Verify your AutoFolio account' : 'Verify your new email address';
     
@@ -116,20 +135,31 @@ If you did not request this, you can safely ignore this email.
 
     if (this.resend) {
       try {
-        await this.resend.emails.send({
+        const { data, error } = await this.resend.emails.send({
           from: this.fromEmail,
           to: email,
           subject,
           html,
           text,
         });
+        
+        if (error) {
+          this.logger.error(`Resend API error: ${error.message}`);
+          return { success: false, error: error.message };
+        }
+        
+        return { success: true, id: data?.id };
       } catch (error) {
         this.logger.error(`Failed to send verification email to ${email}`, error);
+        return { success: false, error: error.message };
       }
     }
+    
+    this.logger.warn('Email provider not configured. Verification email was not sent.');
+    return { success: false, error: 'Email provider not configured' };
   }
 
-  async sendPasswordResetEmail(email: string, token: string) {
+  async sendPasswordResetEmail(email: string, token: string): Promise<EmailResult> {
     const resetUrl = this.getFrontendUrl(`/reset-password?token=${token}`);
     const subject = 'Reset your AutoFolio password';
     
@@ -201,20 +231,31 @@ If you did not request this, you can safely ignore this email.
 
     if (this.resend) {
       try {
-        await this.resend.emails.send({
+        const { data, error } = await this.resend.emails.send({
           from: this.fromEmail,
           to: email,
           subject,
           html,
           text,
         });
+
+        if (error) {
+          this.logger.error(`Resend API error: ${error.message}`);
+          return { success: false, error: error.message };
+        }
+        
+        return { success: true, id: data?.id };
       } catch (error) {
         this.logger.error(`Failed to send password reset email to ${email}`, error);
+        return { success: false, error: error.message };
       }
     }
+    
+    this.logger.warn('Email provider not configured. Password reset email was not sent.');
+    return { success: false, error: 'Email provider not configured' };
   }
 
-  async sendReminderEmail(email: string, reminder: any): Promise<{ vehicleUrl: string }> {
+  async sendReminderEmail(email: string, reminder: EmailReminderItem): Promise<{ vehicleUrl: string }> {
     const vehicleUrl = this.getFrontendUrl(`/vehicles/${reminder.vehicleId}`);
     const subject = `AutoFolio: ${reminder.vehicleDisplayName} ${reminder.type.replace('_', ' ').toLowerCase()} is ${reminder.severity.replace('_', ' ')}`;
     
@@ -304,13 +345,17 @@ View your vehicle: ${vehicleUrl}
 
     if (this.resend) {
       try {
-        await this.resend.emails.send({
+        const { error } = await this.resend.emails.send({
           from: this.fromEmail,
           to: email,
           subject,
           html,
           text,
         });
+        
+        if (error) {
+          throw new Error(`Resend API error: ${error.message}`);
+        }
       } catch (error) {
         this.logger.error(`Failed to send reminder email to ${email}`, error);
         throw error;
@@ -322,7 +367,7 @@ View your vehicle: ${vehicleUrl}
     return { vehicleUrl };
   }
 
-  async sendReminderDigestEmail(email: string, reminders: any[]): Promise<{ garageUrl: string }> {
+  async sendReminderDigestEmail(email: string, reminders: EmailReminderItem[]): Promise<{ garageUrl: string }> {
     const garageUrl = this.getFrontendUrl('/vehicles');
     const count = reminders.length;
     const subject = `AutoFolio: ${count} vehicle reminder${count > 1 ? 's' : ''} need attention`;
@@ -420,13 +465,17 @@ View your garage: ${garageUrl}
 
     if (this.resend) {
       try {
-        await this.resend.emails.send({
+        const { error } = await this.resend.emails.send({
           from: this.fromEmail,
           to: email,
           subject,
           html,
           text,
         });
+        
+        if (error) {
+          throw new Error(`Resend API error: ${error.message}`);
+        }
       } catch (error) {
         this.logger.error(`Failed to send reminder digest email to ${email}`, error);
         throw error;

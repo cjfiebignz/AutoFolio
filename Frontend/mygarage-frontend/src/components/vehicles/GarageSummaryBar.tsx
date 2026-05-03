@@ -217,9 +217,9 @@ export function GarageSummaryBar({ vehicles, effectiveNow }: GarageSummaryBarPro
           </div>
 
           {/* Expanded Content */}
-          {isExpanded && (
-            <div className="border-t border-border-subtle bg-foreground/[0.01] p-6 space-y-8 animate-in slide-in-from-top-4 duration-500">
-              {/* Reminders Section */}
+          <div className={`${isExpanded ? 'block animate-in slide-in-from-top-4 duration-500' : 'hidden'}`}>
+            <div className="border-t border-border-subtle bg-foreground/[0.01] p-6 space-y-8">
+              {/* Reminders Section (Always mounted to keep badge accurate) */}
               <div className="space-y-4">
                 <DueReminders 
                   compact={true} 
@@ -245,7 +245,7 @@ export function GarageSummaryBar({ vehicles, effectiveNow }: GarageSummaryBarPro
                 <ChevronRight size={14} className="text-muted opacity-40" />
               </button>
             </div>
-          )}
+          </div>
         </div>
 
         {/* ROW 2: Streak & Savers | Update Odometer */}

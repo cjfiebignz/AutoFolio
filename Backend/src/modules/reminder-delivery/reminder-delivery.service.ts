@@ -1,8 +1,34 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ReminderEngineService, DueReminder } from '../reminder-engine/reminder-engine.service';
-import { EmailService } from '../email/email.service';
+import { EmailService, EmailReminderItem } from '../email/email.service';
 import { DeliveryChannel, DeliveryStatus } from '@prisma/client';
+
+export interface DeliveryDetails {
+  key: string;
+  status: string;
+  reason?: string;
+  error?: string;
+  vehicleUrl?: string;
+  existingStatus?: string;
+  sentAt?: Date;
+  channel?: DeliveryChannel;
+}
+
+export interface DeliveryProcessResult {
+  totalEvaluated: number;
+  eligibleCount: number;
+  sent: number;
+  skipped: number;
+  failed: number;
+  noEmail: number;
+  noConfig: number;
+  emailMode: 'single' | 'digest' | 'none';
+  digestCount: number;
+  includedReminderKeys: string[];
+  skippedReminderKeys: string[];
+  details: DeliveryDetails[];
+}
 
 @Injectable()
 export class ReminderDeliveryService {
@@ -14,7 +40,7 @@ export class ReminderDeliveryService {
     private readonly emailService: EmailService,
   ) {}
 
-  async processDueReminders(userId: string) {
+  async processDueReminders(userId: string): Promise<DeliveryProcessResult> {
     this.logger.log(`Processing due reminders for user: ${userId}`);
     const { reminders } = await this.reminderEngine.getDueReminders(userId);
     
@@ -26,7 +52,7 @@ export class ReminderDeliveryService {
     const isEmailConfigured = this.emailService.isConfigured();
     
     // Structured diagnostic statistics for API response
-    const stats = {
+    const stats: DeliveryProcessResult = {
       totalEvaluated: reminders.length,
       eligibleCount: 0,
       sent: 0,
@@ -34,26 +60,27 @@ export class ReminderDeliveryService {
       failed: 0,
       noEmail: 0,
       noConfig: 0,
-      emailMode: 'none' as 'single' | 'digest' | 'none',
+      emailMode: 'none',
       digestCount: 0,
       includedReminderKeys: [],
       skippedReminderKeys: [],
+      details: [],
     };
-    const details = [];
 
     if (!user?.email) {
       this.logger.warn(`User ${userId} has no email address. Skipping deliveries.`);
-      return { ...stats, noEmail: reminders.length, details: [{ status: 'skipped', reason: 'User missing email' }] };
+      stats.noEmail = reminders.length;
+      stats.details.push({ key: 'user-level', status: 'skipped', reason: 'User missing email' });
+      return stats;
     }
 
-    const eligibleReminders = [];
+    const eligibleReminders: (DueReminder & { reminderKey: string; existingStatus: string })[] = [];
 
     /**
      * DUPLICATE PREVENTION STRATEGY:
-     * 1. A unique 'reminderKey' is generated for each specific reminder event (vehicle + type + timing + eventId).
-     * 2. We check the 'UserReminderDelivery' table for any existing record with this key and channel.
-     * 3. We ONLY skip if the status is 'SENT'. 
-     * 4. 'FAILED' or 'SKIPPED' (due to config) records do NOT block future attempts, allowing for retries.
+     * 1. A unique 'reminderKey' is generated for each specific reminder event.
+     * 2. We check 'UserReminderDelivery' for an existing 'SENT' record.
+     * 3. Database-level unique constraint on 'confirmedKey' provides a final safety net for scheduler-safe dedupe.
      */
     for (const reminder of reminders) {
       const eventId = reminder.dueDate 
@@ -73,7 +100,7 @@ export class ReminderDeliveryService {
       if (existing && existing.status === DeliveryStatus.SENT) {
         stats.skipped++;
         stats.skippedReminderKeys.push(reminderKey);
-        details.push({ 
+        stats.details.push({ 
           key: reminderKey, 
           status: 'skipped_already_sent', 
           reason: 'Already delivered',
@@ -94,7 +121,7 @@ export class ReminderDeliveryService {
     stats.eligibleCount = eligibleReminders.length;
 
     if (eligibleReminders.length === 0) {
-      return { ...stats, details };
+      return stats;
     }
 
     if (!isEmailConfigured) {
@@ -103,17 +130,17 @@ export class ReminderDeliveryService {
       for (const er of eligibleReminders) {
         stats.skipped++;
         stats.skippedReminderKeys.push(er.reminderKey);
-        details.push({ 
+        stats.details.push({ 
           key: er.reminderKey, 
           status: 'skipped_no_config', 
           reason: 'Email provider not configured',
           existingStatus: er.existingStatus
         });
       }
-      return { ...stats, details };
+      return stats;
     }
 
-    // Determine delivery mode: single email for 1 item, combined digest for 2+
+    // Determine delivery mode
     stats.emailMode = eligibleReminders.length === 1 ? 'single' : 'digest';
     stats.digestCount = eligibleReminders.length;
     stats.includedReminderKeys = eligibleReminders.map(er => er.reminderKey);
@@ -131,13 +158,14 @@ export class ReminderDeliveryService {
             reminderType: er.type,
             channel: DeliveryChannel.EMAIL,
             status: DeliveryStatus.SENT,
+            confirmedKey: `${er.reminderKey}-${DeliveryChannel.EMAIL}`,
             dueDate: er.dueDate,
             dueOdometer: er.dueOdometer,
           },
         });
 
         stats.sent = 1;
-        details.push({ 
+        stats.details.push({ 
           key: er.reminderKey, 
           status: 'sent', 
           vehicleUrl,
@@ -147,25 +175,36 @@ export class ReminderDeliveryService {
         // Send combined digest email
         await this.emailService.sendReminderDigestEmail(user.email, eligibleReminders);
         
-        // Record individual SENT status for each reminder included in the digest
+        // Record individual SENT status for each reminder
         for (const er of eligibleReminders) {
-          await this.prisma.userReminderDelivery.create({
-            data: {
-              userId,
-              vehicleId: er.vehicleId,
-              reminderKey: er.reminderKey,
-              reminderType: er.type,
-              channel: DeliveryChannel.EMAIL,
-              status: DeliveryStatus.SENT,
-              dueDate: er.dueDate,
-              dueOdometer: er.dueOdometer,
-            },
-          });
-          details.push({ 
-            key: er.reminderKey, 
-            status: 'sent', 
-            existingStatus: er.existingStatus
-          });
+          try {
+            await this.prisma.userReminderDelivery.create({
+              data: {
+                userId,
+                vehicleId: er.vehicleId,
+                reminderKey: er.reminderKey,
+                reminderType: er.type,
+                channel: DeliveryChannel.EMAIL,
+                status: DeliveryStatus.SENT,
+                confirmedKey: `${er.reminderKey}-${DeliveryChannel.EMAIL}`,
+                dueDate: er.dueDate,
+                dueOdometer: er.dueOdometer,
+              },
+            });
+            stats.details.push({ 
+              key: er.reminderKey, 
+              status: 'sent', 
+              existingStatus: er.existingStatus
+            });
+          } catch (dbErr) {
+            // Defensively handle rare race condition during batched insert
+            this.logger.warn(`Dedupe triggered for ${er.reminderKey} during digest record.`);
+            stats.details.push({ 
+              key: er.reminderKey, 
+              status: 'skipped_duplicate_race', 
+              reason: 'Dedupe key already exists'
+            });
+          }
         }
         stats.sent = eligibleReminders.length;
       }
@@ -174,7 +213,6 @@ export class ReminderDeliveryService {
       stats.failed = eligibleReminders.length;
       
       for (const er of eligibleReminders) {
-        // Record individual FAILED status to allow for future retries
         await this.prisma.userReminderDelivery.create({
           data: {
             userId,
@@ -183,12 +221,13 @@ export class ReminderDeliveryService {
             reminderType: er.type,
             channel: DeliveryChannel.EMAIL,
             status: DeliveryStatus.FAILED,
+            confirmedKey: null, // Allow retry
             dueDate: er.dueDate,
             dueOdometer: er.dueOdometer,
           },
         });
         
-        details.push({ 
+        stats.details.push({ 
           key: er.reminderKey, 
           status: 'failed', 
           error: error.message,
@@ -197,7 +236,7 @@ export class ReminderDeliveryService {
       }
     }
 
-    return { ...stats, details };
+    return stats;
   }
 
   async resetDeliveries(userId: string, filters: { channel?: DeliveryChannel; vehicleId?: string; reminderType?: string }) {
