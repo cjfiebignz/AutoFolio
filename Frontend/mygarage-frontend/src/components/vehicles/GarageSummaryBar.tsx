@@ -20,6 +20,13 @@ import { usePreferences } from '@/lib/preferences';
 import { useActionConfirm } from '@/lib/use-action-confirm';
 import { DueReminders } from './DueReminders';
 
+/**
+ * ARCHITECTURAL NOTE (Mobile/Desktop Split):
+ * This component is slated for refactoring into a Controller-Presenter pattern.
+ * - Logic (Streak fetching, Alert aggregation) will move to 'GarageSummaryController'.
+ * - UI will split into 'GarageSummaryDesktop' (current sticky bar) and 'GarageSummaryMobile' (stats header/drawer).
+ */
+
 interface GarageSummaryBarProps {
   vehicles: UserVehicle[];
   effectiveNow?: string;

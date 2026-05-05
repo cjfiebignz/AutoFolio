@@ -42,6 +42,13 @@ import { InlineErrorMessage } from '../ui/ActionFeedback';
 import { isMaintenanceAcknowledged, acknowledgeMaintenance } from '@/lib/maintenance-ack-utils';
 import { RenewalModal } from './RenewalModal';
 
+/**
+ * ARCHITECTURAL NOTE (Mobile/Desktop Split):
+ * This component is slated for refactoring into a Controller-Presenter pattern.
+ * - Logic (Reminders mapping, Acknowledge persistence) will move to 'VehicleOverviewController'.
+ * - UI will split into 'VehicleOverviewDesktop' (current grid dashboard) and 'VehicleOverviewMobile' (stacked/sectioned layout).
+ */
+
 interface OverviewProps {
   vehicle: VehicleViewModel;
   services: ServiceEntryViewModel[];

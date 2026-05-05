@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { VehicleViewModel } from '@/lib/mappers/vehicle';
 import { mapPresetItemsToDto } from '@/lib/mappers/parts';
+import { formatDisplayDate } from '@/lib/date-utils';
 
 interface VehiclePartsDisplayProps {
   vehicleId: string;
@@ -810,7 +811,7 @@ function ShoppingListModal({
             <p className="text-[9px] font-bold uppercase text-black/60 tracking-tighter">
               {vehicle.year} {vehicle.make} {vehicle.model}
             </p>
-            <p className="text-[8px] font-medium text-black/40 mt-1">{new Date().toLocaleDateString()}</p>
+            <p className="text-[8px] font-medium text-black/40 mt-1">{formatDisplayDate(new Date())}</p>
           </div>
         </div>
 

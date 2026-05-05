@@ -23,7 +23,7 @@ export function DocumentForm({ vehicleId, isOpen, onClose, initialData, document
   // Form fields
   const [title, setTitle] = useState(initialData?.title || '');
   const [category, setCategory] = useState(initialData?.category || 'receipt');
-  const [date, setDate] = useState(initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : '');
   const [file, setFile] = useState<File | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -32,7 +32,7 @@ export function DocumentForm({ vehicleId, isOpen, onClose, initialData, document
 
   const isEdit = !!initialData || !!documentId;
 
-  // Sync state with initialData
+  // Sync state with initialData and set default date for new documents
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title || '');
@@ -40,8 +40,11 @@ export function DocumentForm({ vehicleId, isOpen, onClose, initialData, document
       if (initialData.date) {
         setDate(new Date(initialData.date).toISOString().split('T')[0]);
       }
+    } else if (!isEdit && !date) {
+      // Set to today for new document entry only on client to avoid hydration mismatch
+      setDate(new Date().toISOString().split('T')[0]);
     }
-  }, [initialData]);
+  }, [initialData, isEdit]);
 
   // Cleanup on close (if used as modal)
   useEffect(() => {
@@ -49,7 +52,7 @@ export function DocumentForm({ vehicleId, isOpen, onClose, initialData, document
       if (!isEdit) {
         setTitle('');
         setCategory('receipt');
-        setDate(new Date().toISOString().split('T')[0]);
+        setDate(''); // Clear on close
         setFile(null);
       }
       setError(null);

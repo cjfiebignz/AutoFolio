@@ -21,6 +21,14 @@ import React from 'react';
 import { normalizeImageUrl } from '@/lib/image-utils';
 import { MaintenanceStatusBadge, MaintenanceStatus } from './MaintenanceStatusBadge';
 
+/**
+ * ARCHITECTURAL NOTE (Mobile/Desktop Split):
+ * This component is slated for refactoring into a Controller-Presenter pattern.
+ * - Logic (Mappers, Actions, Plan Gating) will move to a 'VehicleCardController'.
+ * - UI will split into 'VehicleCardDesktop' (current rich card) and 'VehicleCardMobile' (compact row).
+ * - Phase 1: Use CSS responsive rendering (hidden/block) for simple visibility toggles.
+ */
+
 interface VehicleCardProps {
   vehicle: UserVehicle;
 }

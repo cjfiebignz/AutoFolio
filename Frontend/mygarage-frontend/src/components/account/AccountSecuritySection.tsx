@@ -34,6 +34,7 @@ import {
 } from '@/lib/api';
 import { AccountMetadata } from '@/types/autofolio';
 import { useActionConfirm } from '@/lib/use-action-confirm';
+import { formatMonthYear } from '@/lib/date-utils';
 
 export function AccountSecuritySection({ userId }: { userId: string }) {
   const [isPending, startTransition] = useTransition();
@@ -613,7 +614,7 @@ export function AccountSecuritySection({ userId }: { userId: string }) {
               icon={<ShieldCheck size={12} />} 
               accent={metadata?.hasPassword}
             />
-            <InfoCard label="Member Since" value={new Date(metadata?.createdAt || '').toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })} icon={<CheckCircle2 size={12} />} />
+            <InfoCard label="Member Since" value={formatMonthYear(metadata?.createdAt)} icon={<CheckCircle2 size={12} />} />
           </div>
         </div>
       </section>

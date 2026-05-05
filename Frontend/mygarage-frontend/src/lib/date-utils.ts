@@ -21,6 +21,19 @@ export function formatDisplayDate(date: string | Date | undefined | null): strin
 }
 
 /**
+ * Formats a date into "Month Year" (e.g., "April 2026")
+ * Uses a fixed locale (en-GB) to avoid hydration mismatches.
+ */
+export function formatMonthYear(date: string | Date | undefined | null): string {
+  if (!date) return 'N/A';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat('en-GB', {
+    month: 'long',
+    year: 'numeric'
+  }).format(d);
+}
+
+/**
  * Formats a number into a deterministic currency format (e.g., "$1,234.56")
  * Uses en-US locale for formatting consistency.
  */
